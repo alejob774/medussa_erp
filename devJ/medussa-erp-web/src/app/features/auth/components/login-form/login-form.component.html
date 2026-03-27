@@ -1,0 +1,83 @@
+<!-- src/app/features/auth/components/login-form/login-form.component.html -->
+<div class="w-full">
+  <div class="mb-8 text-center lg:text-left">
+    <h2 class="text-3xl font-bold text-slate-800">Formulario de Acceso</h2>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-5">
+    <div>
+      <label class="mb-2 block text-lg font-semibold text-slate-700">Usuario:</label>
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-icon matPrefix>person</mat-icon>
+        <input matInput formControlName="username" placeholder="Usuario" />
+      </mat-form-field>
+      @if (form.controls.username.touched && form.controls.username.invalid) {
+        <p class="mt-1 text-sm text-red-600">El usuario es obligatorio.</p>
+      }
+    </div>
+
+    <div>
+      <label class="mb-2 block text-lg font-semibold text-slate-700">Contraseña:</label>
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-icon matPrefix>lock</mat-icon>
+        <input
+          matInput
+          formControlName="password"
+          [type]="hidePassword ? 'password' : 'text'"
+          placeholder="Contraseña"
+        />
+        <button
+          type="button"
+          mat-icon-button
+          matSuffix
+          (click)="hidePassword = !hidePassword"
+        >
+          <mat-icon>{{ hidePassword ? 'visibility' : 'visibility_off' }}</mat-icon>
+        </button>
+      </mat-form-field>
+      @if (form.controls.password.touched && form.controls.password.invalid) {
+        <p class="mt-1 text-sm text-red-600">La contraseña es obligatoria.</p>
+      }
+    </div>
+
+    @if (errorMessage) {
+      <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        {{ errorMessage }}
+      </div>
+    }
+
+    <div class="flex items-center">
+      <mat-checkbox formControlName="remember">Recordar sesión</mat-checkbox>
+    </div>
+
+    <div>
+      <button
+        mat-flat-button
+        color="primary"
+        class="w-full !py-6 !text-lg"
+        type="submit"
+        [disabled]="loading"
+      >
+        {{ loading ? 'Ingresando...' : 'Iniciar Sesión' }}
+      </button>
+    </div>
+
+    <div>
+      <a class="text-blue-600 hover:underline" href="javascript:void(0)">
+        ¿Olvidaste tu contraseña?
+      </a>
+    </div>
+
+    <div class="border-t border-slate-200 pt-5">
+      <div class="flex flex-col gap-2 md:flex-row md:items-center">
+        <label class="text-lg font-semibold text-slate-700 md:min-w-28">Servidor:</label>
+        <mat-form-field appearance="outline" class="w-full md:max-w-sm">
+          <mat-select formControlName="server">
+            <mat-option value="produccion">Producción</mat-option>
+            <mat-option value="desarrollo">Desarrollo</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </div>
+  </form>
+</div>

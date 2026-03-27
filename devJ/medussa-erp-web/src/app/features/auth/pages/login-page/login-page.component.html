@@ -1,0 +1,12 @@
+<!-- src/app/features/auth/pages/login-page/login-page.component.html -->
+@if (!loginSuccess) {
+  <app-auth-layout>
+    <app-login-form
+      [loading]="loading"
+      [errorMessage]="errorMessage"
+      (formSubmit)="onLoginSubmit($event)"
+    ></app-login-form>
+  </app-auth-layout>
+} @else {
+  <app-session-started></app-session-started>
+}
