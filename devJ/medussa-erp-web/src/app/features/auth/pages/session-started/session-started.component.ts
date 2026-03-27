@@ -1,4 +1,3 @@
-// src/app/features/auth/pages/session-started/session-started.component.ts
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { AuthSessionService } from '../../services/auth-session.service';
@@ -19,5 +18,21 @@ export class SessionStartedComponent {
 
   get refreshToken(): string | null {
     return this.authSessionService.getRefreshToken();
+  }
+
+  get selectedServer(): string {
+    return this.authSessionService.getSession()?.selectedServer ?? 'produccion';
+  }
+
+  get activeCompanyId(): string | null {
+    return this.authSessionService.getActiveCompanyId();
+  }
+
+  get requiresCompanySelection(): boolean {
+    return this.authSessionService.getSession()?.requiresCompanySelection ?? false;
+  }
+
+  get companyCount(): number {
+    return this.authSessionService.getSession()?.companies?.length ?? 0;
   }
 }

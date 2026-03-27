@@ -1,14 +1,33 @@
-<!-- src/app/features/auth/pages/session-started/session-started.component.html -->
-<div class="min-h-screen bg-slate-100 flex items-center justify-center p-6">
-  <div class="w-full max-w-2xl rounded-3xl bg-white p-10 shadow-2xl">
+<div class="flex min-h-screen items-center justify-center bg-slate-100 p-6">
+  <div class="w-full max-w-3xl rounded-3xl bg-white p-10 shadow-2xl">
     <div class="mb-6">
       <h1 class="text-3xl font-bold text-slate-800">Sesión iniciada</h1>
       <p class="mt-2 text-slate-600">
-        El flujo del login en frontend se ejecutó correctamente.
+        El flujo de autenticación quedó listo para conectarse al backend real y para
+        crecer hacia selección de empresa activa.
       </p>
     </div>
 
-    <div class="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+    <div class="grid gap-4 md:grid-cols-3">
+      <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <p class="text-sm font-semibold text-slate-700">Servidor seleccionado</p>
+        <p class="mt-2 text-sm text-slate-600">{{ selectedServer }}</p>
+      </div>
+
+      <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <p class="text-sm font-semibold text-slate-700">Empresas recibidas</p>
+        <p class="mt-2 text-sm text-slate-600">{{ companyCount }}</p>
+      </div>
+
+      <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <p class="text-sm font-semibold text-slate-700">Empresa activa</p>
+        <p class="mt-2 break-all text-sm text-slate-600">
+          {{ activeCompanyId || 'Pendiente por backend' }}
+        </p>
+      </div>
+    </div>
+
+    <div class="mt-6 space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
       <div>
         <p class="text-sm font-semibold text-slate-700">Access Token</p>
         <p class="mt-1 break-all text-sm text-slate-600">{{ accessToken }}</p>
@@ -20,8 +39,20 @@
       </div>
     </div>
 
-    <div class="mt-8 rounded-2xl bg-green-50 px-4 py-3 text-sm text-green-700">
-      Placeholder funcional listo. El siguiente paso es conectar este flujo al backend real.
+    @if (requiresCompanySelection) {
+      <div class="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        El backend indicó que este usuario debe seleccionar empresa antes de entrar al ERP.
+      </div>
+    } @else {
+      <div class="mt-6 rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+        La estructura ya quedó preparada para que luego conectemos selector de empresa,
+        permisos por empresa y navegación real.
+      </div>
+    }
+
+    <div class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+      Pendiente para backend real: URL exacta, puerto, CORS, credenciales de prueba y
+      endpoint de refresh.
     </div>
   </div>
 </div>

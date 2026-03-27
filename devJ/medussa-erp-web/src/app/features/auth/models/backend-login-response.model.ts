@@ -6,4 +6,12 @@ export interface BackendLoginResponse {
   token_type: string;
   expires_in?: number;
   user?: BackendAuthUser;
+
+  // TODO backend multiempresa:
+  active_company_id?: string | null;
+  requires_company_selection?: boolean;
+  companies?: Array<{
+    id: string;
+    name: string;
+  }>;
 }

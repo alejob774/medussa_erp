@@ -1,4 +1,3 @@
-// src/app/features/auth/pages/login-page/login-page.component.ts
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { finalize } from 'rxjs/operators';
@@ -39,20 +38,31 @@ export class LoginPageComponent {
       .login({
         username: value.username,
         password: value.password,
-        server: value.server,
+        server: value.server === 'desarrollo' ? 'desarrollo' : 'produccion',
       })
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: (response) => {
-          this.authSessionService.setSession(response);
+          this.authSessionService.setSession(response, value.remember);
           this.loginSuccess = true;
-          console.log('Login response:', response);
         },
         error: (error) => {
+          this.errorMessage = this.resolveLoginErrorMessage(error);
           console.error('Login error:', error);
-          this.errorMessage =
-            error?.error?.detail || 'No fue posible iniciar sesión.';
         },
       });
+  }
+
+  private resolveLoginErrorMessage(error: unknown): string {
+    const httpError = error as {
+      status?: number;
+      error?: { detail?: string };
+    };
+
+    if (httpError?.status === 0) {
+      return 'No fue posible conectarse con el backend. Revisa URL, puerto y CORS.';
+    }
+
+    return httpError?.error?.detail || 'No fue posible iniciar sesión.';
   }
 }

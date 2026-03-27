@@ -1,7 +1,6 @@
-<!-- src/app/features/auth/components/login-form/login-form.component.html -->
-<div class="w-full">
+<div class="mx-auto w-full max-w-2xl">
   <div class="mb-8 text-center lg:text-left">
-    <h2 class="text-3xl font-bold text-slate-800">Formulario de Acceso</h2>
+    <h2 class="text-3xl font-bold text-slate-700 md:text-4xl">Formulario de Acceso</h2>
   </div>
 
   <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-5">
@@ -9,7 +8,12 @@
       <label class="mb-2 block text-lg font-semibold text-slate-700">Usuario:</label>
       <mat-form-field appearance="outline" class="w-full">
         <mat-icon matPrefix>person</mat-icon>
-        <input matInput formControlName="username" placeholder="Usuario" />
+        <input
+          matInput
+          formControlName="username"
+          placeholder="Usuario"
+          autocomplete="username"
+        />
       </mat-form-field>
       @if (form.controls.username.touched && form.controls.username.invalid) {
         <p class="mt-1 text-sm text-red-600">El usuario es obligatorio.</p>
@@ -25,6 +29,7 @@
           formControlName="password"
           [type]="hidePassword ? 'password' : 'text'"
           placeholder="Contraseña"
+          autocomplete="current-password"
         />
         <button
           type="button"
@@ -78,6 +83,7 @@
           </mat-select>
         </mat-form-field>
       </div>
+
     </div>
   </form>
 </div>
