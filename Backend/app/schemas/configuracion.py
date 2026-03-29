@@ -1,18 +1,23 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field
 from typing import Optional
 
-class ConfigSchema(BaseModel):
-    nombre: str
-    valor: str
-
 class ConfiguracionBase(BaseModel):
-    nombre_empresa: str = Field(..., max_length=150)
+    nombre_empresa: str = Field(..., max_length=100)
     nit: str = Field(..., max_length=20)
+    direccion: str = Field(..., max_length=150)
+    ciudad: str = Field(..., max_length=100)
+    pais: str = Field(..., max_length=100)
     moneda: str = Field(..., max_length=10)
     zona_horaria: str = Field(..., max_length=50)
-    formato_fecha: str = Field(..., max_length=20)
-    correo_corporativo: Optional[EmailStr] = None
+    telefono: Optional[str] = None
+    formato_fecha: str = Field("DD/MM/YYYY")
+
+class ConfigSchema(ConfiguracionBase):
+    pass
 
 class ConfiguracionResponse(ConfiguracionBase):
+    id: int
+    empresa_id: str
+
     class Config:
-        from_attributes = True # Permite mapear desde SQLAlchemy
+        from_attributes = True

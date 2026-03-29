@@ -1,20 +1,23 @@
-from sqlalchemy import Column, String, Boolean, DateTime
-from sqlalchemy.dialects.postgresql import UUID
-import uuid
-from datetime import datetime
-from ..db.session import Base
+from sqlalchemy import Column, Integer, String, ForeignKey
+from app.db.session import Base  # Asegúrate de que apunte a donde está tu Base
 
-class ParametrosGenerales(Base):
-    __tablename__ = "parametros_generales"
-    __table_args__ = {"schema": "configuracion"}
+class Configuracion(Base):
+    __tablename__ = "configuraciones"
+    __table_args__ = {"schema": "configuracion"} # Según tus esquemas de Postgres
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    nombre_empresa = Column(String(150), nullable=False)
+    id = Column(Integer, primary_key=True, index=True)
+    nombre_empresa = Column(String(100), nullable=False)
     nit = Column(String(20), nullable=False)
+    direccion = Column(String(150), nullable=False)
+    ciudad = Column(String(100), nullable=False)
+    pais = Column(String(100), nullable=False)
     moneda = Column(String(10), nullable=False)
     zona_horaria = Column(String(50), nullable=False)
-    formato_fecha = Column(String(20), nullable=False)
-    correo_corporativo = Column(String(100), nullable=True)
+    telefono = Column(String(20), nullable=True)
+    formato_fecha = Column(String(20), default="DD/MM/YYYY")
     
-    estado = Column(Boolean, default=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    # Este es el campo más importante para la HU-001 (Multi-tenancy)
+    empresa_id = Column(String, index=True, nullable=False) 
+
+    def __repr__(self):
+        return f"<Configuracion(empresa={self.nombre_empresa}, nit={self.nit})>"

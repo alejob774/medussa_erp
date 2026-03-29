@@ -1,52 +1,36 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from ...db.session import get_db
-from ...models.configuracion import ParametrosGenerales
-from ...schemas.configuracion import ConfiguracionBase, ConfiguracionResponse
-# En app/api/v1/configuracion.py
-from app.core.auth_utils import get_password_hash, verify_password, create_tokens, get_current_user # <--- Debe llamarse igual
-from app.schemas.configuracion import ConfigSchema # <--- Ajusta la ruta y el nombre
+from app.db.session import get_db
+from app.core.auth_utils import get_current_user
+from app.schemas.configuracion import ConfigSchema, ConfiguracionResponse
+from app.models.usuarios import Usuario
+# Asumiendo que tienes un modelo llamado Configuracion en app.models.config
+from app.models.configuracion import Configuracion 
 
+router = APIRouter()
 
-router = APIRouter(prefix="/configuracion", tags=["Configuración"])
-
-@router.post("/")
 @router.post("/", response_model=ConfiguracionResponse)
-def crear_configuracion(
+def guardar_configuracion(
     datos: ConfigSchema, 
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user) # Si ya agregaste seguridad
+    db: Session = Depends(get_db), 
+    current_user: Usuario = Depends(get_current_user)
 ):
-    # TODO LO QUE SIGUE DEBE TENER 4 ESPACIOS DE SANGRÍA
-    nueva_config = Configuracion(**datos.dict())
-    db.add(nueva_config)
-    db.commit()
-    db.refresh(nueva_config)
-    return nueva_config
-    
-@router.post("/", response_model=ConfiguracionResponse)
-def guardar_configuracion(data: ConfiguracionBase, db: Session = Depends(get_db)):
-    # Solo permitimos un registro de configuración global
-    config_existente = db.query(ParametrosGenerales).first()
-    
-    if config_existente:
-        # Escenario Dos: Actualización
-        for key, value in data.dict().items():
-            setattr(config_existente, key, value)
-        db.commit()
-        db.refresh(config_existente)
-        return config_existente
-    
-    # Escenario Uno: Creación inicial
-    nueva_config = ParametrosGenerales(**data.dict())
-    db.add(nueva_config)
-    db.commit()
-    db.refresh(nueva_config)
-    return nueva_config
+    # Validamos que el usuario sea Administrador
+    if "Administrador" not in current_user.roles:
+        raise HTTPException(status_code=403, detail="No tienes permisos de administrador")
 
-@router.get("/", response_model=ConfiguracionResponse)
-def obtener_configuracion(db: Session = Depends(get_db)):
-    config = db.query(ParametrosGenerales).first()
-    if not config:
-        raise HTTPException(status_code=404, detail="Configuración no encontrada")
+    # Buscamos si ya existe configuración para la empresa del usuario
+    config = db.query(Configuracion).filter(Configuracion.empresa_id == current_user.empresa_id).first()
+
+    if config:
+        # Actualizar existente
+        for key, value in datos.model_dump().items():
+            setattr(config, key, value)
+    else:
+        # Crear nueva asociada a la empresa del admin
+        config = Configuracion(**datos.model_dump(), empresa_id=current_user.empresa_id)
+        db.add(config)
+    
+    db.commit()
+    db.refresh(config)
     return config

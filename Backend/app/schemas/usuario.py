@@ -7,6 +7,7 @@ class UsuarioCreate(BaseModel):
     email: EmailStr
     password: str
     roles: List[str] = ["Administrador"]
+    empresa_id: str
 
 class Token(BaseModel):
     access_token: str

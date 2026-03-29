@@ -36,10 +36,10 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,            # Permitir estos orígenes
+    allow_origins=["*"], # En desarrollo puedes usar "*" para no bloquear nada
     allow_credentials=True,
-    allow_methods=["*"],              # Permitir todos los métodos (GET, POST, etc.)
-    allow_headers=["*"],              # Permitir todos los encabezados (incluyendo Authorization)
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # 3. INCLUIR LOS ROUTERS (Ahora que 'app' ya existe)
