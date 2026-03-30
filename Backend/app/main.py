@@ -1,11 +1,28 @@
 from fastapi import FastAPI
 from fastapi.security import OAuth2PasswordBearer
 from app.api.v1 import auth, usuarios, configuracion
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
     title="Medussa API",
     description="Sistema de Gestión de Inventarios",
     version="1.0.0"
+)
+
+
+# ... después de app = FastAPI()
+
+origins = [
+    "http://localhost:4200",
+    "http://127.0.0.1:4200",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Esto es lo que activa el "candado" en Swagger
