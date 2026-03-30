@@ -1,67 +1,67 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.models.usuarios import Usuario
-from app.schemas.usuario import UsuarioCreate, Token
-from app.core.auth_utils import get_password_hash, verify_password, create_tokens, get_current_user # <--- Debe llamarse igual
-from fastapi.security import OAuth2PasswordRequestForm  # <--- ESTA ES LA QUE FALTA
+from app.schemas.usuarios import UsuarioCreate, UsuarioResponse
+from passlib.context import CryptContext
+from datetime import datetime, timedelta
 
+router = APIRouter()
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-router = APIRouter(prefix="/auth", tags=["Seguridad"])
-
-@router.post("/register-admin", response_model=dict)
+@router.post("/register-admin", response_model=UsuarioResponse)
 def registrar_admin(user_in: UsuarioCreate, db: Session = Depends(get_db)):
-    # Verificar si ya existe
-    if db.query(Usuario).filter(Usuario.username == user_in.username).first():
-        raise HTTPException(status_code=400, detail="El usuario ya existe")
+    # ... (Código de registro que ya funcionó)
+    user_exists = db.query(Usuario).filter(
+        (Usuario.email == user_in.email) | (Usuario.username == user_in.username)
+    ).first()
+    if user_exists:
+        raise HTTPException(status_code=400, detail="Usuario ya existe")
     
     nuevo_usuario = Usuario(
+        nombre=user_in.nombre,
         username=user_in.username,
         email=user_in.email,
-        password_hash=get_password_hash(user_in.password),
-        roles=user_in.roles,
-        permisos=["configuracion_total", "admin_usuarios"], # Permisos granulares
-        empresa_id=user_in.empresa_id # <--- VERIFICA QUE ESTO NO FALTE
+        password_hash=pwd_context.hash(user_in.password),
+        rol=user_in.rol,
+        estado=True
     )
     db.add(nuevo_usuario)
     db.commit()
-    return {"message": "Administrador creado exitosamente"}
-
-# app/api/v1/auth.py
-
-def authenticate_user(db: Session, username: str, password: str):
-    # 1. Buscar al usuario por username
-    user = db.query(Usuario).filter(Usuario.username == username).first()
-    if not user:
-        return False
-    
-    # 2. Verificar la contraseña usando la función que arreglamos antes
-    if not verify_password(password, user.password_hash):
-        return False
-    
-    return user
+    db.refresh(nuevo_usuario)
+    return nuevo_usuario
 
 @router.post("/login")
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = authenticate_user(db, form_data.username, form_data.password)
-    if not user:
+def login(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()):
+    # 1. Buscar al usuario por email (usamos el campo 'username' del form para el email)
+    usuario = db.query(Usuario).filter(Usuario.email == form_data.username).first()
+    
+    if not usuario:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Usuario o contraseña incorrectos",
+            detail="Credenciales incorrectas",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
-    # Aquí es donde ocurre el 'unpacking' (access, refresh)
-    access, refresh = create_tokens(
-        user_id=str(user.id),
-        roles=user.roles,
-        permisos=user.permisos,
-        empresa_id=str(user.empresa_id) if user.empresa_id else ""
-    )
-    
+
+    # 2. Verificar la contraseña
+    if not pwd_context.verify(form_data.password, usuario.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Credenciales incorrectas",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # 3. Verificar si está activo
+    if not usuario.estado:
+        raise HTTPException(status_code=400, detail="Usuario inactivo")
+
     return {
-        "access_token": access,
-        "refresh_token": refresh,
-        "token_type": "bearer"
+        "access_token": f"token_simulado_para_{usuario.username}",
+        "token_type": "bearer",
+        "user": {
+            "email": usuario.email,
+            "rol": usuario.rol,
+            "nombre": usuario.nombre
+        }
     }
-    

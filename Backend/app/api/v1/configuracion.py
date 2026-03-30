@@ -1,36 +1,54 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from app.db.session import get_db
-from app.core.auth_utils import get_current_user
-from app.schemas.configuracion import ConfigSchema, ConfiguracionResponse
-from app.models.usuarios import Usuario
-# Asumiendo que tienes un modelo llamado Configuracion en app.models.config
-from app.models.configuracion import Configuracion 
 
 router = APIRouter()
 
-@router.post("/", response_model=ConfiguracionResponse)
-def guardar_configuracion(
-    datos: ConfigSchema, 
-    db: Session = Depends(get_db), 
-    current_user: Usuario = Depends(get_current_user)
-):
-    # Validamos que el usuario sea Administrador
-    if "Administrador" not in current_user.roles:
-        raise HTTPException(status_code=403, detail="No tienes permisos de administrador")
+@router.get("/menu-lateral/{rol_id}")
+def obtener_menu_por_rol(rol_id: int, db: Session = Depends(get_db)):
+    try:
+        # Consulta para traer la estructura jerárquica
+        query = text("""
+            SELECT 
+                m.nombre as modulo_nombre, 
+                m.icono as modulo_icono,
+                me.nombre as menu_nombre, 
+                me.url as menu_url, 
+                me.icono as menu_icono
+            FROM configuracion.modulos m
+            JOIN configuracion.menus me ON m.id = me.modulo_id
+            JOIN seguridad.rol_permisos rp ON m.id = rp.modulo_id
+            WHERE rp.rol_id = :rol_id 
+              AND m.estado = true 
+              AND rp.puede_leer = true
+            ORDER BY m.orden, me.orden
+        """)
+        
+        resultado = db.execute(query, {"rol_id": rol_id}).fetchall()
+        
+        # Agrupamiento dinámico por módulo
+        menu_final = []
+        modulos_dict = {}
 
-    # Buscamos si ya existe configuración para la empresa del usuario
-    config = db.query(Configuracion).filter(Configuracion.empresa_id == current_user.empresa_id).first()
+        for fila in resultado:
+            if fila.modulo_nombre not in modulos_dict:
+                nuevo_modulo = {
+                    "modulo": fila.modulo_nombre,
+                    "icono": fila.modulo_icono,
+                    "submenus": []
+                }
+                modulos_dict[fila.modulo_nombre] = nuevo_modulo
+                menu_final.append(nuevo_modulo)
+            
+            modulos_dict[fila.modulo_nombre]["submenus"].append({
+                "nombre": fila.menu_nombre,
+                "url": fila.menu_url,
+                "icono": fila.menu_icono
+            })
+            
+        return menu_final
 
-    if config:
-        # Actualizar existente
-        for key, value in datos.model_dump().items():
-            setattr(config, key, value)
-    else:
-        # Crear nueva asociada a la empresa del admin
-        config = Configuracion(**datos.model_dump(), empresa_id=current_user.empresa_id)
-        db.add(config)
-    
-    db.commit()
-    db.refresh(config)
-    return config
+    except Exception as e:
+        print(f"DEBUG ERROR CONFIG: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error al cargar menú: {str(e)}")
