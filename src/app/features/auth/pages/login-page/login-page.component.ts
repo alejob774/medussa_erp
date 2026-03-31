@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { finalize } from 'rxjs/operators';
+import { CompanyContextService } from '../../../../core/company/services/company-context.service';
 import { AuthLayoutComponent } from '../../components/auth-layout/auth-layout.component';
 import {
   LoginFormComponent,
@@ -8,27 +10,22 @@ import {
 } from '../../components/login-form/login-form.component';
 import { AuthService } from '../../services/auth.service';
 import { AuthSessionService } from '../../services/auth-session.service';
-import { SessionStartedComponent } from '../session-started/session-started.component';
 
 @Component({
   selector: 'app-login-page',
   standalone: true,
-  imports: [
-    CommonModule,
-    AuthLayoutComponent,
-    LoginFormComponent,
-    SessionStartedComponent,
-  ],
+  imports: [CommonModule, AuthLayoutComponent, LoginFormComponent],
   templateUrl: './login-page.component.html',
   styleUrl: './login-page.component.scss',
 })
 export class LoginPageComponent {
-  private authService = inject(AuthService);
-  private authSessionService = inject(AuthSessionService);
+  private readonly authService = inject(AuthService);
+  private readonly authSessionService = inject(AuthSessionService);
+  private readonly companyContextService = inject(CompanyContextService);
+  private readonly router = inject(Router);
 
   loading = false;
   errorMessage = '';
-  loginSuccess = false;
 
   onLoginSubmit(value: LoginFormValue): void {
     this.loading = true;
@@ -43,8 +40,14 @@ export class LoginPageComponent {
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: (response) => {
-          this.authSessionService.setSession(response, value.remember);
-          this.loginSuccess = true;
+          const session = this.companyContextService.enrichSession(
+            response,
+            value.username,
+          );
+          const nextRoute = this.companyContextService.resolvePostLoginRoute(session);
+
+          this.authSessionService.setSession(session, value.remember);
+          void this.router.navigate([nextRoute]);
         },
         error: (error) => {
           this.errorMessage = this.resolveLoginErrorMessage(error);
