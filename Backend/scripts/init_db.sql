@@ -35,15 +35,18 @@ CREATE TABLE seguridad.usuarios (
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabla Intermedia HU-002: Vínculo Empresa-Usuario-Rol
-CREATE TABLE seguridad.usuario_empresa_rol (
+-- Cambia esto:
+-- CREATE TABLE seguridad.usuario_empresa_rol (
+
+-- Por esto (añadiendo las 's' y el plural):
+CREATE TABLE seguridad.usuarios_empresas_roles (
     id SERIAL PRIMARY KEY,
     usuario_id INTEGER REFERENCES seguridad.usuarios(id) ON DELETE CASCADE,
     empresa_id VARCHAR(50) NOT NULL, -- ID de empresa (ej: EMP-001)
     rol_id INTEGER REFERENCES seguridad.roles(id),
+    estado VARCHAR(20) DEFAULT 'activo', -- Añade esta columna si tu backend la pide
     UNIQUE(usuario_id, empresa_id)
 );
-
 -- =============================================
 -- 4. ESQUEMA: CONFIGURACIÓN (Módulos y Menús)
 -- =============================================
