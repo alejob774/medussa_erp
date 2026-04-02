@@ -7,15 +7,19 @@ import { hasRequiredPermissions } from '../utils/permission.utils';
 export const permissionGuard: CanActivateFn = (route) => {
   const companyContextService = inject(CompanyContextService);
   const router = inject(Router);
+  const userPermissions = companyContextService.getUserPermissions();
   const requiredPermission = route.data?.['permission'] as
     | PermissionKey
     | PermissionKey[]
     | undefined;
 
-  return hasRequiredPermissions(
-    companyContextService.getUserPermissions(),
-    requiredPermission,
-  )
-    ? true
-    : router.createUrlTree(['/dashboard']);
+  if (hasRequiredPermissions(userPermissions, requiredPermission)) {
+    return true;
+  }
+
+  const fallbackRoute = hasRequiredPermissions(userPermissions, 'dashboard.view')
+    ? ['/dashboard']
+    : ['/login'];
+
+  return router.createUrlTree(fallbackRoute);
 };
