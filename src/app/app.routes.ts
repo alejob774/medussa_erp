@@ -8,6 +8,8 @@ import { LoginPageComponent } from './features/auth/pages/login-page/login-page.
 import { CompanySelectorPageComponent } from './features/company/pages/company-selector-page/company-selector-page.component';
 import { DashboardPageComponent } from './features/dashboard/pages/dashboard-page/dashboard-page.component';
 import { ModulePlaceholderPageComponent } from './features/dashboard/pages/module-placeholder-page/module-placeholder-page.component';
+import { ProfilesPermissionsPageComponent } from './features/security/pages/profiles-permissions-page/profiles-permissions-page.component';
+import { UsersRolesPageComponent } from './features/security/pages/users-roles-page/users-roles-page.component';
 import { GeneralSettingsPageComponent } from './features/settings/pages/general-settings-page/general-settings-page.component';
 
 export const routes: Routes = [
@@ -143,23 +145,17 @@ export const routes: Routes = [
       },
       {
         path: 'seguridad/usuarios-roles',
-        component: ModulePlaceholderPageComponent,
+        component: UsersRolesPageComponent,
         canActivate: [permissionGuard],
         data: {
-          title: 'Seguridad · Usuarios y roles',
-          description: 'Placeholder para administrar usuarios, roles y asignaciones.',
-          hint: 'HU siguiente: CRUD de usuarios y roles.',
           permission: 'security.users.view',
         },
       },
       {
         path: 'seguridad/perfiles-permisos',
-        component: ModulePlaceholderPageComponent,
+        component: ProfilesPermissionsPageComponent,
         canActivate: [permissionGuard],
         data: {
-          title: 'Seguridad · Perfiles y permisos',
-          description: 'Base para el catálogo de perfiles y matrices de acceso.',
-          hint: 'HU siguiente: editor visual de permisos.',
           permission: 'security.profiles.view',
         },
       },
