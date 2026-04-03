@@ -126,6 +126,8 @@ const MOCK_USERS: UserRowVm[] = [
     email: 'ana.perez@medussa.com',
     roleId: 'role-holding-admin',
     roleName: 'Administrador Empresa',
+    profileId: 'profile-holding-001',
+    profileName: 'Coordinación Corporativa',
     status: 'active',
   },
   {
@@ -136,6 +138,8 @@ const MOCK_USERS: UserRowVm[] = [
     email: 'diego.rios@medussa.com',
     roleId: 'role-holding-area-head',
     roleName: 'Jefe de Área',
+    profileId: 'profile-holding-001',
+    profileName: 'Coordinación Corporativa',
     status: 'active',
   },
   {
@@ -146,6 +150,8 @@ const MOCK_USERS: UserRowVm[] = [
     email: 'laura.quintero@medussa.com',
     roleId: 'role-holding-analyst',
     roleName: 'Analista de Área',
+    profileId: 'profile-holding-002',
+    profileName: 'Analítica Financiera',
     status: 'inactive',
   },
   {
@@ -156,6 +162,8 @@ const MOCK_USERS: UserRowVm[] = [
     email: 'camila.ruiz@medussa.com',
     roleId: 'role-retail-aux',
     roleName: 'Auxiliar Operativo',
+    profileId: 'profile-retail-001',
+    profileName: 'Atención Omnicanal',
     status: 'active',
   },
   {
@@ -166,6 +174,8 @@ const MOCK_USERS: UserRowVm[] = [
     email: 'jorge.leon@medussa.com',
     roleId: 'role-industrial-head',
     roleName: 'Jefe de Área',
+    profileId: 'profile-industrial-001',
+    profileName: 'Operación de Planta',
     status: 'active',
   },
   {
@@ -176,6 +186,8 @@ const MOCK_USERS: UserRowVm[] = [
     email: 'mateo.silva@medussa.com',
     roleId: 'role-services-admin',
     roleName: 'Administrador Empresa',
+    profileId: 'profile-services-001',
+    profileName: 'Gestión de RRHH',
     status: 'active',
   },
   {
@@ -186,6 +198,8 @@ const MOCK_USERS: UserRowVm[] = [
     email: 'paula.navas@medussa.com',
     roleId: 'role-services-auditor',
     roleName: 'Invitado / Auditor',
+    profileId: 'profile-services-002',
+    profileName: 'Auditoría de Servicio',
     status: 'inactive',
   },
   {
@@ -196,6 +210,8 @@ const MOCK_USERS: UserRowVm[] = [
     email: 'sara.cardenas@medussa.com',
     roleId: 'role-global-admin',
     roleName: 'Administrador Global',
+    profileId: 'profile-services-001',
+    profileName: 'Gestión de RRHH',
     status: 'active',
   },
 ];

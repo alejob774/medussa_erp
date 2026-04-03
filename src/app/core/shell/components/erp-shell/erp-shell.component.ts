@@ -77,10 +77,10 @@ import { NavigationFacadeService } from '../../../navigation/services/navigation
                       <span class="text-xs font-normal text-slate-500">{{ item.description || 'Submódulos disponibles por empresa' }}</span>
                     </span>
                   </span>
-                  <mat-icon>{{ expandedItemId === item.id ? 'expand_less' : 'expand_more' }}</mat-icon>
+                  <mat-icon>{{ isItemExpanded(item.id) ? 'expand_less' : 'expand_more' }}</mat-icon>
                 </button>
 
-                @if (expandedItemId === item.id) {
+                @if (isItemExpanded(item.id)) {
                   <div class="mt-2 space-y-1 pl-3">
                     @for (child of item.children; track child.id) {
                       <a
@@ -200,13 +200,13 @@ export class ErpShellComponent {
   readonly session$ = this.authSessionService.session$;
 
   selectedSectionId = '';
-  expandedItemId: string | null = null;
+  expandedItemIds = new Set<string>();
 
   constructor() {
     this.sections$.pipe(takeUntilDestroyed()).subscribe((sections) => {
       if (!sections.length) {
         this.selectedSectionId = '';
-        this.expandedItemId = null;
+        this.expandedItemIds.clear();
         return;
       }
 
@@ -219,10 +219,21 @@ export class ErpShellComponent {
       }
 
       const currentSection = this.getSelectedSection(sections);
-      const firstExpandable = currentSection?.items.find((item) => item.children?.length);
+      const expandableIds = currentSection?.items
+        .filter((item) => item.children?.length)
+        .map((item) => item.id) ?? [];
 
-      if (!currentSection?.items.some((item) => item.id === this.expandedItemId)) {
-        this.expandedItemId = firstExpandable?.id ?? null;
+      if (!expandableIds.length) {
+        this.expandedItemIds.clear();
+        return;
+      }
+
+      const hasExpandedItem = expandableIds.some((itemId) =>
+        this.expandedItemIds.has(itemId),
+      );
+
+      if (!hasExpandedItem) {
+        this.expandedItemIds = new Set(expandableIds);
       }
     });
   }
@@ -236,7 +247,12 @@ export class ErpShellComponent {
   }
 
   toggleItem(itemId: string): void {
-    this.expandedItemId = this.expandedItemId === itemId ? null : itemId;
+    if (this.expandedItemIds.has(itemId)) {
+      this.expandedItemIds.delete(itemId);
+      return;
+    }
+
+    this.expandedItemIds.add(itemId);
   }
 
   selectedSectionLabel(sections: NavigationSection[]): string {
@@ -258,6 +274,10 @@ export class ErpShellComponent {
       .slice(0, 2)
       .map((value) => value[0]?.toUpperCase() ?? '')
       .join('');
+  }
+
+  isItemExpanded(itemId: string): boolean {
+    return this.expandedItemIds.has(itemId);
   }
 
   private getSelectedSection(

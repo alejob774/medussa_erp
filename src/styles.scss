@@ -36,3 +36,55 @@ body {
 
 html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+body .mat-mdc-form-field.mat-form-field-appearance-outline {
+  --erp-field-border: #cbd5e1;
+  --erp-field-border-focus: #0f766e;
+  --erp-field-border-error: #dc2626;
+}
+
+body .mat-mdc-form-field.mat-form-field-appearance-outline .mat-mdc-text-field-wrapper {
+  position: relative;
+  border-radius: 1rem;
+  background: #fff;
+}
+
+body .mat-mdc-form-field.mat-form-field-appearance-outline .mat-mdc-text-field-wrapper::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--erp-field-border);
+  border-radius: inherit;
+  pointer-events: none;
+  transition: border-color 150ms ease, border-width 150ms ease;
+}
+
+body .mat-mdc-form-field.mat-form-field-appearance-outline .mdc-notched-outline__leading,
+body .mat-mdc-form-field.mat-form-field-appearance-outline .mdc-notched-outline__notch,
+body .mat-mdc-form-field.mat-form-field-appearance-outline .mdc-notched-outline__trailing {
+  border-color: transparent !important;
+}
+
+body .mat-mdc-form-field.mat-form-field-appearance-outline .mdc-floating-label {
+  background: #fff;
+  padding-inline: 0.35rem;
+}
+
+body .mat-mdc-form-field.mat-form-field-appearance-outline .mat-mdc-form-field-infix {
+  min-height: 3rem;
+  padding-top: 1rem;
+  padding-bottom: 0.6rem;
+}
+
+body .mat-mdc-form-field.mat-form-field-appearance-outline.mat-focused .mat-mdc-text-field-wrapper::after {
+  border-width: 2px;
+  border-color: var(--erp-field-border-focus);
+}
+
+body .mat-mdc-form-field.mat-form-field-appearance-outline.mat-mdc-form-field-invalid .mat-mdc-text-field-wrapper::after {
+  border-color: var(--erp-field-border-error);
+}
+
+body .mat-mdc-form-field .mat-mdc-form-field-subscript-wrapper {
+  margin-top: 0.35rem;
+}

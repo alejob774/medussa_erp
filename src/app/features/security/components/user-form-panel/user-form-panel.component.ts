@@ -18,6 +18,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { PendingChangesService } from '../../../../core/forms/services/pending-changes.service';
 import {
+  ProfileRowVm,
   RoleRowVm,
   UserFormValue,
   UserRowVm,
@@ -38,8 +39,8 @@ import {
   template: `
     <div class="fixed inset-0 z-40 bg-slate-950/20 backdrop-blur-[1px]" (click)="close()"></div>
 
-    <aside class="fixed inset-y-0 right-0 z-50 flex w-full max-w-xl flex-col border-l border-slate-200 bg-white shadow-2xl">
-      <header class="border-b border-slate-200 px-6 py-5">
+    <aside class="fixed inset-y-0 right-0 z-50 flex w-full max-w-2xl flex-col overflow-hidden border-l border-slate-200 bg-white shadow-2xl">
+      <header class="sticky top-0 z-10 border-b border-slate-200 bg-white px-6 py-5">
         <div class="flex items-start justify-between gap-4">
           <div>
             <p class="text-xs font-semibold uppercase tracking-[0.3em] text-teal-600">
@@ -49,7 +50,7 @@ import {
               {{ initialValue ? 'Editar usuario' : 'Nuevo usuario' }}
             </h2>
             <p class="mt-2 text-sm text-slate-500">
-              Opera sobre {{ activeCompanyName || 'la empresa activa' }} y queda listo para integrar asignaciones reales.
+              Completa los datos del usuario y su asignación de acceso.
             </p>
           </div>
 
@@ -64,14 +65,8 @@ import {
         </div>
       </header>
 
-      <form class="flex flex-1 flex-col" [formGroup]="form" (ngSubmit)="submit()">
+      <form class="flex min-h-0 flex-1 flex-col" [formGroup]="form" (ngSubmit)="submit()">
         <div class="flex-1 space-y-5 overflow-auto px-6 py-6">
-          <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-            <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
-              Contexto
-            </p>
-            <p class="mt-2 font-medium text-slate-900">Empresa activa: {{ activeCompanyName || 'Sin empresa seleccionada' }}</p>
-          </div>
 
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Nombre del usuario</mat-label>
@@ -108,19 +103,30 @@ import {
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Perfil</mat-label>
+            <mat-select formControlName="profileId">
+              <mat-option [value]="null">Sin perfil asignado</mat-option>
+              @for (profile of profiles; track profile.id) {
+                <mat-option
+                  [value]="profile.id"
+                  [disabled]="profile.status === 'inactive' && profile.id !== form.controls.profileId.value"
+                >
+                  {{ profile.name }}
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
             <mat-label>Estado</mat-label>
             <mat-select formControlName="status">
               <mat-option value="active">Activo</mat-option>
               <mat-option value="inactive">Inactivo</mat-option>
             </mat-select>
           </mat-form-field>
-
-          <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-500">
-            El correo duplicado se valida en la capa mock para simular una futura restricción backend por empresa activa.
-          </div>
         </div>
 
-        <footer class="flex items-center justify-end gap-3 border-t border-slate-200 px-6 py-4">
+        <footer class="sticky bottom-0 z-10 flex items-center justify-end gap-3 border-t border-slate-200 bg-white px-6 py-4 shadow-[0_-8px_24px_rgba(15,23,42,0.06)]">
           <button mat-stroked-button type="button" (click)="close()" [disabled]="saving">
             Cancelar
           </button>
@@ -137,6 +143,7 @@ export class UserFormPanelComponent implements OnChanges, OnDestroy {
   private readonly pendingChangesService = inject(PendingChangesService);
 
   @Input() roles: RoleRowVm[] = [];
+  @Input() profiles: ProfileRowVm[] = [];
   @Input() initialValue: UserRowVm | null = null;
   @Input() activeCompanyName = '';
   @Input() saving = false;
@@ -148,6 +155,7 @@ export class UserFormPanelComponent implements OnChanges, OnDestroy {
     name: ['', [Validators.required, Validators.minLength(3)]],
     email: ['', [Validators.required, Validators.email]],
     roleId: this.fb.control<string | null>(null),
+    profileId: this.fb.control<string | null>(null),
     status: this.fb.nonNullable.control<'active' | 'inactive'>('active'),
   });
 
@@ -183,6 +191,7 @@ export class UserFormPanelComponent implements OnChanges, OnDestroy {
       name: value.name.trim(),
       email: value.email.trim(),
       roleId: value.roleId,
+      profileId: value.profileId,
       status: value.status,
     });
   }
@@ -227,6 +236,7 @@ export class UserFormPanelComponent implements OnChanges, OnDestroy {
       name: user?.name ?? '',
       email: user?.email ?? '',
       roleId: user?.roleId ?? null,
+      profileId: user?.profileId ?? null,
       status: user?.status ?? 'active',
     });
     this.form.markAsPristine();

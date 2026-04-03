@@ -37,8 +37,8 @@ import {
   template: `
     <div class="fixed inset-0 z-40 bg-slate-950/20 backdrop-blur-[1px]" (click)="close()"></div>
 
-    <aside class="fixed inset-y-0 right-0 z-50 flex w-full max-w-lg flex-col border-l border-slate-200 bg-white shadow-2xl">
-      <header class="border-b border-slate-200 px-6 py-5">
+    <aside class="fixed inset-y-0 right-0 z-50 flex w-full max-w-xl flex-col overflow-hidden border-l border-slate-200 bg-white shadow-2xl">
+      <header class="sticky top-0 z-10 border-b border-slate-200 bg-white px-6 py-5">
         <div class="flex items-start justify-between gap-4">
           <div>
             <p class="text-xs font-semibold uppercase tracking-[0.3em] text-teal-600">
@@ -48,7 +48,7 @@ import {
               {{ initialValue ? 'Editar rol' : 'Nuevo rol' }}
             </h2>
             <p class="mt-2 text-sm text-slate-500">
-              El rol clasifica al usuario dentro de {{ activeCompanyName || 'la empresa activa' }}.
+              Define la categoría funcional que se asignará a los usuarios.
             </p>
           </div>
 
@@ -58,19 +58,13 @@ import {
         </div>
       </header>
 
-      <form class="flex flex-1 flex-col" [formGroup]="form" (ngSubmit)="submit()">
+      <form class="flex min-h-0 flex-1 flex-col" [formGroup]="form" (ngSubmit)="submit()">
         <div class="flex-1 space-y-5 overflow-auto px-6 py-6">
-          <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-            <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
-              Alcance
-            </p>
-            <div class="mt-2 flex items-center gap-2 font-medium text-slate-900">
-              <span>{{ initialValue?.scope === 'global' ? 'Global' : 'Empresa activa' }}</span>
-              @if (initialValue?.scope === 'global') {
-                <span class="rounded-full bg-slate-900 px-2 py-0.5 text-xs font-semibold text-white">Global</span>
-              }
+          @if (initialValue?.scope === 'global') {
+            <div class="inline-flex items-center rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white">
+              Rol global
             </div>
-          </div>
+          }
 
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Nombre del rol</mat-label>
@@ -92,13 +86,9 @@ import {
               <mat-option value="inactive">Inactivo</mat-option>
             </mat-select>
           </mat-form-field>
-
-          <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-500">
-            Los permisos granulares no se configuran aquí. Esta pantalla solo clasifica al usuario mediante roles.
-          </div>
         </div>
 
-        <footer class="flex items-center justify-end gap-3 border-t border-slate-200 px-6 py-4">
+        <footer class="sticky bottom-0 z-10 flex items-center justify-end gap-3 border-t border-slate-200 bg-white px-6 py-4 shadow-[0_-8px_24px_rgba(15,23,42,0.06)]">
           <button mat-stroked-button type="button" (click)="close()" [disabled]="saving">
             Cancelar
           </button>

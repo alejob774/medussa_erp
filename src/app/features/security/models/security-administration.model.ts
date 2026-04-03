@@ -12,6 +12,8 @@ export interface UserRowVm {
   email: string;
   roleId: string | null;
   roleName: string | null;
+  profileId: string | null;
+  profileName: string | null;
   status: SecurityRecordStatus;
 }
 
@@ -60,6 +62,7 @@ export interface UserFormValue {
   name: string;
   email: string;
   roleId: string | null;
+  profileId: string | null;
   status: SecurityRecordStatus;
 }
 

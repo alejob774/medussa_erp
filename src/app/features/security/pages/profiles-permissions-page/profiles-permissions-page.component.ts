@@ -36,38 +36,21 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
     ProfileFormPanelComponent,
   ],
   template: `
-    @let activeCompany = (activeCompany$ | async);
-
     <section class="space-y-6">
       <header class="rounded-3xl bg-white p-6 shadow-sm">
-        <div class="flex flex-wrap items-start justify-between gap-4">
-          <div class="flex items-start gap-4">
-            <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
-              <mat-icon>badge</mat-icon>
-            </div>
-
-            <div>
-              <p class="text-xs font-semibold uppercase tracking-[0.3em] text-teal-600">
-                Seguridad
-              </p>
-              <h1 class="mt-2 text-3xl font-bold text-slate-900">Gestión de Perfiles y Permisos</h1>
-              <p class="mt-2 max-w-3xl text-sm text-slate-500">
-                El perfil autoriza por módulo y acción dentro de la empresa activa. Los permisos granulares quedan listos para reemplazar el mock por backend real.
-              </p>
-            </div>
+        <div class="flex items-start gap-4">
+          <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+            <mat-icon>badge</mat-icon>
           </div>
 
-          <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-            <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
-              Empresa activa
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-teal-600">
+              Seguridad
             </p>
-            <div class="mt-2 flex items-center gap-2">
-              <span
-                class="inline-block h-2.5 w-2.5 rounded-full"
-                [style.background]="activeCompany?.accentColor ?? '#0f172a'"
-              ></span>
-              <span class="font-semibold text-slate-900">{{ activeCompany?.name ?? 'Sin empresa seleccionada' }}</span>
-            </div>
+            <h1 class="mt-2 text-3xl font-bold text-slate-900">Gestión de Perfiles y Permisos</h1>
+            <p class="mt-2 max-w-3xl text-sm text-slate-500">
+              Configura perfiles reutilizables y sus permisos por módulo.
+            </p>
           </div>
         </div>
       </header>
@@ -86,19 +69,15 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
 
       <section class="rounded-3xl bg-white p-6 shadow-sm">
         <form class="space-y-4" [formGroup]="filterForm" (ngSubmit)="applyFilters()">
-          <div class="flex flex-wrap items-center gap-3">
-            <mat-form-field appearance="outline" class="min-w-[260px] flex-1">
+          <div class="flex flex-wrap items-center gap-3 lg:flex-nowrap">
+            <mat-form-field appearance="outline" class="min-w-[280px] flex-1">
               <mat-label>Buscar perfiles</mat-label>
               <input matInput formControlName="search" placeholder="Nombre, descripción o módulo" />
               <mat-icon matSuffix>search</mat-icon>
             </mat-form-field>
 
-            <button mat-flat-button color="primary" type="button" (click)="openNewProfile()">
+            <button mat-flat-button color="primary" type="button" class="min-h-12" (click)="openNewProfile()">
               Nuevo Perfil
-            </button>
-
-            <button mat-stroked-button type="button" (click)="toggleInsights()">
-              {{ showInsights ? 'Ocultar Resumen' : 'Resumen de Accesos' }}
             </button>
           </div>
 
@@ -112,35 +91,16 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
               </mat-select>
             </mat-form-field>
 
-            <button mat-stroked-button type="submit">Filtrar</button>
+            <button mat-stroked-button type="submit" class="min-h-12">Filtrar</button>
           </div>
         </form>
-
-        @if (showInsights) {
-          <section class="mt-6 grid gap-4 md:grid-cols-3">
-            <article class="rounded-3xl border border-slate-200 bg-slate-50 p-5">
-              <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Perfiles activos</p>
-              <p class="mt-3 text-3xl font-bold text-slate-900">{{ activeProfilesCount() }}</p>
-            </article>
-
-            <article class="rounded-3xl border border-slate-200 bg-slate-50 p-5">
-              <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Perfiles inactivos</p>
-              <p class="mt-3 text-3xl font-bold text-slate-900">{{ inactiveProfilesCount() }}</p>
-            </article>
-
-            <article class="rounded-3xl border border-slate-200 bg-slate-50 p-5">
-              <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Permisos activos</p>
-              <p class="mt-3 text-3xl font-bold text-slate-900">{{ activePermissionsCount() }}</p>
-            </article>
-          </section>
-        }
 
         <div class="mt-6 overflow-hidden rounded-3xl border border-slate-200">
           @if (loadingProfiles) {
             <div class="flex min-h-[280px] items-center justify-center bg-slate-50">
               <div class="flex flex-col items-center gap-3 text-slate-500">
                 <mat-spinner diameter="34"></mat-spinner>
-                <p class="text-sm">Cargando perfiles de la empresa activa...</p>
+                <p class="text-sm">Cargando perfiles...</p>
               </div>
             </div>
           } @else if (!profiles.length) {
@@ -215,14 +175,19 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
 
                           <button
                             type="button"
-                            class="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 transition hover:bg-slate-100"
-                            [class.text-amber-600]="profile.status === 'active'"
-                            [class.text-emerald-600]="profile.status === 'inactive'"
+                            class="inline-flex min-h-9 items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition hover:bg-slate-100"
+                            [class.border-amber-200]="profile.status === 'active'"
+                            [class.text-amber-700]="profile.status === 'active'"
+                            [class.bg-amber-50]="profile.status === 'active'"
+                            [class.border-emerald-200]="profile.status === 'inactive'"
+                            [class.text-emerald-700]="profile.status === 'inactive'"
+                            [class.bg-emerald-50]="profile.status === 'inactive'"
                             (click)="toggleProfileStatus(profile)"
-                            [attr.aria-label]="profile.status === 'active' ? 'Inactivar perfil' : 'Activar perfil'"
-                            [title]="profile.status === 'active' ? 'Inactivar' : 'Activar'"
+                            [attr.aria-label]="rowActionLabel(profile.status) + ' perfil'"
+                            [title]="rowActionLabel(profile.status)"
                           >
-                            <mat-icon>{{ profile.status === 'active' ? 'toggle_off' : 'toggle_on' }}</mat-icon>
+                            <mat-icon class="text-base">{{ profile.status === 'active' ? 'shield_person' : 'verified_user' }}</mat-icon>
+                            <span>{{ rowActionLabel(profile.status) }}</span>
                           </button>
                         </div>
                       </td>
@@ -235,11 +200,7 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
         </div>
       </section>
 
-      <footer class="flex flex-wrap items-center justify-between gap-3 rounded-3xl bg-white p-4 shadow-sm">
-        <p class="text-sm text-slate-500">
-          Aceptar limpia mensajes y confirma el estado visual actual. Cancelar restablece filtros locales y descarta edición abierta.
-        </p>
-
+      <footer class="flex items-center justify-end gap-3 rounded-3xl bg-white p-4 shadow-sm">
         <div class="flex items-center gap-3">
           <button mat-flat-button color="primary" type="button" (click)="acceptPageState()" [disabled]="!canAcceptPageState()">
             Aceptar
@@ -254,7 +215,7 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
         <app-profile-form-panel
           [initialValue]="selectedProfile"
           [basePermissions]="basePermissions"
-          [activeCompanyName]="activeCompany?.name ?? ''"
+          [activeCompanyName]="''"
           [saving]="savingProfile"
           (saveProfile)="saveProfile($event)"
           (closePanel)="closeProfilePanel()"
@@ -282,7 +243,6 @@ export class ProfilesPermissionsPageComponent {
   loadingProfileDetail = false;
   savingProfile = false;
   profilePanelOpen = false;
-  showInsights = false;
   errorMessage = '';
   successMessage = '';
 
@@ -306,10 +266,6 @@ export class ProfilesPermissionsPageComponent {
 
   applyFilters(): void {
     this.loadProfiles();
-  }
-
-  toggleInsights(): void {
-    this.showInsights = !this.showInsights;
   }
 
   openNewProfile(): void {
@@ -377,7 +333,7 @@ export class ProfilesPermissionsPageComponent {
   toggleProfileStatus(profile: ProfileRowVm): void {
     const nextStatus: SecurityRecordStatus =
       profile.status === 'active' ? 'inactive' : 'active';
-    const actionLabel = nextStatus === 'inactive' ? 'inactivar' : 'activar';
+    const actionLabel = this.confirmActionLabel(profile.status);
 
     if (
       typeof window !== 'undefined' &&
@@ -392,7 +348,7 @@ export class ProfilesPermissionsPageComponent {
       .pipe(finalize(() => (this.loadingProfiles = false)))
       .subscribe({
         next: () => {
-          this.successMessage = `El perfil ${profile.name} ahora está ${nextStatus === 'active' ? 'activo' : 'inactivo'}.`;
+          this.successMessage = `El perfil ${profile.name} fue ${this.successStatusLabel(nextStatus)}.`;
           this.loadProfiles(false);
         },
         error: (error: unknown) => {
@@ -407,21 +363,6 @@ export class ProfilesPermissionsPageComponent {
 
   remainingModules(profile: ProfileRowVm): number {
     return Math.max((profile.modulesSummary?.length ?? 0) - 2, 0);
-  }
-
-  activeProfilesCount(): number {
-    return this.profiles.filter((profile) => profile.status === 'active').length;
-  }
-
-  inactiveProfilesCount(): number {
-    return this.profiles.filter((profile) => profile.status === 'inactive').length;
-  }
-
-  activePermissionsCount(): number {
-    return this.profiles.reduce(
-      (total, profile) => total + (profile.permissionCount ?? 0),
-      0,
-    );
   }
 
   acceptPageState(): void {
@@ -455,6 +396,10 @@ export class ProfilesPermissionsPageComponent {
 
   canAcceptPageState(): boolean {
     return !!this.successMessage || !!this.errorMessage || this.profilePanelOpen;
+  }
+
+  rowActionLabel(status: SecurityRecordStatus): string {
+    return status === 'active' ? 'Inactivar' : 'Activar';
   }
 
   private ensureBasePermissions(onReady: () => void): void {
@@ -522,5 +467,13 @@ export class ProfilesPermissionsPageComponent {
       httpError?.message ??
       'No fue posible completar la operación de perfiles y permisos.'
     );
+  }
+
+  private confirmActionLabel(status: SecurityRecordStatus): string {
+    return status === 'active' ? 'inactivar' : 'activar';
+  }
+
+  private successStatusLabel(status: SecurityRecordStatus): string {
+    return status === 'active' ? 'activado' : 'inactivado';
   }
 }

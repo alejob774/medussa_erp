@@ -34,6 +34,7 @@ export class SecurityAdministrationMockRepository
   listUsers(companyId: string, filters: SecurityListFilters): Observable<UserRowVm[]> {
     const store = this.readStore();
     const roles = this.listVisibleRoles(store.roles, companyId);
+    const profiles = this.listVisibleProfiles(store.profiles, companyId);
     const normalizedSearch = filters.search.trim().toLowerCase();
 
     const users = store.users
@@ -41,6 +42,8 @@ export class SecurityAdministrationMockRepository
       .map((user) => ({
         ...user,
         roleName: roles.find((role) => role.id === user.roleId)?.name ?? null,
+        profileName:
+          profiles.find((profile) => profile.id === user.profileId)?.name ?? null,
       }))
       .filter((user) => {
         const matchesStatus =
@@ -49,7 +52,8 @@ export class SecurityAdministrationMockRepository
           !normalizedSearch ||
           user.name.toLowerCase().includes(normalizedSearch) ||
           user.email.toLowerCase().includes(normalizedSearch) ||
-          (user.roleName ?? '').toLowerCase().includes(normalizedSearch);
+          (user.roleName ?? '').toLowerCase().includes(normalizedSearch) ||
+          (user.profileName ?? '').toLowerCase().includes(normalizedSearch);
 
         return matchesStatus && matchesSearch;
       })
@@ -74,6 +78,7 @@ export class SecurityAdministrationMockRepository
     const store = this.readStore();
     const normalizedEmail = payload.email.trim().toLowerCase();
     const visibleRoles = this.listVisibleRoles(store.roles, companyId);
+    const visibleProfiles = this.listVisibleProfiles(store.profiles, companyId);
 
     if (
       store.users.some(
@@ -97,6 +102,15 @@ export class SecurityAdministrationMockRepository
       );
     }
 
+    if (
+      payload.profileId &&
+      !visibleProfiles.some((profile) => profile.id === payload.profileId)
+    ) {
+      return throwError(
+        () => new Error('Selecciona un perfil válido para la empresa activa.'),
+      );
+    }
+
     const currentUser = assignmentId
       ? store.users.find(
           (user) => user.assignmentId === assignmentId && user.companyId === companyId,
@@ -112,6 +126,9 @@ export class SecurityAdministrationMockRepository
       roleId: payload.roleId,
       roleName:
         visibleRoles.find((role) => role.id === payload.roleId)?.name ?? null,
+      profileId: payload.profileId,
+      profileName:
+        visibleProfiles.find((profile) => profile.id === payload.profileId)?.name ?? null,
       status: payload.status,
     };
 
@@ -136,6 +153,7 @@ export class SecurityAdministrationMockRepository
   ): Observable<UserRowVm> {
     const store = this.readStore();
     const roles = this.listVisibleRoles(store.roles, companyId);
+    const profiles = this.listVisibleProfiles(store.profiles, companyId);
     const currentUser = store.users.find(
       (user) => user.assignmentId === assignmentId && user.companyId === companyId,
     );
@@ -148,6 +166,8 @@ export class SecurityAdministrationMockRepository
       ...currentUser,
       status,
       roleName: roles.find((role) => role.id === currentUser.roleId)?.name ?? null,
+      profileName:
+        profiles.find((profile) => profile.id === currentUser.profileId)?.name ?? null,
     };
 
     this.writeStore({
@@ -374,6 +394,13 @@ export class SecurityAdministrationMockRepository
     return roles.filter(
       (role) => role.scope === 'global' || role.companyId === companyId,
     );
+  }
+
+  private listVisibleProfiles(
+    profiles: readonly ProfileDetailVm[],
+    companyId: string,
+  ): ProfileDetailVm[] {
+    return profiles.filter((profile) => profile.companyId === companyId);
   }
 
   private readStore(): SecurityAdministrationStore {
