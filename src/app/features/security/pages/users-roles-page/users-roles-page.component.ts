@@ -52,7 +52,7 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
             </p>
             <h1 class="mt-2 text-3xl font-bold text-slate-900">Gestión de Usuarios y Roles</h1>
             <p class="mt-2 max-w-3xl text-sm text-slate-500">
-              Administra usuarios, roles y asignaciones de acceso.
+              Administra usuarios, roles y perfiles de acceso.
             </p>
           </div>
         </div>
@@ -75,7 +75,7 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
           <div class="flex flex-wrap items-center gap-3 lg:flex-nowrap">
             <mat-form-field appearance="outline" class="min-w-[280px] flex-1">
               <mat-label>Buscar usuarios</mat-label>
-              <input matInput formControlName="search" placeholder="Nombre, correo, rol o perfil" />
+              <input matInput formControlName="search" placeholder="Nombre, correo, rol o perfil de acceso" />
               <mat-icon matSuffix>search</mat-icon>
             </mat-form-field>
 
@@ -126,9 +126,9 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
                     <th class="px-4 py-4">Nombre del Usuario</th>
                     <th class="px-4 py-4">Correo</th>
                     <th class="px-4 py-4">Rol</th>
-                    <th class="px-4 py-4">Perfil</th>
+                    <th class="px-4 py-4">Perfil de acceso</th>
                     <th class="px-4 py-4">Estado</th>
-                    <th class="px-4 py-4 text-right">Acciones</th>
+                    <th class="w-[176px] px-4 py-4 text-right">Acciones</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 bg-white">
@@ -142,8 +142,14 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
                         </span>
                       </td>
                       <td class="px-4 py-4">
-                        <span class="rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700">
-                          {{ user.profileName || 'Sin perfil asignado' }}
+                        <span
+                          class="rounded-full px-3 py-1 text-xs font-semibold"
+                          [class.bg-slate-100]="!user.profileName"
+                          [class.text-slate-500]="!user.profileName"
+                          [class.bg-teal-50]="!!user.profileName"
+                          [class.text-teal-700]="!!user.profileName"
+                        >
+                          {{ user.profileName || 'Sin asignar' }}
                         </span>
                       </td>
                       <td class="px-4 py-4">
@@ -157,8 +163,8 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
                           {{ user.status === 'active' ? 'Activo' : 'Inactivo' }}
                         </span>
                       </td>
-                      <td class="px-4 py-4">
-                        <div class="flex items-center justify-end gap-2">
+                      <td class="w-[176px] px-4 py-4">
+                        <div class="grid grid-cols-[36px_120px] items-center justify-end gap-2">
                           <button
                             type="button"
                             class="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-100"
@@ -171,7 +177,7 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
 
                           <button
                             type="button"
-                            class="inline-flex min-h-9 items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition hover:bg-slate-100"
+                            class="inline-flex min-h-9 w-[120px] items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition hover:bg-slate-100"
                             [class.border-amber-200]="user.status === 'active'"
                             [class.text-amber-700]="user.status === 'active'"
                             [class.bg-amber-50]="user.status === 'active'"
@@ -234,7 +240,7 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
                       <th class="px-4 py-4">Descripción</th>
                       <th class="px-4 py-4">Alcance</th>
                       <th class="px-4 py-4">Estado</th>
-                      <th class="px-4 py-4 text-right">Acciones</th>
+                      <th class="w-[176px] px-4 py-4 text-right">Acciones</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-slate-100 bg-white">
@@ -258,8 +264,8 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
                             {{ role.status === 'active' ? 'Activo' : 'Inactivo' }}
                           </span>
                         </td>
-                        <td class="px-4 py-4">
-                          <div class="flex items-center justify-end gap-2">
+                        <td class="w-[176px] px-4 py-4">
+                          <div class="grid grid-cols-[36px_120px] items-center justify-end gap-2">
                             <button
                               type="button"
                               class="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-100"
@@ -272,7 +278,7 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
 
                             <button
                               type="button"
-                              class="inline-flex min-h-9 items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition hover:bg-slate-100"
+                              class="inline-flex min-h-9 w-[120px] items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition hover:bg-slate-100"
                               [class.border-amber-200]="role.status === 'active'"
                               [class.text-amber-700]="role.status === 'active'"
                               [class.bg-amber-50]="role.status === 'active'"

@@ -50,7 +50,7 @@ import {
               {{ initialValue ? 'Editar usuario' : 'Nuevo usuario' }}
             </h2>
             <p class="mt-2 text-sm text-slate-500">
-              Completa los datos del usuario y su asignación de acceso.
+              Completa los datos del usuario y define su acceso.
             </p>
           </div>
 
@@ -67,6 +67,16 @@ import {
 
       <form class="flex min-h-0 flex-1 flex-col" [formGroup]="form" (ngSubmit)="submit()">
         <div class="flex-1 space-y-5 overflow-auto px-6 py-6">
+          <div class="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 md:grid-cols-2">
+            <div>
+              <p class="font-semibold text-slate-900">Rol</p>
+              <p class="mt-1">Cargo o categoría del usuario.</p>
+            </div>
+            <div>
+              <p class="font-semibold text-slate-900">Perfil de acceso</p>
+              <p class="mt-1">Conjunto de permisos asignados.</p>
+            </div>
+          </div>
 
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Nombre del usuario</mat-label>
@@ -100,12 +110,13 @@ import {
                 </mat-option>
               }
             </mat-select>
+            <mat-hint>Cargo o categoría del usuario.</mat-hint>
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Perfil</mat-label>
+            <mat-label>Perfil de acceso</mat-label>
             <mat-select formControlName="profileId">
-              <mat-option [value]="null">Sin perfil asignado</mat-option>
+              <mat-option [value]="null">Sin asignar</mat-option>
               @for (profile of profiles; track profile.id) {
                 <mat-option
                   [value]="profile.id"
@@ -115,6 +126,7 @@ import {
                 </mat-option>
               }
             </mat-select>
+            <mat-hint>Define los permisos disponibles para el usuario.</mat-hint>
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="w-full">

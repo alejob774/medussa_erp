@@ -47,9 +47,9 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
             <p class="text-xs font-semibold uppercase tracking-[0.3em] text-teal-600">
               Seguridad
             </p>
-            <h1 class="mt-2 text-3xl font-bold text-slate-900">Gestión de Perfiles y Permisos</h1>
+            <h1 class="mt-2 text-3xl font-bold text-slate-900">Gestión de Perfiles de Acceso y Permisos</h1>
             <p class="mt-2 max-w-3xl text-sm text-slate-500">
-              Configura perfiles reutilizables y sus permisos por módulo.
+              Configura perfiles de acceso reutilizables y sus permisos por módulo.
             </p>
           </div>
         </div>
@@ -71,13 +71,13 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
         <form class="space-y-4" [formGroup]="filterForm" (ngSubmit)="applyFilters()">
           <div class="flex flex-wrap items-center gap-3 lg:flex-nowrap">
             <mat-form-field appearance="outline" class="min-w-[280px] flex-1">
-              <mat-label>Buscar perfiles</mat-label>
+              <mat-label>Buscar perfiles de acceso</mat-label>
               <input matInput formControlName="search" placeholder="Nombre, descripción o módulo" />
               <mat-icon matSuffix>search</mat-icon>
             </mat-form-field>
 
             <button mat-flat-button color="primary" type="button" class="min-h-12" (click)="openNewProfile()">
-              Nuevo Perfil
+              Nuevo Perfil de Acceso
             </button>
           </div>
 
@@ -116,11 +116,11 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
               <table class="min-w-full divide-y divide-slate-200 text-sm">
                 <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
                   <tr>
-                    <th class="px-4 py-4">Nombre del Perfil</th>
+                    <th class="px-4 py-4">Perfil de acceso</th>
                     <th class="px-4 py-4">Módulo</th>
                     <th class="px-4 py-4">Permisos</th>
                     <th class="px-4 py-4">Estado</th>
-                    <th class="px-4 py-4 text-right">Acciones</th>
+                    <th class="w-[224px] px-4 py-4 text-right">Acciones</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 bg-white">
@@ -131,7 +131,7 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
                         <div class="text-xs text-slate-500">{{ profile.description || 'Sin descripción' }}</div>
                       </td>
                       <td class="px-4 py-4">
-                        <div class="flex flex-wrap gap-2">
+                        <div class="flex min-h-[52px] min-w-[240px] max-w-[320px] flex-wrap content-start gap-2">
                           @for (moduleName of visibleModules(profile); track moduleName) {
                             <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
                               {{ moduleName }}
@@ -145,9 +145,11 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
                         </div>
                       </td>
                       <td class="px-4 py-4 text-slate-600">
-                        <div class="font-medium text-slate-900">{{ profile.permissionCount || 0 }} permisos activos</div>
-                        <div class="mt-1 text-xs text-slate-500">
+                        <div class="min-w-[220px] max-w-[280px]">
+                          <div class="font-medium text-slate-900">{{ profile.permissionCount || 0 }} permisos activos</div>
+                          <div class="mt-1 text-xs leading-5 text-slate-500">
                           {{ profile.permissionsSummary?.[0] || 'Sin permisos asignados' }}
+                          </div>
                         </div>
                       </td>
                       <td class="px-4 py-4">
@@ -161,8 +163,8 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
                           {{ profile.status === 'active' ? 'Activo' : 'Inactivo' }}
                         </span>
                       </td>
-                      <td class="px-4 py-4">
-                        <div class="flex items-center justify-end gap-2">
+                      <td class="w-[224px] px-4 py-4">
+                        <div class="grid grid-cols-[36px_120px_36px] items-center justify-end gap-2">
                           <button
                             type="button"
                             class="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-100"
@@ -175,7 +177,7 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
 
                           <button
                             type="button"
-                            class="inline-flex min-h-9 items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition hover:bg-slate-100"
+                            class="inline-flex min-h-9 w-[120px] items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition hover:bg-slate-100"
                             [class.border-amber-200]="profile.status === 'active'"
                             [class.text-amber-700]="profile.status === 'active'"
                             [class.bg-amber-50]="profile.status === 'active'"
@@ -183,11 +185,28 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
                             [class.text-emerald-700]="profile.status === 'inactive'"
                             [class.bg-emerald-50]="profile.status === 'inactive'"
                             (click)="toggleProfileStatus(profile)"
-                            [attr.aria-label]="rowActionLabel(profile.status) + ' perfil'"
-                            [title]="rowActionLabel(profile.status)"
+                            [attr.aria-label]="statusActionLabel(profile.status) + ' perfil de acceso'"
+                            [title]="statusActionLabel(profile.status)"
                           >
-                            <mat-icon class="text-base">{{ profile.status === 'active' ? 'shield_person' : 'verified_user' }}</mat-icon>
-                            <span>{{ rowActionLabel(profile.status) }}</span>
+                            <mat-icon class="text-base">{{ profile.status === 'active' ? 'toggle_off' : 'verified_user' }}</mat-icon>
+                            <span>{{ statusActionLabel(profile.status) }}</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            class="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 transition hover:bg-slate-100"
+                            [class.text-rose-700]="profile.status === 'active'"
+                            [class.border-rose-200]="profile.status === 'active'"
+                            [class.bg-rose-50]="profile.status === 'active'"
+                            [class.text-slate-400]="profile.status !== 'active'"
+                            [class.border-slate-200]="profile.status !== 'active'"
+                            [class.bg-slate-50]="profile.status !== 'active'"
+                            (click)="deleteProfile(profile)"
+                            [disabled]="profile.status !== 'active'"
+                            aria-label="Eliminar perfil de acceso"
+                            title="Eliminar"
+                          >
+                            <mat-icon class="text-base">delete</mat-icon>
                           </button>
                         </div>
                       </td>
@@ -319,8 +338,8 @@ export class ProfilesPermissionsPageComponent {
       .subscribe({
         next: () => {
           this.successMessage = this.selectedProfile
-            ? 'El perfil se actualizó correctamente.'
-            : 'El perfil se creó correctamente.';
+            ? 'El perfil de acceso se actualizó correctamente.'
+            : 'El perfil de acceso se creó correctamente.';
           this.closeProfilePanel(true);
           this.loadProfiles();
         },
@@ -348,7 +367,36 @@ export class ProfilesPermissionsPageComponent {
       .pipe(finalize(() => (this.loadingProfiles = false)))
       .subscribe({
         next: () => {
-          this.successMessage = `El perfil ${profile.name} fue ${this.successStatusLabel(nextStatus)}.`;
+          this.successMessage = `El perfil de acceso ${profile.name} fue ${this.successStatusLabel(nextStatus)}.`;
+          this.loadProfiles(false);
+        },
+        error: (error: unknown) => {
+          this.errorMessage = this.resolveErrorMessage(error);
+        },
+      });
+  }
+
+  deleteProfile(profile: ProfileRowVm): void {
+    if (profile.status !== 'active') {
+      return;
+    }
+
+    if (
+      typeof window !== 'undefined' &&
+      !window.confirm(
+        `¿Deseas eliminar el perfil de acceso ${profile.name}? Se marcará como inactivo y podrás activarlo nuevamente cuando lo necesites.`,
+      )
+    ) {
+      return;
+    }
+
+    this.loadingProfiles = true;
+    this.securityFacade
+      .updateProfileStatus(profile.id, 'inactive')
+      .pipe(finalize(() => (this.loadingProfiles = false)))
+      .subscribe({
+        next: () => {
+          this.successMessage = `El perfil de acceso ${profile.name} fue marcado como inactivo.`;
           this.loadProfiles(false);
         },
         error: (error: unknown) => {
@@ -398,7 +446,7 @@ export class ProfilesPermissionsPageComponent {
     return !!this.successMessage || !!this.errorMessage || this.profilePanelOpen;
   }
 
-  rowActionLabel(status: SecurityRecordStatus): string {
+  statusActionLabel(status: SecurityRecordStatus): string {
     return status === 'active' ? 'Inactivar' : 'Activar';
   }
 

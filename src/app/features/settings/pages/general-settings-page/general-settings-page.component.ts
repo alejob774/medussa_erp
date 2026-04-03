@@ -37,35 +37,19 @@ import { CompanySettingsFacadeService } from '../../services/company-settings.fa
 
     <section class="space-y-6">
       <header class="rounded-3xl bg-white p-6 shadow-sm">
-        <div class="flex flex-wrap items-start justify-between gap-4">
-          <div class="flex items-start gap-4">
-            <div class="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-slate-100">
-              <img src="assets/login/Logo1.png" alt="Medussa" class="h-10 w-auto object-contain" />
-            </div>
-
-            <div>
-              <p class="text-xs font-semibold uppercase tracking-[0.3em] text-teal-600">
-                Configuración
-              </p>
-              <h1 class="mt-2 text-3xl font-bold text-slate-900">Parámetros generales</h1>
-              <p class="mt-2 max-w-2xl text-sm text-slate-500">
-                Esta configuración siempre opera sobre la empresa activa y queda lista para
-                conectarse a backend real.
-              </p>
-            </div>
+        <div class="flex items-start gap-4">
+          <div class="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-slate-100">
+            <img src="assets/login/Logo1.png" alt="Medussa" class="h-10 w-auto object-contain" />
           </div>
 
-          <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-            <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
-              Empresa activa
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-teal-600">
+              Configuración
             </p>
-            <div class="mt-2 flex items-center gap-2">
-              <span
-                class="inline-block h-2.5 w-2.5 rounded-full"
-                [style.background]="activeCompany?.accentColor ?? '#0f172a'"
-              ></span>
-              <span class="font-semibold text-slate-800">{{ activeCompany?.name ?? 'Sin empresa seleccionada' }}</span>
-            </div>
+            <h1 class="mt-2 text-3xl font-bold text-slate-900">Parámetros generales</h1>
+            <p class="mt-2 max-w-2xl text-sm text-slate-500">
+              Administra los datos generales y de contacto de la empresa seleccionada.
+            </p>
           </div>
         </div>
       </header>

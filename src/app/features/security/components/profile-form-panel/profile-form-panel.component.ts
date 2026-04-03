@@ -61,10 +61,10 @@ import {
               Seguridad
             </p>
             <h2 class="mt-2 text-2xl font-bold text-slate-900">
-              {{ initialValue ? 'Editar perfil' : 'Nuevo perfil' }}
+              {{ initialValue ? 'Editar perfil de acceso' : 'Nuevo perfil de acceso' }}
             </h2>
             <p class="mt-2 text-sm text-slate-500">
-              Define el perfil y selecciona los permisos que incluye.
+              Selecciona los permisos que formarán parte del perfil de acceso.
             </p>
           </div>
 
@@ -79,7 +79,7 @@ import {
           <div class="grid gap-6 xl:grid-cols-[340px_minmax(0,1fr)]">
             <section class="space-y-4 rounded-3xl border border-slate-200 bg-slate-50 p-5">
               <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Nombre del perfil</mat-label>
+                <mat-label>Nombre del perfil de acceso</mat-label>
                 <input matInput formControlName="name" />
                 @if (isInvalid('name')) {
                   <mat-error>{{ getErrorMessage('name') }}</mat-error>
