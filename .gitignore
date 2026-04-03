@@ -42,3 +42,11 @@ __screenshots__/
 .DS_Store
 Thumbs.db
 node_modules
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.venv/
+venv/
