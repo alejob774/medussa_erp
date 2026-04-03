@@ -7,12 +7,10 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
 
 export interface LoginFormValue {
   username: string;
   password: string;
-  server?: string;
   remember: boolean;
 }
 
@@ -27,7 +25,6 @@ export interface LoginFormValue {
     MatButtonModule,
     MatIconModule,
     MatCheckboxModule,
-    MatSelectModule,
   ],
   templateUrl: './login-form.component.html',
   styleUrl: './login-form.component.scss',
@@ -45,7 +42,6 @@ export class LoginFormComponent {
   form = this.fb.group({
     username: ['', [Validators.required]],
     password: ['', [Validators.required]],
-    server: ['produccion'],
     remember: [false],
   });
 

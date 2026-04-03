@@ -11,6 +11,4 @@ export interface LoginResponse {
   activeCompanyId?: string | null;
   requiresCompanySelection?: boolean;
   companies?: Company[];
-
-  selectedServer?: string;
 }

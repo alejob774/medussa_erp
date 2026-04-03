@@ -35,7 +35,6 @@ export class LoginPageComponent {
       .login({
         username: value.username,
         password: value.password,
-        server: value.server === 'desarrollo' ? 'desarrollo' : 'produccion',
       })
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({

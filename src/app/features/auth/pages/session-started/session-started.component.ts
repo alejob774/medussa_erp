@@ -20,10 +20,6 @@ export class SessionStartedComponent {
     return this.authSessionService.getRefreshToken();
   }
 
-  get selectedServer(): string {
-    return this.authSessionService.getSession()?.selectedServer ?? 'produccion';
-  }
-
   get activeCompanyId(): string | null {
     return this.authSessionService.getActiveCompanyId();
   }

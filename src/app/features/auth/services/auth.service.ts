@@ -15,8 +15,6 @@ export class AuthService {
   private readonly loginUrl = `${environment.apiUrl}/auth/login`;
 
   login(payload: LoginRequest): Observable<LoginResponse> {
-    const selectedServer = payload.server ?? 'produccion';
-
     const body = new HttpParams({
       fromObject: {
         username: payload.username,
@@ -30,10 +28,6 @@ export class AuthService {
           'Content-Type': 'application/x-www-form-urlencoded',
         }),
       })
-      .pipe(
-        map((response) =>
-          mapBackendLoginResponseToLoginResponse(response, selectedServer),
-        ),
-      );
+      .pipe(map((response) => mapBackendLoginResponseToLoginResponse(response)));
   }
 }
