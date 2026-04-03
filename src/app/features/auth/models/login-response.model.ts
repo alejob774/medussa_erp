@@ -1,3 +1,4 @@
+import { Company } from '../../../core/company/models/company.model';
 import { AuthUser } from './auth-user.model';
 
 export interface LoginResponse {
@@ -9,10 +10,5 @@ export interface LoginResponse {
 
   activeCompanyId?: string | null;
   requiresCompanySelection?: boolean;
-  companies?: Array<{
-    id: string;
-    name: string;
-  }>;
-
-  selectedServer?: string;
+  companies?: Company[];
 }

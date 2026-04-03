@@ -1,0 +1,55 @@
+import { CompanyGeneralSettings } from '../models/company-general-settings.model';
+
+export const MOCK_COMPANY_GENERAL_SETTINGS: Record<
+  string,
+  CompanyGeneralSettings
+> = {
+  'medussa-holding': {
+    companyId: 'medussa-holding',
+    nombre_empresa: 'Medussa Holding',
+    nit: '901.245.778-1',
+    direccion: 'Av. Principal 123, Torre Corporativa',
+    ciudad: 'Bogotá',
+    pais: 'Colombia',
+    moneda: 'COP',
+    zona_horaria: 'America/Bogota',
+    telefono: '+57 601 555 0101',
+    logo: 'assets/login/Logo1.png',
+  },
+  'medussa-retail': {
+    companyId: 'medussa-retail',
+    nombre_empresa: 'Medussa Retail',
+    nit: '901.245.778-2',
+    direccion: 'Calle Comercio 45-18',
+    ciudad: 'Medellín',
+    pais: 'Colombia',
+    moneda: 'COP',
+    zona_horaria: 'America/Bogota',
+    telefono: '+57 604 555 0188',
+    logo: null,
+  },
+  'medussa-industrial': {
+    companyId: 'medussa-industrial',
+    nombre_empresa: 'Medussa Industrial',
+    nit: '901.245.778-3',
+    direccion: 'Zona Franca Industrial, Bodega 7',
+    ciudad: 'Cali',
+    pais: 'Colombia',
+    moneda: 'USD',
+    zona_horaria: 'America/Bogota',
+    telefono: '+57 602 555 0177',
+    logo: 'assets/login/Logo2.jpg',
+  },
+  'medussa-services': {
+    companyId: 'medussa-services',
+    nombre_empresa: 'Medussa Services',
+    nit: '901.245.778-4',
+    direccion: 'Carrera 18 #92-14',
+    ciudad: 'Barranquilla',
+    pais: 'Colombia',
+    moneda: 'EUR',
+    zona_horaria: 'America/Bogota',
+    telefono: '',
+    logo: null,
+  },
+};

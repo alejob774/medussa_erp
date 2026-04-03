@@ -1,3 +1,4 @@
+import { Company } from '../../../core/company/models/company.model';
 import { BackendAuthUser } from './backend-auth-user.model';
 
 export interface BackendLoginResponse {
@@ -10,8 +11,5 @@ export interface BackendLoginResponse {
   // TODO backend multiempresa:
   active_company_id?: string | null;
   requires_company_selection?: boolean;
-  companies?: Array<{
-    id: string;
-    name: string;
-  }>;
+  companies?: Company[];
 }

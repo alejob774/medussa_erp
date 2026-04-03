@@ -1,0 +1,172 @@
+import { NavigationSection } from '../models/navigation-item.model';
+
+const ALL_COMPANIES = [
+  'medussa-holding',
+  'medussa-retail',
+  'medussa-industrial',
+  'medussa-services',
+];
+
+export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
+  {
+    id: 'overview',
+    label: 'Visión general',
+    icon: 'space_dashboard',
+    hint: 'KPIs y foco comercial',
+    items: [
+      {
+        id: 'dashboard',
+        label: 'Dashboard',
+        route: '/dashboard',
+        icon: 'dashboard',
+        requiredPermissions: ['dashboard.view'],
+        companyIds: ALL_COMPANIES,
+      },
+      {
+        id: 'ventas',
+        label: 'Ventas',
+        route: '/ventas',
+        icon: 'point_of_sale',
+        requiredPermissions: ['sales.view'],
+        companyIds: ['medussa-holding', 'medussa-retail'],
+      },
+      {
+        id: 'compras',
+        label: 'Compras',
+        route: '/compras',
+        icon: 'shopping_cart',
+        requiredPermissions: ['purchases.view'],
+        companyIds: ['medussa-holding', 'medussa-industrial'],
+      },
+      {
+        id: 'finanzas',
+        label: 'Finanzas',
+        route: '/finanzas',
+        icon: 'account_balance',
+        requiredPermissions: ['finance.view'],
+        companyIds: ['medussa-holding', 'medussa-services'],
+      },
+    ],
+  },
+  {
+    id: 'operations',
+    label: 'Operación',
+    icon: 'factory',
+    hint: 'Producción, servicio y talento',
+    items: [
+      {
+        id: 'produccion',
+        label: 'Producción',
+        route: '/produccion',
+        icon: 'precision_manufacturing',
+        requiredPermissions: ['production.view'],
+        companyIds: ['medussa-holding', 'medussa-industrial'],
+      },
+      {
+        id: 'rrhh',
+        label: 'RRHH',
+        route: '/rrhh',
+        icon: 'groups',
+        requiredPermissions: ['hr.view'],
+        companyIds: ['medussa-holding', 'medussa-services'],
+      },
+      {
+        id: 'atencion',
+        label: 'Atención',
+        route: '/atencion',
+        icon: 'support_agent',
+        requiredPermissions: ['support.view'],
+        companyIds: ['medussa-retail', 'medussa-services'],
+      },
+      {
+        id: 'marketing',
+        label: 'Marketing',
+        route: '/marketing',
+        icon: 'campaign',
+        requiredPermissions: ['marketing.view'],
+        companyIds: ['medussa-retail'],
+      },
+      {
+        id: 'logistica',
+        label: 'Logística e inventario',
+        icon: 'inventory_2',
+        requiredPermissions: ['warehouse.view'],
+        companyIds: ['medussa-holding', 'medussa-industrial'],
+        children: [
+          {
+            id: 'gestion-almacen',
+            label: 'Gestión de almacén',
+            route: '/gestion-almacen',
+            icon: 'warehouse',
+            requiredPermissions: ['warehouse.view'],
+            companyIds: ['medussa-holding', 'medussa-industrial'],
+          },
+          {
+            id: 'inventarios',
+            label: 'Manejo de inventarios',
+            route: '/inventarios',
+            icon: 'inventory',
+            requiredPermissions: ['inventory.view'],
+            companyIds: ['medussa-holding', 'medussa-industrial'],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'admin',
+    label: 'Administración',
+    icon: 'admin_panel_settings',
+    hint: 'Setup general y seguridad',
+    items: [
+      {
+        id: 'configuracion',
+        label: 'Configuración',
+        icon: 'tune',
+        companyIds: ALL_COMPANIES,
+        children: [
+          {
+            id: 'parametros-generales',
+            label: 'Parámetros generales',
+            route: '/configuracion/parametros-generales',
+            icon: 'settings',
+            requiredPermissions: ['settings.general.view'],
+            companyIds: ALL_COMPANIES,
+          },
+        ],
+      },
+      {
+        id: 'seguridad',
+        label: 'Seguridad',
+        icon: 'shield',
+        companyIds: ['medussa-holding', 'medussa-services'],
+        children: [
+          {
+            id: 'usuarios-roles',
+            label: 'Usuarios y roles',
+            route: '/seguridad/usuarios-roles',
+            icon: 'manage_accounts',
+            requiredPermissions: ['security.users.view'],
+            companyIds: ['medussa-holding', 'medussa-services'],
+          },
+          {
+            id: 'perfiles-permisos',
+            label: 'Perfiles y permisos',
+            route: '/seguridad/perfiles-permisos',
+            icon: 'badge',
+            requiredPermissions: ['security.profiles.view'],
+            companyIds: ['medussa-holding', 'medussa-services'],
+          },
+          {
+            id: 'auditoria',
+            label: 'Auditoría',
+            route: '/seguridad/auditoria',
+            icon: 'fact_check',
+            requiredPermissions: ['security.audit.view'],
+            companyIds: ['medussa-holding', 'medussa-services'],
+          },
+        ],
+      },
+    ],
+  },
+];

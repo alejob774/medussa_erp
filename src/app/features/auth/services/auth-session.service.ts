@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
+import { Company } from '../../../core/company/models/company.model';
 import { LoginResponse } from '../models/login-response.model';
+import { SessionUser } from '../models/session-user.model';
 
 @Injectable({
   providedIn: 'root',
@@ -15,11 +17,16 @@ export class AuthSessionService {
   session$ = this.sessionSubject.asObservable();
 
   setSession(session: LoginResponse, remember: boolean = false): void {
+    const companies = session.companies ?? [];
+    const activeCompanyId =
+      session.activeCompanyId ?? (companies.length === 1 ? companies[0].id : null);
+
     const normalizedSession: LoginResponse = {
       ...session,
-      activeCompanyId: session.activeCompanyId ?? null,
-      requiresCompanySelection: session.requiresCompanySelection ?? false,
-      companies: session.companies ?? [],
+      activeCompanyId,
+      requiresCompanySelection:
+        session.requiresCompanySelection ?? (companies.length > 1 && !activeCompanyId),
+      companies,
     };
 
     this.clearPersistedSession();
@@ -37,6 +44,24 @@ export class AuthSessionService {
 
   getSession(): LoginResponse | null {
     return this.sessionSubject.value;
+  }
+
+  getSessionUser(): SessionUser | null {
+    const session = this.sessionSubject.value;
+
+    if (!session?.user) {
+      return null;
+    }
+
+    return {
+      ...session.user,
+      companies: session.companies ?? [],
+      activeCompanyId: session.activeCompanyId ?? null,
+    };
+  }
+
+  getAvailableCompanies(): Company[] {
+    return this.sessionSubject.value?.companies ?? [];
   }
 
   getAccessToken(): string | null {
@@ -61,6 +86,7 @@ export class AuthSessionService {
     const updatedSession: LoginResponse = {
       ...currentSession,
       activeCompanyId: companyId,
+      requiresCompanySelection: false,
     };
 
     this.sessionSubject.next(updatedSession);

@@ -15,7 +15,6 @@ export function mapBackendUserToAuthUser(user: BackendAuthUser): AuthUser {
 
 export function mapBackendLoginResponseToLoginResponse(
   response: BackendLoginResponse,
-  selectedServer: string = 'produccion',
 ): LoginResponse {
   return {
     access_token: response.access_token,
@@ -26,6 +25,5 @@ export function mapBackendLoginResponseToLoginResponse(
     activeCompanyId: response.active_company_id ?? null,
     requiresCompanySelection: response.requires_company_selection ?? false,
     companies: response.companies ?? [],
-    selectedServer,
   };
 }
