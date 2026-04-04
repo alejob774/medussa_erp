@@ -25,8 +25,7 @@ export const authTokenInterceptor: HttpInterceptorFn = (req, next) => {
   }
 
   if (activeCompanyId) {
-    // TODO: confirmar con backend si este contexto viaja en JWT, header o ambos.
-    setHeaders['X-Empresa-Id'] = activeCompanyId;
+    setHeaders['X-Company-ID'] = activeCompanyId;
   }
 
   return next(

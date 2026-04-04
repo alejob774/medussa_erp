@@ -1,9 +1,10 @@
-import { PermissionKey } from '../../../core/permissions/models/permission.model';
-
 export interface AuthUser {
   id: string;
   username: string;
   email: string;
+  displayName?: string;
   roles: string[];
-  permissions: PermissionKey[];
+  roleName?: string | null;
+  profileName?: string | null;
+  permissions: string[];
 }

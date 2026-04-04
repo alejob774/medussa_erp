@@ -1,9 +1,8 @@
-export interface BackendAuthUser {
+export interface BackendAuthMeResponse {
   id: number | string;
-  username?: string;
-  nombre?: string;
+  nombre: string;
   email: string;
-  roles?: string[];
+  empresa_activa?: string | null;
   rol?: string | null;
   perfil?: string | null;
   permisos?: string[];

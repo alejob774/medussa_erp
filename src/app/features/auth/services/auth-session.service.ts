@@ -17,17 +17,7 @@ export class AuthSessionService {
   session$ = this.sessionSubject.asObservable();
 
   setSession(session: LoginResponse, remember: boolean = false): void {
-    const companies = session.companies ?? [];
-    const activeCompanyId =
-      session.activeCompanyId ?? (companies.length === 1 ? companies[0].id : null);
-
-    const normalizedSession: LoginResponse = {
-      ...session,
-      activeCompanyId,
-      requiresCompanySelection:
-        session.requiresCompanySelection ?? (companies.length > 1 && !activeCompanyId),
-      companies,
-    };
+    const normalizedSession = this.normalizeSession(session);
 
     this.clearPersistedSession();
 
@@ -76,6 +66,13 @@ export class AuthSessionService {
     return this.sessionSubject.value?.activeCompanyId ?? null;
   }
 
+  updateSession(session: LoginResponse): void {
+    const normalizedSession = this.normalizeSession(session);
+
+    this.sessionSubject.next(normalizedSession);
+    this.persistSession(normalizedSession);
+  }
+
   setActiveCompanyId(companyId: string | null): void {
     const currentSession = this.sessionSubject.value;
 
@@ -83,11 +80,11 @@ export class AuthSessionService {
       return;
     }
 
-    const updatedSession: LoginResponse = {
+    const updatedSession = this.normalizeSession({
       ...currentSession,
       activeCompanyId: companyId,
       requiresCompanySelection: false,
-    };
+    });
 
     this.sessionSubject.next(updatedSession);
     this.persistSession(updatedSession);
@@ -132,6 +129,20 @@ export class AuthSessionService {
 
     this.clearPersistedSession();
     targetStorage.setItem(this.storageKey, JSON.stringify(session));
+  }
+
+  private normalizeSession(session: LoginResponse): LoginResponse {
+    const companies = session.companies ?? [];
+    const activeCompanyId =
+      session.activeCompanyId ?? (companies.length === 1 ? companies[0].id : null);
+
+    return {
+      ...session,
+      activeCompanyId,
+      requiresCompanySelection:
+        session.requiresCompanySelection ?? (companies.length > 1 && !activeCompanyId),
+      companies,
+    };
   }
 
   private clearPersistedSession(): void {

@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
+import { of } from 'rxjs';
+import { finalize, map, switchMap } from 'rxjs/operators';
 import { Router } from '@angular/router';
-import { finalize } from 'rxjs/operators';
 import { CompanyContextService } from '../../../../core/company/services/company-context.service';
 import { AuthLayoutComponent } from '../../components/auth-layout/auth-layout.component';
 import {
@@ -36,19 +37,31 @@ export class LoginPageComponent {
         username: value.username,
         password: value.password,
       })
-      .pipe(finalize(() => (this.loading = false)))
-      .subscribe({
-        next: (response) => {
-          const session = this.companyContextService.enrichSession(
-            response,
-            value.username,
-          );
+      .pipe(
+        map((response) =>
+          this.companyContextService.enrichSession(response, value.username),
+        ),
+        switchMap((session) => {
           const nextRoute = this.companyContextService.resolvePostLoginRoute(session);
 
           this.authSessionService.setSession(session, value.remember);
+
+          if (nextRoute === '/select-company' || !session.activeCompanyId) {
+            return of(nextRoute);
+          }
+
+          return this.authService
+            .syncAuthenticatedContext()
+            .pipe(map(() => nextRoute));
+        }),
+        finalize(() => (this.loading = false)),
+      )
+      .subscribe({
+        next: (nextRoute) => {
           void this.router.navigate([nextRoute]);
         },
         error: (error) => {
+          this.authSessionService.clearSession();
           this.errorMessage = this.resolveLoginErrorMessage(error);
           console.error('Login error:', error);
         },
@@ -63,6 +76,14 @@ export class LoginPageComponent {
 
     if (httpError?.status === 0) {
       return 'No fue posible conectarse con el backend. Revisa URL, puerto y CORS.';
+    }
+
+    if (httpError?.status === 403) {
+      return 'La empresa activa no está autorizada para esta sesión.';
+    }
+
+    if (httpError?.status === 422) {
+      return 'El backend rechazó la validación de la sesión o de la empresa activa.';
     }
 
     return httpError?.error?.detail || 'No fue posible iniciar sesión.';

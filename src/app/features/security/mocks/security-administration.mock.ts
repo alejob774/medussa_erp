@@ -33,6 +33,7 @@ export function createEmptyPermissionActionSet(): PermissionActionSet {
     edit: false,
     delete: false,
     approve: false,
+    export: false,
     manage: false,
   };
 }

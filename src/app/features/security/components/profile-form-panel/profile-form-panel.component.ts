@@ -10,6 +10,7 @@ import {
   inject,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { merge } from 'rxjs';
 import {
   FormArray,
   FormBuilder,
@@ -35,6 +36,7 @@ import {
   SECURITY_PERMISSION_ACTION_LABELS,
   clonePermissionMatrix,
   getEnabledActionKeys,
+  normalizePermissionActionSet,
 } from '../../utils/security-authorization.utils';
 
 @Component({
@@ -193,6 +195,7 @@ export class ProfileFormPanelComponent implements OnChanges, OnDestroy {
     'edit',
     'delete',
     'approve',
+    'export',
     'manage',
   ];
   readonly actionLabels = SECURITY_PERMISSION_ACTION_LABELS;
@@ -249,6 +252,7 @@ export class ProfileFormPanelComponent implements OnChanges, OnDestroy {
           edit: !!permission['actions']['edit'],
           delete: !!permission['actions']['delete'],
           approve: !!permission['actions']['approve'],
+          export: !!permission['actions']['export'],
           manage: !!permission['actions']['manage'],
         },
       })),
@@ -291,10 +295,12 @@ export class ProfileFormPanelComponent implements OnChanges, OnDestroy {
   }
 
   enabledLabels(index: number): string[] {
-    const actions = this.permissionArray.at(index).get('actions')?.value as Record<
-      PermissionActionKey,
-      boolean
-    >;
+    const actions = normalizePermissionActionSet(
+      this.permissionArray.at(index).get('actions')?.value as Record<
+        PermissionActionKey,
+        boolean
+      >,
+    );
 
     return getEnabledActionKeys(actions).map((action) => this.actionLabels[action]);
   }
@@ -379,17 +385,52 @@ export class ProfileFormPanelComponent implements OnChanges, OnDestroy {
   }
 
   private buildPermissionGroup(permission: ModulePermissionVm): FormGroup {
+    const normalizedActions = normalizePermissionActionSet(permission.actions);
+    const actionsGroup = this.fb.group({
+      view: this.fb.nonNullable.control(normalizedActions.view),
+      create: this.fb.nonNullable.control(normalizedActions.create),
+      edit: this.fb.nonNullable.control(normalizedActions.edit),
+      delete: this.fb.nonNullable.control(normalizedActions.delete),
+      approve: this.fb.nonNullable.control(normalizedActions.approve),
+      export: this.fb.nonNullable.control(normalizedActions.export),
+      manage: this.fb.nonNullable.control(normalizedActions.manage),
+    });
+
+    this.bindManageSelection(actionsGroup);
+
     return this.fb.group({
       moduleKey: this.fb.nonNullable.control(permission.moduleKey),
       moduleName: this.fb.nonNullable.control(permission.moduleName),
-      actions: this.fb.group({
-        view: this.fb.nonNullable.control(permission.actions.view),
-        create: this.fb.nonNullable.control(permission.actions.create),
-        edit: this.fb.nonNullable.control(permission.actions.edit),
-        delete: this.fb.nonNullable.control(permission.actions.delete),
-        approve: this.fb.nonNullable.control(permission.actions.approve),
-        manage: this.fb.nonNullable.control(permission.actions.manage),
-      }),
+      actions: actionsGroup,
+    });
+  }
+
+  private bindManageSelection(actionsGroup: FormGroup): void {
+    const createControl = actionsGroup.get('create') as FormControl<boolean>;
+    const editControl = actionsGroup.get('edit') as FormControl<boolean>;
+    const deleteControl = actionsGroup.get('delete') as FormControl<boolean>;
+    const manageControl = actionsGroup.get('manage') as FormControl<boolean>;
+
+    merge(
+      createControl.valueChanges,
+      editControl.valueChanges,
+      deleteControl.valueChanges,
+    )
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => {
+        const shouldEnableManage =
+          !!createControl.value && !!editControl.value && !!deleteControl.value;
+
+        manageControl.setValue(shouldEnableManage, { emitEvent: false });
+      });
+
+    manageControl.valueChanges.pipe(takeUntilDestroyed()).subscribe((enabled) => {
+      const nextValue = !!enabled;
+
+      createControl.setValue(nextValue, { emitEvent: false });
+      editControl.setValue(nextValue, { emitEvent: false });
+      deleteControl.setValue(nextValue, { emitEvent: false });
+      manageControl.setValue(nextValue, { emitEvent: false });
     });
   }
 }

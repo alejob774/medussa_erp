@@ -32,6 +32,7 @@ export interface PermissionActionSet {
   edit: boolean;
   delete: boolean;
   approve: boolean;
+  export: boolean;
   manage: boolean;
 }
 

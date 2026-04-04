@@ -4,14 +4,38 @@ import {
   PermissionActionSet,
 } from '../models/security-administration.model';
 
+export const SECURITY_REAL_PERMISSION_ACTION_KEYS: PermissionActionKey[] = [
+  'view',
+  'create',
+  'edit',
+  'delete',
+  'approve',
+  'export',
+];
+
 export const SECURITY_PERMISSION_ACTION_LABELS: Record<PermissionActionKey, string> = {
   view: 'Ver',
   create: 'Crear',
   edit: 'Editar',
   delete: 'Eliminar',
   approve: 'Aprobar',
+  export: 'Exportar',
   manage: 'Administrar',
 };
+
+export function normalizePermissionActionSet(
+  actions: Partial<PermissionActionSet> = {},
+): PermissionActionSet {
+  return {
+    view: !!actions.view,
+    create: !!actions.create,
+    edit: !!actions.edit,
+    delete: !!actions.delete,
+    approve: !!actions.approve,
+    export: !!actions.export,
+    manage: !!actions.create && !!actions.edit && !!actions.delete,
+  };
+}
 
 export function clonePermissionMatrix(
   permissions: readonly ModulePermissionVm[] = [],
@@ -19,20 +43,27 @@ export function clonePermissionMatrix(
   return permissions.map((permission) => ({
     moduleKey: permission.moduleKey,
     moduleName: permission.moduleName,
-    actions: { ...permission.actions },
+    actions: normalizePermissionActionSet(permission.actions),
   }));
 }
 
 export function getEnabledActionKeys(
   actions: PermissionActionSet,
+  options: { includeDerived?: boolean } = {},
 ): PermissionActionKey[] {
-  return Object.entries(actions)
-    .filter(([, enabled]) => enabled)
-    .map(([key]) => key as PermissionActionKey);
+  const normalizedActions = normalizePermissionActionSet(actions);
+  const actionKeys = options.includeDerived
+    ? (Object.keys(normalizedActions) as PermissionActionKey[])
+    : SECURITY_REAL_PERMISSION_ACTION_KEYS;
+
+  return actionKeys.filter((actionKey) => normalizedActions[actionKey]);
 }
 
-export function getEnabledActionLabels(actions: PermissionActionSet): string[] {
-  return getEnabledActionKeys(actions).map(
+export function getEnabledActionLabels(
+  actions: PermissionActionSet,
+  options: { includeDerived?: boolean } = {},
+): string[] {
+  return getEnabledActionKeys(actions, options).map(
     (action) => SECURITY_PERMISSION_ACTION_LABELS[action],
   );
 }
@@ -80,8 +111,12 @@ export function canPerform(
   action: PermissionActionKey,
 ): boolean {
   return (
-    permissions.find((permission) => permission.moduleKey === moduleKey)?.actions[action] ??
-    false
+    action === 'manage'
+      ? canCreate(permissions, moduleKey) &&
+          canEdit(permissions, moduleKey) &&
+          canDelete(permissions, moduleKey)
+      : (permissions.find((permission) => permission.moduleKey === moduleKey)?.actions[action] ??
+          false)
   );
 }
 
@@ -120,9 +155,16 @@ export function canApprove(
   return canPerform(permissions, moduleKey, 'approve');
 }
 
+export function canExport(
+  permissions: readonly ModulePermissionVm[] = [],
+  moduleKey: string,
+): boolean {
+  return canPerform(permissions, moduleKey, 'export');
+}
+
 export function canManage(
   permissions: readonly ModulePermissionVm[] = [],
   moduleKey: string,
 ): boolean {
-  return canPerform(permissions, moduleKey, 'manage');
+  return canCreate(permissions, moduleKey) && canEdit(permissions, moduleKey) && canDelete(permissions, moduleKey);
 }

@@ -49,4 +49,10 @@ describe('permissionGuard', () => {
 
     expect(router.serializeUrl(result as UrlTree)).toBe('/dashboard');
   });
+
+  it('allows navigation when backend permissions map to the current frontend route permission', () => {
+    getUserPermissions.and.returnValue(['configuracion_view']);
+
+    expect(runGuard('settings.general.view')).toBeTrue();
+  });
 });

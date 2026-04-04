@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { combineLatest, distinctUntilChanged, map, Observable } from 'rxjs';
 import { LoginResponse } from '../../../features/auth/models/login-response.model';
+import { AuthService } from '../../../features/auth/services/auth.service';
 import { AuthSessionService } from '../../../features/auth/services/auth-session.service';
 import { PendingChangesService } from '../../forms/services/pending-changes.service';
 import { Company } from '../models/company.model';
@@ -10,6 +11,7 @@ import { CompanyMockFacadeService } from './company-mock-facade.service';
   providedIn: 'root',
 })
 export class CompanyContextService {
+  private readonly authService = inject(AuthService);
   private readonly authSessionService = inject(AuthSessionService);
   private readonly companyMockFacade = inject(CompanyMockFacadeService);
   private readonly pendingChangesService = inject(PendingChangesService);
@@ -116,7 +118,9 @@ export class CompanyContextService {
     companyId: string | null,
     options: { force?: boolean } = {},
   ): boolean {
-    if (this.authSessionService.getActiveCompanyId() === companyId) {
+    const previousCompanyId = this.authSessionService.getActiveCompanyId();
+
+    if (previousCompanyId === companyId) {
       return true;
     }
 
@@ -130,6 +134,13 @@ export class CompanyContextService {
     }
 
     this.authSessionService.setActiveCompanyId(companyId);
+    this.authService.syncAuthenticatedContext().subscribe({
+      error: (error: unknown) => {
+        this.authSessionService.setActiveCompanyId(previousCompanyId);
+        console.error('No fue posible sincronizar el contexto autenticado.', error);
+      },
+    });
+
     return true;
   }
 

@@ -1,4 +1,4 @@
-export type PermissionKey =
+export type LegacyPermissionKey =
   | 'dashboard.view'
   | 'sales.view'
   | 'purchases.view'
@@ -13,6 +13,8 @@ export type PermissionKey =
   | 'security.users.view'
   | 'security.profiles.view'
   | 'security.audit.view';
+
+export type PermissionKey = LegacyPermissionKey | string;
 
 export interface Permission {
   key: PermissionKey;
