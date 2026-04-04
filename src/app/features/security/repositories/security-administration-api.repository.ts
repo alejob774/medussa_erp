@@ -1,4 +1,4 @@
-import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { catchError, forkJoin, map, Observable, of, switchMap, throwError } from 'rxjs';
 import { environment } from '../../../../environments/environment';
@@ -17,6 +17,7 @@ import {
   RoleRowVm,
   SecurityListFilters,
   SecurityRecordStatus,
+  UserCompanyAssignmentVm,
   UserFormValue,
   UserRowVm,
 } from '../models/security-administration.model';
@@ -42,6 +43,12 @@ interface BackendUserDto {
   email: string;
   cargo?: string;
   celular?: string;
+  telefono?: string;
+  telefono_fijo?: string;
+  foto?: string;
+  foto_url?: string;
+  avatar_url?: string;
+  imagen_url?: string;
   estado?: boolean;
   empresas?: BackendCompanyAssignmentDto[];
 }
@@ -106,12 +113,13 @@ export class SecurityAdministrationApiRepository
         forkJoin({
           users: this.fetchUsers(),
           roles: this.fetchRolesCatalog(companyId, true),
-          profiles: this.fetchProfilesCatalog(companyId, true),
+          profiles: this.fetchProfilesCatalog(companyId, true).pipe(
+            map((profiles) => profiles.map((profile) => this.mapProfileRow(profile, companyId))),
+          ),
         }).pipe(
           map(({ users, roles, profiles }) =>
             users
               .map((user) => this.mapUserRow(user, companyId, roles, profiles))
-              .filter((user): user is UserRowVm => !!user)
               .filter((user) => this.matchesUserFilters(user, filters))
               .sort((left, right) => left.name.localeCompare(right.name)),
           ),
@@ -124,88 +132,152 @@ export class SecurityAdministrationApiRepository
     return this.withFallback(
       () =>
         this.fetchRolesCatalog(companyId, true).pipe(
-          map((roles) => roles.sort((left, right) => left.name.localeCompare(right.name))),
+          map((roles) =>
+            roles
+              .filter((role) => role.companyId === companyId && role.scope === 'company')
+              .sort((left, right) => left.name.localeCompare(right.name)),
+          ),
         ),
       () => this.mockRepository.listRoles(companyId),
+    );
+  }
+
+  listRoleCatalogs(companyIds: string[]): Observable<Record<string, RoleRowVm[]>> {
+    return this.withFallback(
+      () => {
+        if (!companyIds.length) {
+          return of({});
+        }
+
+        return forkJoin(
+          companyIds.map((companyId) =>
+            this.fetchRolesCatalog(companyId, true).pipe(
+              map(
+                (roles) =>
+                  [
+                    companyId,
+                    roles.filter(
+                      (role) => role.companyId === companyId && role.scope === 'company',
+                    ),
+                  ] as const,
+              ),
+            ),
+          ),
+        ).pipe(
+          map((entries) => Object.fromEntries(entries) as Record<string, RoleRowVm[]>),
+        );
+      },
+      () => this.mockRepository.listRoleCatalogs(companyIds),
+      'catalogo de roles',
+    );
+  }
+
+  listProfileCatalogs(companyIds: string[]): Observable<Record<string, ProfileRowVm[]>> {
+    return this.withFallback(
+      () => {
+        if (!companyIds.length) {
+          return of({});
+        }
+
+        return forkJoin(
+          companyIds.map((companyId) =>
+            this.fetchProfilesCatalog(companyId, true).pipe(
+              map(
+                (profiles) =>
+                  [
+                    companyId,
+                    profiles
+                      .map((profile) => this.mapProfileRow(profile, companyId))
+                      .sort((left, right) => left.name.localeCompare(right.name)),
+                  ] as const,
+              ),
+            ),
+          ),
+        ).pipe(
+          map((entries) => Object.fromEntries(entries) as Record<string, ProfileRowVm[]>),
+        );
+      },
+      () => this.mockRepository.listProfileCatalogs(companyIds),
+      'catalogo de perfiles',
     );
   }
 
   saveUser(
     companyId: string,
     payload: UserFormValue,
-    assignmentId?: string,
+    userId?: string,
   ): Observable<UserRowVm> {
+    const catalogCompanyIds = this.collectCatalogCompanyIds(
+      companyId,
+      payload.assignedCompanies.map((assignment) => assignment.companyId),
+    );
+
     return this.withFallback(
       () =>
         forkJoin({
-          roles: this.fetchRolesCatalog(companyId, true),
-          profiles: this.fetchProfilesCatalog(companyId, true),
+          roles: this.listRoleCatalogs(catalogCompanyIds),
+          profiles: this.listProfileCatalogs(catalogCompanyIds),
         }).pipe(
           switchMap(({ roles, profiles }) => {
             this.validateUserReferences(payload, roles, profiles);
+            const activeRoles = roles[companyId] ?? [];
+            const activeProfiles = profiles[companyId] ?? [];
 
-            if (!assignmentId) {
+            if (!userId) {
               return this.http
-                .post<BackendUserDto>(this.withTrailingSlash(this.usersUrl), this.buildCreateUserPayload(companyId, payload, roles))
+                .post<BackendUserDto>(
+                  this.withTrailingSlash(this.usersUrl),
+                  this.buildCreateUserPayload(payload),
+                )
                 .pipe(
                   switchMap((createdUser) =>
                     this.loadUserRow(
                       this.resolveId(createdUser?.id, 'usuario'),
                       companyId,
-                      roles,
-                      profiles,
+                      activeRoles,
+                      activeProfiles,
                     ),
                   ),
                 );
             }
 
-            const userId = this.extractUserId(assignmentId);
-
-            return this.fetchUserDetail(userId).pipe(
-              switchMap((currentUser) =>
-                this.http
-                  .put<BackendUserDto>(
-                    `${this.withTrailingSlash(this.usersUrl)}${userId}`,
-                    this.buildUpdateUserPayload(companyId, payload, currentUser),
-                  )
-                  .pipe(
-                    switchMap(() =>
-                      this.loadUserRow(userId, companyId, roles, profiles),
-                    ),
-                  ),
-              ),
-            );
+            return this.http
+              .put<BackendUserDto>(
+                `${this.withTrailingSlash(this.usersUrl)}${userId}`,
+                this.buildUpdateUserPayload(payload),
+              )
+              .pipe(
+                switchMap(() => this.loadUserRow(userId, companyId, activeRoles, activeProfiles)),
+              );
           }),
         ),
-      () => this.mockRepository.saveUser(companyId, payload, assignmentId),
+      () => this.mockRepository.saveUser(companyId, payload, userId),
       'usuario',
     );
   }
 
   updateUserStatus(
     companyId: string,
-    assignmentId: string,
+    userId: string,
     status: SecurityRecordStatus,
   ): Observable<UserRowVm> {
     return this.withFallback(
       () =>
         forkJoin({
           roles: this.fetchRolesCatalog(companyId, true),
-          profiles: this.fetchProfilesCatalog(companyId, true),
+          profiles: this.fetchProfilesCatalog(companyId, true).pipe(
+            map((profiles) => profiles.map((profile) => this.mapProfileRow(profile, companyId))),
+          ),
         }).pipe(
-          switchMap(({ roles, profiles }) => {
-            const userId = this.extractUserId(assignmentId);
-
-            return this.http
+          switchMap(({ roles, profiles }) =>
+            this.http
               .put<void>(`${this.withTrailingSlash(this.usersUrl)}${userId}`, {
                 estado: status === 'active',
               })
-              .pipe(
-                switchMap(() => this.loadUserRow(userId, companyId, roles, profiles)),
-              );
-          }),
+              .pipe(switchMap(() => this.loadUserRow(userId, companyId, roles, profiles))),
+          ),
         ),
-      () => this.mockRepository.updateUserStatus(companyId, assignmentId, status),
+      () => this.mockRepository.updateUserStatus(companyId, userId, status),
       'usuario',
     );
   }
@@ -415,9 +487,10 @@ export class SecurityAdministrationApiRepository
     includeInactive: boolean,
   ): Observable<RoleRowVm[]> {
     return this.http
-      .get<unknown>(this.withTrailingSlash(this.rolesUrl), {
-        params: this.buildInactiveParams(includeInactive),
-      })
+      .get<unknown>(
+        this.withTrailingSlash(this.rolesUrl),
+        this.buildScopedRequestOptions(companyId, includeInactive),
+      )
       .pipe(
         map((response) =>
           this.extractArrayPayload<BackendRoleDto>(response)
@@ -432,9 +505,10 @@ export class SecurityAdministrationApiRepository
     includeInactive: boolean,
   ): Observable<BackendProfileDto[]> {
     return this.http
-      .get<unknown>(this.withTrailingSlash(this.profilesUrl), {
-        params: this.buildInactiveParams(includeInactive),
-      })
+      .get<unknown>(
+        this.withTrailingSlash(this.profilesUrl),
+        this.buildScopedRequestOptions(companyId, includeInactive),
+      )
       .pipe(map((response) => this.extractArrayPayload<BackendProfileDto>(response)));
   }
 
@@ -448,25 +522,20 @@ export class SecurityAdministrationApiRepository
     userId: string,
     companyId: string,
     roles: readonly RoleRowVm[],
-    profiles: readonly BackendProfileDto[],
+    profiles: readonly ProfileRowVm[],
   ): Observable<UserRowVm> {
     return this.fetchUserDetail(userId).pipe(
-      map((user) => {
-        const row = this.mapUserRow(user, companyId, roles, profiles);
-
-        if (!row) {
-          throw new Error('No se encontró la asignación del usuario en la empresa activa.');
-        }
-
-        return row;
-      }),
+      map((user) => this.mapUserRow(user, companyId, roles, profiles)),
     );
   }
 
   private loadRoleById(companyId: string, roleId: string): Observable<RoleRowVm> {
     return this.fetchRolesCatalog(companyId, true).pipe(
       map((roles) => {
-        const role = roles.find((candidate) => candidate.id === roleId);
+        const role = roles.find(
+          (candidate) =>
+            candidate.id === roleId && candidate.companyId === companyId && candidate.scope === 'company',
+        );
 
         if (!role) {
           throw new Error('No se encontró el rol solicitado.');
@@ -501,32 +570,35 @@ export class SecurityAdministrationApiRepository
     user: BackendUserDto,
     companyId: string,
     roles: readonly RoleRowVm[],
-    profiles: readonly BackendProfileDto[],
-  ): UserRowVm | null {
-    const assignment = user.empresas?.find((candidate) =>
-      this.matchesRequestedCompanyId(candidate.empresa_id, companyId),
-    );
-
-    if (!assignment) {
-      return null;
-    }
-
-    const roleId = this.resolveOptionalId(assignment.rol_id);
-    const profileId = this.resolveOptionalId(assignment.perfil_id);
+    profiles: readonly ProfileRowVm[],
+  ): UserRowVm {
+    const assignedCompanies = this.mapUserAssignments(user, companyId, roles, profiles);
+    const activeAssignment = assignedCompanies.find(
+      (assignment) => assignment.companyId === companyId,
+    ) ?? null;
 
     return {
-      assignmentId: this.resolveId(user.id, 'usuario'),
       userId: this.resolveId(user.id, 'usuario'),
-      companyId,
+      firstName: user.nombre?.trim() || 'Usuario',
+      lastName: user.apellido?.trim() || '',
       name: this.composePersonName(user.nombre, user.apellido, user.email),
+      position: user.cargo?.trim() || '',
       email: user.email.trim().toLowerCase(),
-      roleId,
-      roleName: roles.find((role) => role.id === roleId)?.name ?? null,
-      profileId,
-      profileName: profiles.find(
-        (profile) => this.resolveId(profile.id, 'perfil') === profileId,
-      )?.nombre?.trim() ?? null,
+      mobilePhone: user.celular?.trim() || '',
+      landlinePhone: user.telefono_fijo?.trim() || user.telefono?.trim() || '',
+      photoUrl:
+        user.foto_url?.trim() ||
+        user.avatar_url?.trim() ||
+        user.foto?.trim() ||
+        user.imagen_url?.trim() ||
+        null,
       status: this.resolveStatus(user.estado),
+      assignedCompanies,
+      activeAssignment,
+      roleId: activeAssignment?.roleId ?? null,
+      roleName: activeAssignment?.roleName ?? null,
+      profileId: activeAssignment?.profileId ?? null,
+      profileName: activeAssignment?.profileName ?? null,
     };
   }
 
@@ -728,51 +800,42 @@ export class SecurityAdministrationApiRepository
       .filter((permissionId): permissionId is number | string => permissionId !== undefined);
   }
 
-  private buildCreateUserPayload(
-    companyId: string,
-    payload: UserFormValue,
-    roles: readonly RoleRowVm[],
-  ): Record<string, unknown> {
-    const { nombre, apellido } = this.splitPersonName(payload.name);
+  private buildCreateUserPayload(payload: UserFormValue): Record<string, unknown> {
     const normalizedEmail = payload.email.trim().toLowerCase();
-    const roleName = roles.find((role) => role.id === payload.roleId)?.name ?? 'Pendiente de asignar';
 
     return {
-      nombre,
-      apellido,
-      username: this.buildUsername(normalizedEmail, payload.name),
+      nombre: payload.firstName.trim(),
+      apellido: payload.lastName.trim(),
+      username: this.buildUsername(
+        normalizedEmail,
+        `${payload.firstName.trim()} ${payload.lastName.trim()}`,
+      ),
       email: normalizedEmail,
       password: 'TempMedussa123!',
-      cargo: roleName,
-      celular: '',
+      cargo: payload.position.trim(),
+      celular: payload.mobilePhone.trim(),
+      telefono_fijo: payload.landlinePhone.trim() || undefined,
+      foto_url: payload.photoUrl ?? undefined,
       estado: payload.status === 'active',
-      empresas: [this.buildCompanyAssignment(companyId, payload.roleId, payload.profileId)],
+      empresas: payload.assignedCompanies.map((assignment) =>
+        this.buildCompanyAssignment(assignment.companyId, assignment.roleId, assignment.profileId),
+      ),
     };
   }
 
-  private buildUpdateUserPayload(
-    companyId: string,
-    payload: UserFormValue,
-    currentUser: BackendUserDto,
-  ): Record<string, unknown> {
-    const { nombre, apellido } = this.splitPersonName(payload.name);
-    const currentAssignments = currentUser.empresas ?? [];
-    const nextAssignments = currentAssignments.some(
-      (assignment) => assignment.empresa_id === companyId,
-    )
-      ? currentAssignments.map((assignment) =>
-          assignment.empresa_id === companyId
-            ? this.buildCompanyAssignment(companyId, payload.roleId, payload.profileId)
-            : assignment,
-        )
-      : [...currentAssignments, this.buildCompanyAssignment(companyId, payload.roleId, payload.profileId)];
-
+  private buildUpdateUserPayload(payload: UserFormValue): Record<string, unknown> {
     return {
-      nombre,
-      apellido,
+      nombre: payload.firstName.trim(),
+      apellido: payload.lastName.trim(),
       email: payload.email.trim().toLowerCase(),
+      cargo: payload.position.trim(),
+      celular: payload.mobilePhone.trim(),
+      telefono_fijo: payload.landlinePhone.trim() || undefined,
+      foto_url: payload.photoUrl ?? undefined,
       estado: payload.status === 'active',
-      empresas: nextAssignments,
+      empresas: payload.assignedCompanies.map((assignment) =>
+        this.buildCompanyAssignment(assignment.companyId, assignment.roleId, assignment.profileId),
+      ),
     };
   }
 
@@ -790,19 +853,83 @@ export class SecurityAdministrationApiRepository
 
   private validateUserReferences(
     payload: UserFormValue,
-    roles: readonly RoleRowVm[],
-    profiles: readonly BackendProfileDto[],
+    roleCatalogs: Record<string, RoleRowVm[]>,
+    profileCatalogs: Record<string, ProfileRowVm[]>,
   ): void {
-    if (payload.roleId && !roles.some((role) => role.id === payload.roleId)) {
-      throw new Error('Selecciona un rol válido para la empresa activa.');
+    if (!payload.firstName.trim()) {
+      throw new Error('El nombre es obligatorio.');
     }
 
-    if (
-      payload.profileId &&
-      !profiles.some((profile) => this.resolveId(profile.id, 'perfil') === payload.profileId)
-    ) {
-      throw new Error('Selecciona un perfil válido para la empresa activa.');
+    if (!payload.lastName.trim()) {
+      throw new Error('El apellido es obligatorio.');
     }
+
+    if (!payload.position.trim()) {
+      throw new Error('El cargo es obligatorio.');
+    }
+
+    if (!payload.email.trim()) {
+      throw new Error('El correo es obligatorio.');
+    }
+
+    if (!payload.assignedCompanies.length) {
+      throw new Error('Debes asignar al menos una empresa al usuario.');
+    }
+
+    const uniqueCompanyIds = new Set(payload.assignedCompanies.map((assignment) => assignment.companyId));
+
+    if (uniqueCompanyIds.size !== payload.assignedCompanies.length) {
+      throw new Error('No puedes repetir una empresa dentro de las asignaciones del usuario.');
+    }
+
+    payload.assignedCompanies.forEach((assignment) => {
+      if (!assignment.roleId) {
+        throw new Error('Cada empresa asignada debe tener un rol.');
+      }
+
+      if (!assignment.profileId) {
+        throw new Error('Cada empresa asignada debe tener un perfil de acceso.');
+      }
+
+      if (!roleCatalogs[assignment.companyId]?.some((role) => role.id === assignment.roleId)) {
+        throw new Error('Selecciona un rol valido para la empresa asignada.');
+      }
+
+      if (
+        !profileCatalogs[assignment.companyId]?.some(
+          (profile) => profile.id === assignment.profileId,
+        )
+      ) {
+        throw new Error('Selecciona un perfil valido para la empresa asignada.');
+      }
+    });
+  }
+
+  private mapUserAssignments(
+    user: BackendUserDto,
+    activeCompanyId: string,
+    roles: readonly RoleRowVm[],
+    profiles: readonly ProfileRowVm[],
+  ): UserCompanyAssignmentVm[] {
+    return (user.empresas ?? []).map((assignment) => {
+      const resolvedCompanyId = this.resolveFrontendCompanyId(assignment.empresa_id);
+      const roleId = this.resolveOptionalId(assignment.rol_id);
+      const profileId = this.resolveOptionalId(assignment.perfil_id);
+      const isActiveCompanyAssignment = resolvedCompanyId === activeCompanyId;
+
+      return {
+        companyId: resolvedCompanyId,
+        companyName: this.resolveCompanyName(resolvedCompanyId),
+        roleId,
+        roleName: isActiveCompanyAssignment
+          ? roles.find((role) => role.id === roleId)?.name ?? null
+          : null,
+        profileId,
+        profileName: isActiveCompanyAssignment
+          ? profiles.find((profile) => profile.id === profileId)?.name ?? null
+          : null,
+      };
+    });
   }
 
   private matchesUserFilters(user: UserRowVm, filters: SecurityListFilters): boolean {
@@ -815,7 +942,14 @@ export class SecurityAdministrationApiRepository
 
     return (
       matchesStatus &&
-      [user.name, user.email, user.roleName ?? '', user.profileName ?? '']
+      [
+        user.name,
+        user.email,
+        user.position,
+        user.roleName ?? '',
+        user.profileName ?? '',
+        ...user.assignedCompanies.map((assignment) => assignment.companyName),
+      ]
         .some((value) => value.toLowerCase().includes(normalizedSearch))
     );
   }
@@ -854,17 +988,6 @@ export class SecurityAdministrationApiRepository
     const fullName = [firstName?.trim(), lastName?.trim()].filter(Boolean).join(' ').trim();
 
     return fullName || email?.split('@')[0] || 'Usuario sin nombre';
-  }
-
-  private splitPersonName(name: string): { nombre: string; apellido: string } {
-    const fragments = name
-      .trim()
-      .split(/\s+/)
-      .filter(Boolean);
-    const nombre = fragments.shift() ?? 'Usuario';
-    const apellido = fragments.join(' ') || 'Pendiente';
-
-    return { nombre, apellido };
   }
 
   private buildUsername(email: string, fullName: string): string {
@@ -915,12 +1038,20 @@ export class SecurityAdministrationApiRepository
       : undefined;
   }
 
-  private withTrailingSlash(url: string): string {
-    return url.endsWith('/') ? url : `${url}/`;
+  private buildScopedRequestOptions(
+    companyId: string,
+    includeInactive: boolean,
+  ): { headers: HttpHeaders; params?: HttpParams } {
+    return {
+      headers: new HttpHeaders({
+        'X-Company-ID': this.resolveRequestCompanyId(companyId),
+      }),
+      params: this.buildInactiveParams(includeInactive),
+    };
   }
 
-  private extractUserId(assignmentId: string): string {
-    return assignmentId.split(':')[0] || assignmentId;
+  private withTrailingSlash(url: string): string {
+    return url.endsWith('/') ? url : `${url}/`;
   }
 
   private resolveId(value: unknown, label: string): string {
@@ -955,17 +1086,34 @@ export class SecurityAdministrationApiRepository
     backendCompanyId: string | null | undefined,
     companyId: string,
   ): boolean {
+    return this.resolveFrontendCompanyId(backendCompanyId) === companyId;
+  }
+
+  private resolveFrontendCompanyId(backendCompanyId: string | null | undefined): string {
     const normalizedBackendCompanyId = backendCompanyId?.trim();
 
     if (!normalizedBackendCompanyId) {
-      return false;
+      return '';
     }
 
-    const requestedCompanyId = this.resolveRequestCompanyId(companyId);
+    const company = this.authSessionService
+      .getSession()
+      ?.companies?.find(
+        (candidate) =>
+          candidate.backendId === normalizedBackendCompanyId || candidate.id === normalizedBackendCompanyId,
+      );
 
+    return company?.id ?? normalizedBackendCompanyId;
+  }
+
+  private collectCatalogCompanyIds(activeCompanyId: string, companyIds: string[]): string[] {
+    return Array.from(new Set([activeCompanyId, ...companyIds.filter(Boolean)]));
+  }
+
+  private resolveCompanyName(companyId: string): string {
     return (
-      normalizedBackendCompanyId === requestedCompanyId ||
-      normalizedBackendCompanyId === companyId
+      this.authSessionService.getSession()?.companies?.find((company) => company.id === companyId)?.name ??
+      companyId
     );
   }
 

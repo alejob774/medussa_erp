@@ -48,8 +48,15 @@ import {
               {{ initialValue ? 'Editar rol' : 'Nuevo rol' }}
             </h2>
             <p class="mt-2 text-sm text-slate-500">
-              Define la categoría funcional que se asignará a los usuarios.
+              Define la categoria funcional para la empresa activa.
             </p>
+
+            @if (activeCompanyName) {
+              <div class="mt-4 inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                <mat-icon class="!h-4 !w-4 !text-base">apartment</mat-icon>
+                {{ activeCompanyName }}
+              </div>
+            }
           </div>
 
           <button mat-icon-button type="button" aria-label="Cerrar panel" (click)="close()">
@@ -60,12 +67,6 @@ import {
 
       <form class="flex min-h-0 flex-1 flex-col" [formGroup]="form" (ngSubmit)="submit()">
         <div class="flex-1 space-y-5 overflow-auto px-6 py-6">
-          @if (initialValue?.scope === 'global') {
-            <div class="inline-flex items-center rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white">
-              Rol global
-            </div>
-          }
-
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Nombre del rol</mat-label>
             <input matInput formControlName="name" />

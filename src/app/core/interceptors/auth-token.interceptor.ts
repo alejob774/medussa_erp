@@ -12,7 +12,9 @@ export const authTokenInterceptor: HttpInterceptorFn = (req, next) => {
   }
 
   const accessToken = authSessionService.getAccessToken();
-  const activeCompanyId = authSessionService.getPreferredCompanyIdForRequest();
+  const activeCompanyId = req.headers.has('X-Company-ID')
+    ? null
+    : authSessionService.getPreferredCompanyIdForRequest();
 
   if (!accessToken && !activeCompanyId) {
     return next(req);

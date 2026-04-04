@@ -15,14 +15,16 @@ import {
 export interface SecurityAdministrationRepository {
   listUsers(companyId: string, filters: SecurityListFilters): Observable<UserRowVm[]>;
   listRoles(companyId: string): Observable<RoleRowVm[]>;
+  listRoleCatalogs(companyIds: string[]): Observable<Record<string, RoleRowVm[]>>;
+  listProfileCatalogs(companyIds: string[]): Observable<Record<string, ProfileRowVm[]>>;
   saveUser(
     companyId: string,
     payload: UserFormValue,
-    assignmentId?: string,
+    userId?: string,
   ): Observable<UserRowVm>;
   updateUserStatus(
     companyId: string,
-    assignmentId: string,
+    userId: string,
     status: SecurityRecordStatus,
   ): Observable<UserRowVm>;
   saveRole(

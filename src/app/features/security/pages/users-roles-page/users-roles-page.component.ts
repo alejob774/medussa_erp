@@ -8,7 +8,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
+import { forkJoin } from 'rxjs';
 import { distinctUntilChanged, finalize, map } from 'rxjs/operators';
+import { Company } from '../../../../core/company/models/company.model';
 import { PendingChangesService } from '../../../../core/forms/services/pending-changes.service';
 import { RoleFormPanelComponent } from '../../components/role-form-panel/role-form-panel.component';
 import { UserFormPanelComponent } from '../../components/user-form-panel/user-form-panel.component';
@@ -41,19 +43,32 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
   template: `
     <section class="space-y-6">
       <header class="rounded-3xl bg-white p-6 shadow-sm">
-        <div class="flex items-start gap-4">
-          <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
-            <mat-icon>manage_accounts</mat-icon>
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div class="flex items-start gap-4">
+            <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+              <mat-icon>manage_accounts</mat-icon>
+            </div>
+
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-[0.3em] text-teal-600">
+                Seguridad
+              </p>
+              <h1 class="mt-2 text-3xl font-bold text-slate-900">Gestion de Usuarios y Roles</h1>
+              <p class="mt-2 max-w-3xl text-sm text-slate-500">
+                Administra usuarios del sistema y su acceso por empresa.
+              </p>
+            </div>
           </div>
 
-          <div>
-            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-teal-600">
-              Seguridad
-            </p>
-            <h1 class="mt-2 text-3xl font-bold text-slate-900">Gestión de Usuarios y Roles</h1>
-            <p class="mt-2 max-w-3xl text-sm text-slate-500">
-              Administra usuarios, roles y perfiles de acceso.
-            </p>
+          <div class="rounded-2xl bg-slate-100 px-4 py-3 text-sm text-slate-700">
+            <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Empresa activa</p>
+            <div class="mt-2 flex items-center gap-2 font-semibold text-slate-900">
+              <span
+                class="inline-block h-2.5 w-2.5 rounded-full"
+                [style.background]="activeCompany?.accentColor ?? '#14b8a6'"
+              ></span>
+              <span>{{ activeCompany?.name ?? 'Sin empresa activa' }}</span>
+            </div>
           </div>
         </div>
       </header>
@@ -75,7 +90,7 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
           <div class="flex flex-wrap items-center gap-3 lg:flex-nowrap">
             <mat-form-field appearance="outline" class="min-w-[280px] flex-1">
               <mat-label>Buscar usuarios</mat-label>
-              <input matInput formControlName="search" placeholder="Nombre, correo, rol o perfil de acceso" />
+              <input matInput formControlName="search" placeholder="Nombre, correo, cargo o empresa asignada" />
               <mat-icon matSuffix>search</mat-icon>
             </mat-form-field>
 
@@ -115,7 +130,7 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
               <mat-icon class="!h-10 !w-10 !text-4xl text-slate-300">group_off</mat-icon>
               <div>
                 <p class="text-base font-semibold text-slate-700">No hay usuarios para este criterio.</p>
-                <p class="mt-1 text-sm">Prueba otro filtro o crea el primer usuario de la empresa activa.</p>
+                <p class="mt-1 text-sm">Ajusta los filtros o registra el primer usuario multiempresa.</p>
               </div>
             </div>
           } @else {
@@ -123,22 +138,44 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
               <table class="min-w-full divide-y divide-slate-200 text-sm">
                 <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
                   <tr>
-                    <th class="px-4 py-4">Nombre del Usuario</th>
+                    <th class="px-4 py-4">Nombre del usuario</th>
                     <th class="px-4 py-4">Correo</th>
-                    <th class="px-4 py-4">Rol</th>
-                    <th class="px-4 py-4">Perfil de acceso</th>
+                    <th class="px-4 py-4">Rol en empresa activa</th>
+                    <th class="px-4 py-4">Perfil de acceso en empresa activa</th>
+                    <th class="px-4 py-4">Empresas asignadas</th>
                     <th class="px-4 py-4">Estado</th>
                     <th class="w-[176px] px-4 py-4 text-right">Acciones</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 bg-white">
-                  @for (user of users; track user.assignmentId) {
+                  @for (user of users; track user.userId) {
                     <tr class="hover:bg-slate-50/70">
-                      <td class="px-4 py-4 font-semibold text-slate-900">{{ user.name }}</td>
+                      <td class="px-4 py-4">
+                        <div class="flex items-center gap-3">
+                          <div class="flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl bg-slate-100 text-slate-600">
+                            @if (user.photoUrl) {
+                              <img [src]="user.photoUrl" [alt]="user.name" class="h-full w-full object-cover" />
+                            } @else {
+                              <mat-icon>person</mat-icon>
+                            }
+                          </div>
+
+                          <div>
+                            <div class="font-semibold text-slate-900">{{ user.name }}</div>
+                            <div class="text-xs text-slate-500">{{ user.position }}</div>
+                          </div>
+                        </div>
+                      </td>
                       <td class="px-4 py-4 text-slate-600">{{ user.email }}</td>
                       <td class="px-4 py-4">
-                        <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                          {{ user.roleName || 'Sin rol asignado' }}
+                        <span
+                          class="rounded-full px-3 py-1 text-xs font-semibold"
+                          [class.bg-slate-100]="!user.roleName"
+                          [class.text-slate-500]="!user.roleName"
+                          [class.bg-slate-900]="!!user.roleName"
+                          [class.text-white]="!!user.roleName"
+                        >
+                          {{ user.roleName || 'Sin asignacion' }}
                         </span>
                       </td>
                       <td class="px-4 py-4">
@@ -149,8 +186,23 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
                           [class.bg-teal-50]="!!user.profileName"
                           [class.text-teal-700]="!!user.profileName"
                         >
-                          {{ user.profileName || 'Sin asignar' }}
+                          {{ user.profileName || 'Sin asignacion' }}
                         </span>
+                      </td>
+                      <td class="px-4 py-4">
+                        <div class="flex min-w-[220px] max-w-[280px] flex-wrap gap-2">
+                          @for (assignment of visibleAssignedCompanies(user); track assignment.companyId) {
+                            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                              {{ assignment.companyName }}
+                            </span>
+                          }
+
+                          @if (remainingAssignedCompanies(user) > 0) {
+                            <span class="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white">
+                              +{{ remainingAssignedCompanies(user) }}
+                            </span>
+                          }
+                        </div>
                       </td>
                       <td class="px-4 py-4">
                         <span
@@ -207,9 +259,9 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Roles</p>
-              <h2 class="mt-2 text-2xl font-semibold text-slate-900">Catálogo de roles</h2>
+              <h2 class="mt-2 text-2xl font-semibold text-slate-900">Catalogo de roles</h2>
               <p class="mt-2 max-w-3xl text-sm text-slate-500">
-                Define los roles disponibles para clasificar a los usuarios.
+                Gestiona los roles de {{ activeCompany?.name ?? 'la empresa activa' }} sin seleccionar empresa manualmente.
               </p>
             </div>
 
@@ -229,7 +281,7 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
             } @else if (!roles.length) {
               <div class="flex min-h-[220px] flex-col items-center justify-center gap-3 bg-slate-50 px-6 text-center text-slate-500">
                 <mat-icon class="!h-10 !w-10 !text-4xl text-slate-300">shield_person</mat-icon>
-                <p class="text-base font-semibold text-slate-700">No hay roles configurados todavía.</p>
+                <p class="text-base font-semibold text-slate-700">No hay roles configurados para la empresa activa.</p>
               </div>
             } @else {
               <div class="overflow-x-auto">
@@ -237,8 +289,7 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
                   <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
                     <tr>
                       <th class="px-4 py-4">Rol</th>
-                      <th class="px-4 py-4">Descripción</th>
-                      <th class="px-4 py-4">Alcance</th>
+                      <th class="px-4 py-4">Descripcion</th>
                       <th class="px-4 py-4">Estado</th>
                       <th class="w-[176px] px-4 py-4 text-right">Acciones</th>
                     </tr>
@@ -247,12 +298,7 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
                     @for (role of roles; track role.id) {
                       <tr class="hover:bg-slate-50/70">
                         <td class="px-4 py-4 font-semibold text-slate-900">{{ role.name }}</td>
-                        <td class="px-4 py-4 text-slate-600">{{ role.description || 'Sin descripción' }}</td>
-                        <td class="px-4 py-4">
-                          <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                            {{ role.scope === 'global' ? 'Global' : 'Empresa' }}
-                          </span>
-                        </td>
+                        <td class="px-4 py-4 text-slate-600">{{ role.description || 'Sin descripcion' }}</td>
                         <td class="px-4 py-4">
                           <span
                             class="rounded-full px-3 py-1 text-xs font-semibold"
@@ -317,10 +363,11 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
 
       @if (userPanelOpen) {
         <app-user-form-panel
-          [roles]="roles"
-          [profiles]="profiles"
+          [companies]="availableCompanies"
+          [roleCatalogs]="roleCatalogsByCompany"
+          [profileCatalogs]="profileCatalogsByCompany"
           [initialValue]="selectedUser"
-          [activeCompanyName]="''"
+          [activeCompanyName]="activeCompanyName"
           [saving]="savingUser"
           (saveUser)="saveUser($event)"
           (closePanel)="closeUserPanel()"
@@ -330,7 +377,7 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
       @if (rolePanelOpen) {
         <app-role-form-panel
           [initialValue]="selectedRole"
-          [activeCompanyName]="''"
+          [activeCompanyName]="activeCompanyName"
           [saving]="savingRole"
           (saveRole)="saveRole($event)"
           (closePanel)="closeRolePanel()"
@@ -345,6 +392,7 @@ export class UsersRolesPageComponent {
   private readonly pendingChangesService = inject(PendingChangesService);
 
   readonly activeCompany$ = this.securityFacade.activeCompany$;
+  readonly companies$ = this.securityFacade.companies$;
   readonly filterForm = this.fb.nonNullable.group({
     search: [''],
     status: this.fb.nonNullable.control<'all' | 'active' | 'inactive'>('all'),
@@ -353,9 +401,15 @@ export class UsersRolesPageComponent {
   users: UserRowVm[] = [];
   roles: RoleRowVm[] = [];
   profiles: ProfileRowVm[] = [];
+  availableCompanies: Company[] = [];
+  activeCompany: Company | null = null;
+  roleCatalogsByCompany: Record<string, RoleRowVm[]> = {};
+  profileCatalogsByCompany: Record<string, ProfileRowVm[]> = {};
+  activeCompanyName = '';
   loadingUsers = true;
   loadingRoles = true;
   loadingProfilesCatalog = true;
+  loadingAssignmentCatalogs = false;
   savingUser = false;
   savingRole = false;
   errorMessage = '';
@@ -367,21 +421,35 @@ export class UsersRolesPageComponent {
   selectedRole: RoleRowVm | null = null;
 
   constructor() {
+    this.companies$.pipe(takeUntilDestroyed()).subscribe((companies) => {
+      this.availableCompanies = companies;
+
+      if (companies.length) {
+        this.loadAssignmentCatalogs(false);
+      }
+    });
+
     this.activeCompany$
       .pipe(
-        map((company) => company?.id ?? null),
-        distinctUntilChanged(),
+        map((company) => company ?? null),
+        distinctUntilChanged((previous, current) => previous?.id === current?.id),
         takeUntilDestroyed(),
       )
-      .subscribe((companyId) => {
-        if (!companyId) {
+      .subscribe((company) => {
+        if (!company?.id) {
           return;
         }
 
+        this.activeCompany = company;
+        this.activeCompanyName = company.name;
         this.closePanels(true);
         this.loadUsers();
         this.loadRoles();
         this.loadProfilesCatalog();
+
+        if (this.availableCompanies.length) {
+          this.loadAssignmentCatalogs(false);
+        }
       });
   }
 
@@ -401,26 +469,20 @@ export class UsersRolesPageComponent {
     this.rolePanelOpen = false;
     this.selectedRole = null;
     this.selectedUser = null;
-    if (!this.roles.length) {
-      this.loadRoles();
-    }
-    if (!this.profiles.length) {
-      this.loadProfilesCatalog();
-    }
-    this.userPanelOpen = true;
+
+    this.ensureUserCatalogsReady(() => {
+      this.userPanelOpen = true;
+    });
   }
 
   editUser(user: UserRowVm): void {
     this.rolePanelOpen = false;
     this.selectedRole = null;
     this.selectedUser = user;
-    if (!this.roles.length) {
-      this.loadRoles();
-    }
-    if (!this.profiles.length) {
-      this.loadProfilesCatalog();
-    }
-    this.userPanelOpen = true;
+
+    this.ensureUserCatalogsReady(() => {
+      this.userPanelOpen = true;
+    });
   }
 
   closeUserPanel(): void {
@@ -435,13 +497,13 @@ export class UsersRolesPageComponent {
     this.successMessage = '';
 
     this.securityFacade
-      .saveUser(payload, this.selectedUser?.assignmentId)
+      .saveUser(payload, this.selectedUser?.userId)
       .pipe(finalize(() => (this.savingUser = false)))
       .subscribe({
         next: () => {
           this.successMessage = this.selectedUser
-            ? 'El usuario se actualizó correctamente.'
-            : 'El usuario se creó correctamente.';
+            ? 'El usuario se actualizo correctamente.'
+            : 'El usuario se creo correctamente.';
           this.closeUserPanel();
           this.loadUsers();
         },
@@ -452,20 +514,19 @@ export class UsersRolesPageComponent {
   }
 
   toggleUserStatus(user: UserRowVm): void {
-    const nextStatus: SecurityRecordStatus =
-      user.status === 'active' ? 'inactive' : 'active';
+    const nextStatus: SecurityRecordStatus = user.status === 'active' ? 'inactive' : 'active';
     const actionLabel = this.confirmActionLabel(user.status);
 
     if (
       typeof window !== 'undefined' &&
-      !window.confirm(`¿Deseas ${actionLabel} al usuario ${user.name}? Esta acción es reversible.`)
+      !window.confirm(`Deseas ${actionLabel} al usuario ${user.name}? Esta accion es reversible.`)
     ) {
       return;
     }
 
     this.loadingUsers = true;
     this.securityFacade
-      .updateUserStatus(user.assignmentId, nextStatus)
+      .updateUserStatus(user.userId, nextStatus)
       .pipe(finalize(() => (this.loadingUsers = false)))
       .subscribe({
         next: () => {
@@ -510,12 +571,13 @@ export class UsersRolesPageComponent {
         next: (role) => {
           this.roles = this.upsertRole(role);
           this.successMessage = this.selectedRole
-            ? 'El rol se actualizó correctamente.'
-            : 'El rol se creó correctamente.';
+            ? 'El rol se actualizo correctamente.'
+            : 'El rol se creo correctamente.';
           this.closeRolePanel();
           this.showRolesSection = true;
           this.loadRoles();
           this.loadUsers(false);
+          this.loadAssignmentCatalogs(false);
         },
         error: (error: unknown) => {
           this.errorMessage = this.resolveErrorMessage(error);
@@ -524,13 +586,12 @@ export class UsersRolesPageComponent {
   }
 
   toggleRoleStatus(role: RoleRowVm): void {
-    const nextStatus: SecurityRecordStatus =
-      role.status === 'active' ? 'inactive' : 'active';
+    const nextStatus: SecurityRecordStatus = role.status === 'active' ? 'inactive' : 'active';
     const actionLabel = this.confirmActionLabel(role.status);
 
     if (
       typeof window !== 'undefined' &&
-      !window.confirm(`¿Deseas ${actionLabel} el rol ${role.name}? Esta acción es reversible.`)
+      !window.confirm(`Deseas ${actionLabel} el rol ${role.name}? Esta accion es reversible.`)
     ) {
       return;
     }
@@ -545,6 +606,7 @@ export class UsersRolesPageComponent {
           this.successMessage = `El rol ${role.name} fue ${this.successStatusLabel(nextStatus)}.`;
           this.loadRoles(false);
           this.loadUsers(false);
+          this.loadAssignmentCatalogs(false);
         },
         error: (error: unknown) => {
           this.errorMessage = this.resolveErrorMessage(error);
@@ -569,7 +631,7 @@ export class UsersRolesPageComponent {
     if (
       (this.userPanelOpen || this.rolePanelOpen) &&
       !this.pendingChangesService.confirmDiscard(
-        'Hay cambios sin guardar. Si cancelas, se cerrarán las ediciones abiertas. ¿Deseas continuar?',
+        'Hay cambios sin guardar. Si cancelas, se cerraran las ediciones abiertas. Deseas continuar?',
       )
     ) {
       return;
@@ -583,10 +645,13 @@ export class UsersRolesPageComponent {
     this.errorMessage = '';
     this.closePanels(true);
     this.loadUsers();
+
     if (this.showRolesSection) {
       this.loadRoles();
     }
+
     this.loadProfilesCatalog(false);
+    this.loadAssignmentCatalogs(false);
   }
 
   canAcceptPageState(): boolean {
@@ -595,6 +660,34 @@ export class UsersRolesPageComponent {
 
   rowActionLabel(status: SecurityRecordStatus): string {
     return status === 'active' ? 'Inactivar' : 'Activar';
+  }
+
+  visibleAssignedCompanies(user: UserRowVm): Array<{ companyId: string; companyName: string }> {
+    return user.assignedCompanies.slice(0, 2).map((assignment) => ({
+      companyId: assignment.companyId,
+      companyName: assignment.companyName,
+    }));
+  }
+
+  remainingAssignedCompanies(user: UserRowVm): number {
+    return Math.max(user.assignedCompanies.length - 2, 0);
+  }
+
+  private ensureUserCatalogsReady(onReady: () => void): void {
+    if (!this.availableCompanies.length) {
+      this.errorMessage = 'No hay empresas disponibles para asignar al usuario.';
+      return;
+    }
+
+    if (
+      Object.keys(this.roleCatalogsByCompany).length === this.availableCompanies.length &&
+      Object.keys(this.profileCatalogsByCompany).length === this.availableCompanies.length
+    ) {
+      onReady();
+      return;
+    }
+
+    this.loadAssignmentCatalogs(true, onReady);
   }
 
   private loadUsers(showLoader: boolean = true): void {
@@ -657,6 +750,36 @@ export class UsersRolesPageComponent {
       });
   }
 
+  private loadAssignmentCatalogs(showLoader: boolean = true, onLoaded?: () => void): void {
+    if (!this.availableCompanies.length) {
+      return;
+    }
+
+    if (showLoader) {
+      this.loadingAssignmentCatalogs = true;
+    }
+
+    const companyIds = this.availableCompanies.map((company) => company.id);
+
+    forkJoin({
+      roles: this.securityFacade.listRoleCatalogs(companyIds),
+      profiles: this.securityFacade.listProfileCatalogs(companyIds),
+    })
+      .pipe(finalize(() => (this.loadingAssignmentCatalogs = false)))
+      .subscribe({
+        next: ({ roles, profiles }) => {
+          this.roleCatalogsByCompany = roles;
+          this.profileCatalogsByCompany = profiles;
+          onLoaded?.();
+        },
+        error: (error: unknown) => {
+          this.roleCatalogsByCompany = {};
+          this.profileCatalogsByCompany = {};
+          this.errorMessage = this.resolveErrorMessage(error);
+        },
+      });
+  }
+
   private buildFilters(): SecurityListFilters {
     const value = this.filterForm.getRawValue();
 
@@ -684,7 +807,7 @@ export class UsersRolesPageComponent {
     return (
       httpError?.error?.detail ??
       httpError?.message ??
-      'No fue posible completar la operación de usuarios y roles.'
+      'No fue posible completar la operacion de usuarios y roles.'
     );
   }
 

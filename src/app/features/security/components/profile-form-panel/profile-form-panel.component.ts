@@ -66,8 +66,15 @@ import {
               {{ initialValue ? 'Editar perfil de acceso' : 'Nuevo perfil de acceso' }}
             </h2>
             <p class="mt-2 text-sm text-slate-500">
-              Selecciona los permisos que formarán parte del perfil de acceso.
+              Configura permisos granulares para la empresa activa.
             </p>
+
+            @if (activeCompanyName) {
+              <div class="mt-4 inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                <mat-icon class="!h-4 !w-4 !text-base">apartment</mat-icon>
+                {{ activeCompanyName }}
+              </div>
+            }
           </div>
 
           <button mat-icon-button type="button" aria-label="Cerrar panel" (click)="close()">

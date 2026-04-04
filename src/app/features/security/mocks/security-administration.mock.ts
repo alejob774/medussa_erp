@@ -4,7 +4,8 @@ import {
   ProfileDetailVm,
   RoleRowVm,
   SecurityAdministrationStore,
-  UserRowVm,
+  UserCompanyAssignmentVm,
+  UserDetailVm,
 } from '../models/security-administration.model';
 
 export interface SecurityPermissionModuleCatalogItem {
@@ -16,8 +17,8 @@ export const SECURITY_PERMISSION_MODULES: readonly SecurityPermissionModuleCatal
   { key: 'usuarios', name: 'Usuarios' },
   { key: 'roles', name: 'Roles' },
   { key: 'perfiles', name: 'Perfiles' },
-  { key: 'configuracion', name: 'Configuración' },
-  { key: 'auditoria', name: 'Auditoría' },
+  { key: 'configuracion', name: 'Configuracion' },
+  { key: 'auditoria', name: 'Auditoria' },
 ];
 
 export function createEmptyPermissionActionSet(): PermissionActionSet {
@@ -45,36 +46,53 @@ export function buildPermissionMatrix(
   }));
 }
 
+function buildAssignment(
+  companyId: string,
+  companyName: string,
+  roleId: string,
+  roleName: string,
+  profileId: string,
+  profileName: string,
+): UserCompanyAssignmentVm {
+  return {
+    companyId,
+    companyName,
+    roleId,
+    roleName,
+    profileId,
+    profileName,
+  };
+}
+
+function buildUser(user: Omit<UserDetailVm, 'name'>): UserDetailVm {
+  return {
+    ...user,
+    name: `${user.firstName} ${user.lastName}`.trim(),
+  };
+}
+
 const MOCK_ROLES: RoleRowVm[] = [
-  {
-    id: 'role-global-admin',
-    companyId: null,
-    name: 'Administrador Global',
-    description: 'Supervisa la operación transversal y gobierno corporativo.',
-    status: 'active',
-    scope: 'global',
-  },
   {
     id: 'role-holding-admin',
     companyId: 'medussa-holding',
     name: 'Administrador Empresa',
-    description: 'Administra usuarios, roles y configuración corporativa.',
+    description: 'Administra seguridad, parametrizacion y operacion corporativa.',
     status: 'active',
     scope: 'company',
   },
   {
     id: 'role-holding-area-head',
     companyId: 'medussa-holding',
-    name: 'Jefe de Área',
-    description: 'Coordina operación y aprobaciones de su unidad.',
+    name: 'Jefe de Area',
+    description: 'Coordina aprobaciones y ejecucion de su unidad.',
     status: 'active',
     scope: 'company',
   },
   {
     id: 'role-holding-analyst',
     companyId: 'medussa-holding',
-    name: 'Analista de Área',
-    description: 'Ejecuta operación diaria y seguimiento analítico.',
+    name: 'Analista de Area',
+    description: 'Opera seguimiento administrativo y analitico.',
     status: 'inactive',
     scope: 'company',
   },
@@ -82,15 +100,23 @@ const MOCK_ROLES: RoleRowVm[] = [
     id: 'role-retail-aux',
     companyId: 'medussa-retail',
     name: 'Auxiliar Operativo',
-    description: 'Opera tareas de soporte comercial y servicio.',
+    description: 'Soporta operacion comercial y atencion omnicanal.',
+    status: 'active',
+    scope: 'company',
+  },
+  {
+    id: 'role-retail-supervisor',
+    companyId: 'medussa-retail',
+    name: 'Supervisor Comercial',
+    description: 'Coordina punto de venta, servicio y escalaciones.',
     status: 'active',
     scope: 'company',
   },
   {
     id: 'role-industrial-head',
     companyId: 'medussa-industrial',
-    name: 'Jefe de Área',
-    description: 'Coordina producción, inventarios y compras.',
+    name: 'Jefe de Planta',
+    description: 'Coordina produccion, compras e inventarios.',
     status: 'active',
     scope: 'company',
   },
@@ -98,7 +124,7 @@ const MOCK_ROLES: RoleRowVm[] = [
     id: 'role-services-admin',
     companyId: 'medussa-services',
     name: 'Administrador Empresa',
-    description: 'Gestiona seguridad, RRHH y parametrización del servicio.',
+    description: 'Gestiona seguridad, RRHH y parametrizacion del servicio.',
     status: 'active',
     scope: 'company',
   },
@@ -112,111 +138,173 @@ const MOCK_ROLES: RoleRowVm[] = [
   },
 ];
 
-const MOCK_USERS: UserRowVm[] = [
-  {
-    assignmentId: 'assignment-holding-001',
+const MOCK_USERS: UserDetailVm[] = [
+  buildUser({
     userId: 'user-ana-perez',
-    companyId: 'medussa-holding',
-    name: 'Ana Perez',
+    firstName: 'Ana',
+    lastName: 'Perez',
+    position: 'Coordinadora Administrativa',
     email: 'ana.perez@medussa.com',
-    roleId: 'role-holding-admin',
-    roleName: 'Administrador Empresa',
-    profileId: 'profile-holding-001',
-    profileName: 'Coordinación Corporativa',
+    mobilePhone: '3005550101',
+    landlinePhone: '6015550101',
+    photoUrl: null,
     status: 'active',
-  },
-  {
-    assignmentId: 'assignment-holding-002',
+    assignedCompanies: [
+      buildAssignment(
+        'medussa-holding',
+        'Medussa Holding',
+        'role-holding-admin',
+        'Administrador Empresa',
+        'profile-holding-001',
+        'Coordinacion Corporativa',
+      ),
+      buildAssignment(
+        'medussa-services',
+        'Medussa Services',
+        'role-services-admin',
+        'Administrador Empresa',
+        'profile-services-001',
+        'Gestion de RRHH',
+      ),
+    ],
+  }),
+  buildUser({
     userId: 'user-diego-rios',
-    companyId: 'medussa-holding',
-    name: 'Diego Rios',
+    firstName: 'Diego',
+    lastName: 'Rios',
+    position: 'Lider de Operaciones',
     email: 'diego.rios@medussa.com',
-    roleId: 'role-holding-area-head',
-    roleName: 'Jefe de Área',
-    profileId: 'profile-holding-001',
-    profileName: 'Coordinación Corporativa',
+    mobilePhone: '3005550102',
+    landlinePhone: '6015550102',
+    photoUrl: null,
     status: 'active',
-  },
-  {
-    assignmentId: 'assignment-holding-003',
+    assignedCompanies: [
+      buildAssignment(
+        'medussa-holding',
+        'Medussa Holding',
+        'role-holding-area-head',
+        'Jefe de Area',
+        'profile-holding-001',
+        'Coordinacion Corporativa',
+      ),
+      buildAssignment(
+        'medussa-retail',
+        'Medussa Retail',
+        'role-retail-supervisor',
+        'Supervisor Comercial',
+        'profile-retail-001',
+        'Atencion Omnicanal',
+      ),
+    ],
+  }),
+  buildUser({
     userId: 'user-laura-quintero',
-    companyId: 'medussa-holding',
-    name: 'Laura Quintero',
+    firstName: 'Laura',
+    lastName: 'Quintero',
+    position: 'Analista Financiera',
     email: 'laura.quintero@medussa.com',
-    roleId: 'role-holding-analyst',
-    roleName: 'Analista de Área',
-    profileId: 'profile-holding-002',
-    profileName: 'Analítica Financiera',
+    mobilePhone: '3005550103',
+    landlinePhone: '',
+    photoUrl: null,
     status: 'inactive',
-  },
-  {
-    assignmentId: 'assignment-retail-001',
+    assignedCompanies: [
+      buildAssignment(
+        'medussa-holding',
+        'Medussa Holding',
+        'role-holding-analyst',
+        'Analista de Area',
+        'profile-holding-002',
+        'Analitica Financiera',
+      ),
+    ],
+  }),
+  buildUser({
     userId: 'user-camila-ruiz',
-    companyId: 'medussa-retail',
-    name: 'Camila Ruiz',
+    firstName: 'Camila',
+    lastName: 'Ruiz',
+    position: 'Supervisora de Servicio',
     email: 'camila.ruiz@medussa.com',
-    roleId: 'role-retail-aux',
-    roleName: 'Auxiliar Operativo',
-    profileId: 'profile-retail-001',
-    profileName: 'Atención Omnicanal',
+    mobilePhone: '3005550104',
+    landlinePhone: '6045550104',
+    photoUrl: null,
     status: 'active',
-  },
-  {
-    assignmentId: 'assignment-industrial-001',
+    assignedCompanies: [
+      buildAssignment(
+        'medussa-retail',
+        'Medussa Retail',
+        'role-retail-aux',
+        'Auxiliar Operativo',
+        'profile-retail-001',
+        'Atencion Omnicanal',
+      ),
+      buildAssignment(
+        'medussa-services',
+        'Medussa Services',
+        'role-services-auditor',
+        'Invitado / Auditor',
+        'profile-services-002',
+        'Auditoria de Servicio',
+      ),
+    ],
+  }),
+  buildUser({
     userId: 'user-jorge-leon',
-    companyId: 'medussa-industrial',
-    name: 'Jorge Leon',
+    firstName: 'Jorge',
+    lastName: 'Leon',
+    position: 'Coordinador de Planta',
     email: 'jorge.leon@medussa.com',
-    roleId: 'role-industrial-head',
-    roleName: 'Jefe de Área',
-    profileId: 'profile-industrial-001',
-    profileName: 'Operación de Planta',
+    mobilePhone: '3005550105',
+    landlinePhone: '6045550105',
+    photoUrl: null,
     status: 'active',
-  },
-  {
-    assignmentId: 'assignment-services-001',
+    assignedCompanies: [
+      buildAssignment(
+        'medussa-industrial',
+        'Medussa Industrial',
+        'role-industrial-head',
+        'Jefe de Planta',
+        'profile-industrial-001',
+        'Operacion de Planta',
+      ),
+    ],
+  }),
+  buildUser({
     userId: 'user-mateo-silva',
-    companyId: 'medussa-services',
-    name: 'Mateo Silva',
+    firstName: 'Mateo',
+    lastName: 'Silva',
+    position: 'Administrador de Servicio',
     email: 'mateo.silva@medussa.com',
-    roleId: 'role-services-admin',
-    roleName: 'Administrador Empresa',
-    profileId: 'profile-services-001',
-    profileName: 'Gestión de RRHH',
+    mobilePhone: '3005550106',
+    landlinePhone: '6015550106',
+    photoUrl: null,
     status: 'active',
-  },
-  {
-    assignmentId: 'assignment-services-002',
-    userId: 'user-paula-navas',
-    companyId: 'medussa-services',
-    name: 'Paula Navas',
-    email: 'paula.navas@medussa.com',
-    roleId: 'role-services-auditor',
-    roleName: 'Invitado / Auditor',
-    profileId: 'profile-services-002',
-    profileName: 'Auditoría de Servicio',
-    status: 'inactive',
-  },
-  {
-    assignmentId: 'assignment-services-003',
-    userId: 'user-sara-cardenas',
-    companyId: 'medussa-services',
-    name: 'Sara Cardenas',
-    email: 'sara.cardenas@medussa.com',
-    roleId: 'role-global-admin',
-    roleName: 'Administrador Global',
-    profileId: 'profile-services-001',
-    profileName: 'Gestión de RRHH',
-    status: 'active',
-  },
+    assignedCompanies: [
+      buildAssignment(
+        'medussa-services',
+        'Medussa Services',
+        'role-services-admin',
+        'Administrador Empresa',
+        'profile-services-001',
+        'Gestion de RRHH',
+      ),
+      buildAssignment(
+        'medussa-holding',
+        'Medussa Holding',
+        'role-holding-admin',
+        'Administrador Empresa',
+        'profile-holding-001',
+        'Coordinacion Corporativa',
+      ),
+    ],
+  }),
 ];
 
 const MOCK_PROFILES: ProfileDetailVm[] = [
   {
     id: 'profile-holding-001',
     companyId: 'medussa-holding',
-    name: 'Coordinación Corporativa',
-    description: 'Perfil reusable para dirección administrativa y aprobaciones.',
+    name: 'Coordinacion Corporativa',
+    description: 'Perfil reusable para direccion administrativa y aprobaciones.',
     status: 'active',
     permissions: buildPermissionMatrix({
       usuarios: { view: true, create: true, edit: true, delete: true },
@@ -229,8 +317,8 @@ const MOCK_PROFILES: ProfileDetailVm[] = [
   {
     id: 'profile-holding-002',
     companyId: 'medussa-holding',
-    name: 'Analítica Financiera',
-    description: 'Consulta, edición y análisis para control financiero.',
+    name: 'Analitica Financiera',
+    description: 'Consulta, edicion y analisis para control financiero.',
     status: 'inactive',
     permissions: buildPermissionMatrix({
       usuarios: { view: true },
@@ -242,7 +330,7 @@ const MOCK_PROFILES: ProfileDetailVm[] = [
   {
     id: 'profile-retail-001',
     companyId: 'medussa-retail',
-    name: 'Atención Omnicanal',
+    name: 'Atencion Omnicanal',
     description: 'Resuelve casos, seguimiento de clientes y escalaciones.',
     status: 'active',
     permissions: buildPermissionMatrix({
@@ -254,8 +342,8 @@ const MOCK_PROFILES: ProfileDetailVm[] = [
   {
     id: 'profile-industrial-001',
     companyId: 'medussa-industrial',
-    name: 'Operación de Planta',
-    description: 'Opera producción, almacén y soporte de abastecimiento.',
+    name: 'Operacion de Planta',
+    description: 'Opera produccion, almacen y soporte de abastecimiento.',
     status: 'active',
     permissions: buildPermissionMatrix({
       usuarios: { view: true, create: true, edit: true },
@@ -268,7 +356,7 @@ const MOCK_PROFILES: ProfileDetailVm[] = [
   {
     id: 'profile-services-001',
     companyId: 'medussa-services',
-    name: 'Gestión de RRHH',
+    name: 'Gestion de RRHH',
     description: 'Configura personal, aprobaciones y mantenimiento administrativo.',
     status: 'active',
     permissions: buildPermissionMatrix({
@@ -282,8 +370,8 @@ const MOCK_PROFILES: ProfileDetailVm[] = [
   {
     id: 'profile-services-002',
     companyId: 'medussa-services',
-    name: 'Auditoría de Servicio',
-    description: 'Consulta transversal para control y revisión de cumplimiento.',
+    name: 'Auditoria de Servicio',
+    description: 'Consulta transversal para control y revision de cumplimiento.',
     status: 'inactive',
     permissions: buildPermissionMatrix({
       usuarios: { view: true },

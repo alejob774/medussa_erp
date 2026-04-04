@@ -27,6 +27,7 @@ export class SecurityAdministrationFacadeService {
   private readonly apiRepository = inject(SecurityAdministrationApiRepository);
 
   readonly activeCompany$ = this.companyContextService.activeCompany$;
+  readonly companies$ = this.companyContextService.companies$;
 
   listUsers(filters: SecurityListFilters): Observable<UserRowVm[]> {
     return this.withActiveCompany((companyId) =>
@@ -38,18 +39,23 @@ export class SecurityAdministrationFacadeService {
     return this.withActiveCompany((companyId) => this.repository.listRoles(companyId));
   }
 
-  saveUser(payload: UserFormValue, assignmentId?: string): Observable<UserRowVm> {
+  listRoleCatalogs(companyIds: string[]): Observable<Record<string, RoleRowVm[]>> {
+    return this.repository.listRoleCatalogs(companyIds);
+  }
+
+  listProfileCatalogs(companyIds: string[]): Observable<Record<string, ProfileRowVm[]>> {
+    return this.repository.listProfileCatalogs(companyIds);
+  }
+
+  saveUser(payload: UserFormValue, userId?: string): Observable<UserRowVm> {
     return this.withActiveCompany((companyId) =>
-      this.repository.saveUser(companyId, payload, assignmentId),
+      this.repository.saveUser(companyId, payload, userId),
     );
   }
 
-  updateUserStatus(
-    assignmentId: string,
-    status: SecurityRecordStatus,
-  ): Observable<UserRowVm> {
+  updateUserStatus(userId: string, status: SecurityRecordStatus): Observable<UserRowVm> {
     return this.withActiveCompany((companyId) =>
-      this.repository.updateUserStatus(companyId, assignmentId, status),
+      this.repository.updateUserStatus(companyId, userId, status),
     );
   }
 
@@ -101,6 +107,10 @@ export class SecurityAdministrationFacadeService {
 
   getActiveCompanyId(): string | null {
     return this.companyContextService.getActiveCompany()?.id ?? null;
+  }
+
+  getAvailableCompanies() {
+    return this.companyContextService.getAvailableCompanies();
   }
 
   private withActiveCompany<T>(

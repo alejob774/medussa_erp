@@ -4,17 +4,46 @@ export type SecurityListStatusFilter = 'all' | SecurityRecordStatus;
 
 export type SecurityRoleScope = 'company' | 'global';
 
-export interface UserRowVm {
-  assignmentId: string;
-  userId: string;
+export interface UserCompanyAssignmentVm {
   companyId: string;
-  name: string;
-  email: string;
+  companyName: string;
   roleId: string | null;
   roleName: string | null;
   profileId: string | null;
   profileName: string | null;
+}
+
+export interface UserDetailVm {
+  userId: string;
+  firstName: string;
+  lastName: string;
+  name: string;
+  position: string;
+  email: string;
+  mobilePhone: string;
+  landlinePhone: string;
+  photoUrl: string | null;
   status: SecurityRecordStatus;
+  assignedCompanies: UserCompanyAssignmentVm[];
+}
+
+export interface UserRowVm {
+  userId: string;
+  firstName: string;
+  lastName: string;
+  name: string;
+  position: string;
+  email: string;
+  mobilePhone: string;
+  landlinePhone: string;
+  photoUrl: string | null;
+  status: SecurityRecordStatus;
+  assignedCompanies: UserCompanyAssignmentVm[];
+  activeAssignment: UserCompanyAssignmentVm | null;
+  roleId: string | null;
+  roleName: string | null;
+  profileId: string | null;
+  profileName: string | null;
 }
 
 export interface RoleRowVm {
@@ -60,10 +89,18 @@ export interface ProfileDetailVm extends ProfileRowVm {
 }
 
 export interface UserFormValue {
-  name: string;
+  firstName: string;
+  lastName: string;
+  position: string;
   email: string;
-  roleId: string | null;
-  profileId: string | null;
+  mobilePhone: string;
+  landlinePhone: string;
+  photoUrl: string | null;
+  assignedCompanies: Array<{
+    companyId: string;
+    roleId: string;
+    profileId: string;
+  }>;
   status: SecurityRecordStatus;
 }
 
@@ -86,7 +123,7 @@ export interface SecurityListFilters {
 }
 
 export interface SecurityAdministrationStore {
-  users: UserRowVm[];
+  users: UserDetailVm[];
   roles: RoleRowVm[];
   profiles: ProfileDetailVm[];
 }

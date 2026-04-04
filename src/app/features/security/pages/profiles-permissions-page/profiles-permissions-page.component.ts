@@ -36,21 +36,36 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
     ProfileFormPanelComponent,
   ],
   template: `
+    @let activeCompany = (activeCompany$ | async);
+
     <section class="space-y-6">
       <header class="rounded-3xl bg-white p-6 shadow-sm">
-        <div class="flex items-start gap-4">
-          <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
-            <mat-icon>badge</mat-icon>
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div class="flex items-start gap-4">
+            <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+              <mat-icon>badge</mat-icon>
+            </div>
+
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-[0.3em] text-teal-600">
+                Seguridad
+              </p>
+              <h1 class="mt-2 text-3xl font-bold text-slate-900">Gestion de Perfiles de Acceso y Permisos</h1>
+              <p class="mt-2 max-w-3xl text-sm text-slate-500">
+                Configura perfiles reutilizables y permisos granulares para la empresa activa.
+              </p>
+            </div>
           </div>
 
-          <div>
-            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-teal-600">
-              Seguridad
-            </p>
-            <h1 class="mt-2 text-3xl font-bold text-slate-900">Gestión de Perfiles de Acceso y Permisos</h1>
-            <p class="mt-2 max-w-3xl text-sm text-slate-500">
-              Configura perfiles de acceso reutilizables y sus permisos por módulo.
-            </p>
+          <div class="rounded-2xl bg-slate-100 px-4 py-3 text-sm text-slate-700">
+            <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Empresa activa</p>
+            <div class="mt-2 flex items-center gap-2 font-semibold text-slate-900">
+              <span
+                class="inline-block h-2.5 w-2.5 rounded-full"
+                [style.background]="activeCompany?.accentColor ?? '#14b8a6'"
+              ></span>
+              <span>{{ activeCompany?.name ?? 'Sin empresa activa' }}</span>
+            </div>
           </div>
         </div>
       </header>
@@ -108,7 +123,7 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
               <mat-icon class="!h-10 !w-10 !text-4xl text-slate-300">shield_person</mat-icon>
               <div>
                 <p class="text-base font-semibold text-slate-700">No hay perfiles para este criterio.</p>
-                <p class="mt-1 text-sm">Crea un perfil reusable y configura su matriz de permisos.</p>
+                  <p class="mt-1 text-sm">Crea un perfil reusable para {{ activeCompany?.name ?? 'la empresa activa' }}.</p>
               </div>
             </div>
           } @else {
@@ -120,7 +135,7 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
                     <th class="px-4 py-4">Módulo</th>
                     <th class="px-4 py-4">Permisos</th>
                     <th class="px-4 py-4">Estado</th>
-                    <th class="w-[224px] px-4 py-4 text-right">Acciones</th>
+                    <th class="w-[176px] px-4 py-4 text-right">Acciones</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 bg-white">
@@ -163,8 +178,8 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
                           {{ profile.status === 'active' ? 'Activo' : 'Inactivo' }}
                         </span>
                       </td>
-                      <td class="w-[224px] px-4 py-4">
-                        <div class="grid grid-cols-[36px_120px_36px] items-center justify-end gap-2">
+                      <td class="w-[176px] px-4 py-4">
+                        <div class="grid grid-cols-[36px_120px] items-center justify-end gap-2">
                           <button
                             type="button"
                             class="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-100"
@@ -190,23 +205,6 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
                           >
                             <mat-icon class="text-base">{{ profile.status === 'active' ? 'toggle_off' : 'verified_user' }}</mat-icon>
                             <span>{{ statusActionLabel(profile.status) }}</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            class="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 transition hover:bg-slate-100"
-                            [class.text-rose-700]="profile.status === 'active'"
-                            [class.border-rose-200]="profile.status === 'active'"
-                            [class.bg-rose-50]="profile.status === 'active'"
-                            [class.text-slate-400]="profile.status !== 'active'"
-                            [class.border-slate-200]="profile.status !== 'active'"
-                            [class.bg-slate-50]="profile.status !== 'active'"
-                            (click)="deleteProfile(profile)"
-                            [disabled]="profile.status !== 'active'"
-                            aria-label="Eliminar perfil de acceso"
-                            title="Eliminar"
-                          >
-                            <mat-icon class="text-base">delete</mat-icon>
                           </button>
                         </div>
                       </td>
@@ -234,7 +232,7 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
         <app-profile-form-panel
           [initialValue]="selectedProfile"
           [basePermissions]="basePermissions"
-          [activeCompanyName]="''"
+          [activeCompanyName]="activeCompany?.name ?? ''"
           [saving]="savingProfile"
           (saveProfile)="saveProfile($event)"
           (closePanel)="closeProfilePanel()"
