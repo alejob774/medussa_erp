@@ -40,50 +40,37 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
     @let activeCompany = (activeCompany$ | async);
 
     <section class="space-y-6">
-      <header class="rounded-3xl bg-white p-6 shadow-sm">
-        <div class="flex flex-wrap items-start justify-between gap-4">
+      <header class="erp-page-header">
+        <div class="flex flex-wrap items-start gap-4">
           <div class="flex items-start gap-4">
-            <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+            <div class="erp-page-icon">
               <mat-icon>badge</mat-icon>
             </div>
 
             <div>
-              <p class="text-xs font-semibold uppercase tracking-[0.3em] text-teal-600">
-                Seguridad
-              </p>
-              <h1 class="mt-2 text-3xl font-bold text-slate-900">Gestion de Perfiles de Acceso y Permisos</h1>
-              <p class="mt-2 max-w-3xl text-sm text-slate-500">
+              <p class="erp-page-eyebrow">Configuración</p>
+              <h1 class="erp-page-title">Perfiles y permisos</h1>
+              <p class="erp-page-description max-w-3xl">
                 Configura perfiles reutilizables y permisos granulares para la empresa activa.
               </p>
-            </div>
-          </div>
-
-          <div class="rounded-2xl bg-slate-100 px-4 py-3 text-sm text-slate-700">
-            <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Empresa activa</p>
-            <div class="mt-2 flex items-center gap-2 font-semibold text-slate-900">
-              <span
-                class="inline-block h-2.5 w-2.5 rounded-full"
-                [style.background]="activeCompany?.accentColor ?? '#14b8a6'"
-              ></span>
-              <span>{{ activeCompany?.name ?? 'Sin empresa activa' }}</span>
             </div>
           </div>
         </div>
       </header>
 
       @if (errorMessage) {
-        <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div class="erp-alert erp-alert--error">
           {{ errorMessage }}
         </div>
       }
 
       @if (successMessage) {
-        <div class="rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+        <div class="erp-alert erp-alert--success">
           {{ successMessage }}
         </div>
       }
 
-      <section class="rounded-3xl bg-white p-6 shadow-sm">
+      <section class="erp-filter-panel">
         <form class="space-y-4" [formGroup]="filterForm" (ngSubmit)="applyFilters()">
           <div class="flex flex-wrap items-center gap-3 lg:flex-nowrap">
             <mat-form-field appearance="outline" class="min-w-[280px] flex-1">
@@ -111,17 +98,17 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
           </div>
         </form>
 
-        <div class="mt-6 overflow-hidden rounded-3xl border border-slate-200">
+        <div class="erp-table-shell mt-6">
           @if (loadingProfiles) {
-            <div class="flex min-h-[280px] items-center justify-center bg-slate-50">
+            <div class="erp-empty-state">
               <div class="flex flex-col items-center gap-3 text-slate-500">
                 <mat-spinner diameter="34"></mat-spinner>
                 <p class="text-sm">Cargando perfiles...</p>
               </div>
             </div>
           } @else if (!profiles.length) {
-            <div class="flex min-h-[280px] flex-col items-center justify-center gap-3 bg-slate-50 px-6 text-center text-slate-500">
-              <mat-icon class="!h-10 !w-10 !text-4xl text-slate-300">shield_person</mat-icon>
+            <div class="erp-empty-state">
+              <mat-icon class="erp-empty-state__icon !h-10 !w-10 !text-4xl">shield_person</mat-icon>
               <div>
                 <p class="text-base font-semibold text-slate-700">No hay perfiles para este criterio.</p>
                   <p class="mt-1 text-sm">Crea un perfil reusable para {{ activeCompany?.name ?? 'la empresa activa' }}.</p>
@@ -129,8 +116,8 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
             </div>
           } @else {
             <div class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-slate-200 text-sm">
-                <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+              <table class="erp-data-table min-w-full text-sm">
+                <thead>
                   <tr>
                     <th class="px-4 py-4">Perfil de acceso</th>
                     <th class="px-4 py-4">Módulo</th>
@@ -139,9 +126,9 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
                     <th class="w-[176px] px-4 py-4 text-right">Acciones</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100 bg-white">
+                <tbody>
                   @for (profile of profiles; track profile.id) {
-                    <tr class="hover:bg-slate-50/70">
+                    <tr>
                       <td class="px-4 py-4">
                         <div class="font-semibold text-slate-900">{{ profile.name }}</div>
                         <div class="text-xs text-slate-500">{{ profile.description || 'Sin descripción' }}</div>
@@ -149,12 +136,12 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
                       <td class="px-4 py-4">
                         <div class="flex min-h-[52px] min-w-[240px] max-w-[320px] flex-wrap content-start gap-2">
                           @for (moduleName of visibleModules(profile); track moduleName) {
-                            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                            <span class="erp-chip erp-chip--neutral">
                               {{ moduleName }}
                             </span>
                           }
                           @if (remainingModules(profile) > 0) {
-                            <span class="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white">
+                            <span class="erp-chip erp-chip--strong">
                               +{{ remainingModules(profile) }}
                             </span>
                           }
@@ -170,11 +157,9 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
                       </td>
                       <td class="px-4 py-4">
                         <span
-                          class="rounded-full px-3 py-1 text-xs font-semibold"
-                          [class.bg-emerald-100]="profile.status === 'active'"
-                          [class.text-emerald-700]="profile.status === 'active'"
-                          [class.bg-slate-200]="profile.status === 'inactive'"
-                          [class.text-slate-600]="profile.status === 'inactive'"
+                          class="erp-chip"
+                          [class.erp-chip--success]="profile.status === 'active'"
+                          [class.erp-chip--warning]="profile.status === 'inactive'"
                         >
                           {{ profile.status === 'active' ? 'Activo' : 'Inactivo' }}
                         </span>
@@ -183,7 +168,7 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
                         <div class="grid grid-cols-[36px_120px] items-center justify-end gap-2">
                           <button
                             type="button"
-                            class="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-100"
+                            class="erp-icon-button"
                             (click)="editProfile(profile)"
                             [attr.aria-label]="'Editar ' + profile.name"
                             title="Editar"
@@ -218,7 +203,7 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
         </div>
       </section>
 
-      <footer class="flex items-center justify-end gap-3 rounded-3xl bg-white p-4 shadow-sm">
+      <footer class="erp-action-bar">
         <div class="flex items-center gap-3">
           <button mat-flat-button color="primary" type="button" (click)="acceptPageState()" [disabled]="!canAcceptPageState()">
             Aceptar

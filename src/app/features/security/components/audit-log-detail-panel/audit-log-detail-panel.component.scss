@@ -8,7 +8,7 @@
   position: absolute;
   inset: 0;
   border: 0;
-  background: rgba(15, 23, 42, 0.32);
+  background: rgba(15, 52, 96, 0.34);
 }
 
 .audit-log-detail-panel {
@@ -20,7 +20,7 @@
   width: min(100%, 42rem);
   flex-direction: column;
   background: #ffffff;
-  box-shadow: -24px 0 48px rgba(15, 23, 42, 0.22);
+  box-shadow: -24px 0 48px rgba(15, 52, 96, 0.22);
 }
 
 .audit-log-detail-header {
@@ -28,8 +28,9 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--erp-border);
   padding: 1.5rem;
+  background: linear-gradient(180deg, rgba(248, 250, 255, 0.94), rgba(230, 240, 255, 0.6));
 }
 
 .audit-log-detail-caption {
@@ -38,14 +39,14 @@
   font-weight: 700;
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: #0f766e;
+  color: #0052cc;
 }
 
 .audit-log-detail-title {
   margin: 0.5rem 0 0;
   font-size: 1.4rem;
   font-weight: 700;
-  color: #0f172a;
+  color: #17314f;
 }
 
 .audit-log-detail-close {
@@ -54,10 +55,10 @@
   width: 2.75rem;
   align-items: center;
   justify-content: center;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--erp-border);
   border-radius: 1rem;
-  background: #f8fafc;
-  color: #475569;
+  background: rgba(255, 255, 255, 0.82);
+  color: #62758b;
 }
 
 .audit-log-detail-content {
@@ -78,14 +79,14 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #64748b;
+  color: #62758b;
 }
 
 .audit-log-detail-grid dd {
   margin: 0;
   font-size: 0.95rem;
   line-height: 1.45;
-  color: #0f172a;
+  color: #17314f;
 }
 
 .audit-log-detail-section {
@@ -96,15 +97,15 @@
   margin: 0 0 0.75rem;
   font-size: 0.95rem;
   font-weight: 700;
-  color: #0f172a;
+  color: #17314f;
 }
 
 .audit-log-detail-section p,
 .audit-log-detail-section pre {
   margin: 0;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--erp-border);
   border-radius: 1rem;
-  background: #f8fafc;
+  background: rgba(248, 250, 255, 0.92);
   padding: 1rem;
   font-size: 0.85rem;
   line-height: 1.55;
@@ -126,7 +127,7 @@
   gap: 0.75rem;
   padding: 2rem;
   text-align: center;
-  color: #64748b;
+  color: #62758b;
 }
 
 .audit-log-detail-error {

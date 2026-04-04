@@ -60,6 +60,17 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'supply-chain-management',
+        component: ModulePlaceholderPageComponent,
+        canActivate: [permissionGuard],
+        data: {
+          title: 'Supply Chain Management',
+          description: 'Vista marco para coordinación de abastecimiento, inventarios, almacén y compras.',
+          hint: 'Siguiente iteración: orquestar abastecimiento y ejecución operativa desde un tablero unificado.',
+          permission: 'warehouse.view',
+        },
+      },
+      {
         path: 'finanzas',
         component: ModulePlaceholderPageComponent,
         canActivate: [permissionGuard],

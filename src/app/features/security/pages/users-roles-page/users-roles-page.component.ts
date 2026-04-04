@@ -42,50 +42,37 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
   ],
   template: `
     <section class="space-y-6">
-      <header class="rounded-3xl bg-white p-6 shadow-sm">
-        <div class="flex flex-wrap items-start justify-between gap-4">
+      <header class="erp-page-header">
+        <div class="flex flex-wrap items-start gap-4">
           <div class="flex items-start gap-4">
-            <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+            <div class="erp-page-icon">
               <mat-icon>manage_accounts</mat-icon>
             </div>
 
             <div>
-              <p class="text-xs font-semibold uppercase tracking-[0.3em] text-teal-600">
-                Seguridad
-              </p>
-              <h1 class="mt-2 text-3xl font-bold text-slate-900">Gestion de Usuarios y Roles</h1>
-              <p class="mt-2 max-w-3xl text-sm text-slate-500">
+              <p class="erp-page-eyebrow">Configuración</p>
+              <h1 class="erp-page-title">Usuarios y roles</h1>
+              <p class="erp-page-description max-w-3xl">
                 Administra usuarios del sistema y su acceso por empresa.
               </p>
-            </div>
-          </div>
-
-          <div class="rounded-2xl bg-slate-100 px-4 py-3 text-sm text-slate-700">
-            <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Empresa activa</p>
-            <div class="mt-2 flex items-center gap-2 font-semibold text-slate-900">
-              <span
-                class="inline-block h-2.5 w-2.5 rounded-full"
-                [style.background]="activeCompany?.accentColor ?? '#14b8a6'"
-              ></span>
-              <span>{{ activeCompany?.name ?? 'Sin empresa activa' }}</span>
             </div>
           </div>
         </div>
       </header>
 
       @if (errorMessage) {
-        <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div class="erp-alert erp-alert--error">
           {{ errorMessage }}
         </div>
       }
 
       @if (successMessage) {
-        <div class="rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+        <div class="erp-alert erp-alert--success">
           {{ successMessage }}
         </div>
       }
 
-      <section class="rounded-3xl bg-white p-6 shadow-sm">
+      <section class="erp-filter-panel">
         <form class="space-y-4" [formGroup]="filterForm" (ngSubmit)="applyFilters()">
           <div class="flex flex-wrap items-center gap-3 lg:flex-nowrap">
             <mat-form-field appearance="outline" class="min-w-[280px] flex-1">
@@ -117,17 +104,17 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
           </div>
         </form>
 
-        <div class="mt-6 overflow-hidden rounded-3xl border border-slate-200 bg-white">
+        <div class="erp-table-shell mt-6">
           @if (loadingUsers) {
-            <div class="flex min-h-[280px] items-center justify-center bg-slate-50">
+            <div class="erp-empty-state">
               <div class="flex flex-col items-center gap-3 text-slate-500">
                 <mat-spinner diameter="34"></mat-spinner>
                 <p class="text-sm">Cargando usuarios...</p>
               </div>
             </div>
           } @else if (!users.length) {
-            <div class="flex min-h-[280px] flex-col items-center justify-center gap-3 bg-slate-50 px-6 text-center text-slate-500">
-              <mat-icon class="!h-10 !w-10 !text-4xl text-slate-300">group_off</mat-icon>
+            <div class="erp-empty-state">
+              <mat-icon class="erp-empty-state__icon !h-10 !w-10 !text-4xl">group_off</mat-icon>
               <div>
                 <p class="text-base font-semibold text-slate-700">No hay usuarios para este criterio.</p>
                 <p class="mt-1 text-sm">Ajusta los filtros o registra el primer usuario multiempresa.</p>
@@ -135,8 +122,8 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
             </div>
           } @else {
             <div class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-slate-200 text-sm">
-                <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+              <table class="erp-data-table min-w-full text-sm">
+                <thead>
                   <tr>
                     <th class="px-4 py-4">Nombre del usuario</th>
                     <th class="px-4 py-4">Correo</th>
@@ -147,9 +134,9 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
                     <th class="w-[176px] px-4 py-4 text-right">Acciones</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100 bg-white">
+                <tbody>
                   @for (user of users; track user.userId) {
-                    <tr class="hover:bg-slate-50/70">
+                    <tr>
                       <td class="px-4 py-4">
                         <div class="flex items-center gap-3">
                           <div class="flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl bg-slate-100 text-slate-600">
@@ -169,22 +156,18 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
                       <td class="px-4 py-4 text-slate-600">{{ user.email }}</td>
                       <td class="px-4 py-4">
                         <span
-                          class="rounded-full px-3 py-1 text-xs font-semibold"
-                          [class.bg-slate-100]="!user.roleName"
-                          [class.text-slate-500]="!user.roleName"
-                          [class.bg-slate-900]="!!user.roleName"
-                          [class.text-white]="!!user.roleName"
+                          class="erp-chip"
+                          [class.erp-chip--neutral]="!user.roleName"
+                          [class.erp-chip--strong]="!!user.roleName"
                         >
                           {{ user.roleName || 'Sin asignacion' }}
                         </span>
                       </td>
                       <td class="px-4 py-4">
                         <span
-                          class="rounded-full px-3 py-1 text-xs font-semibold"
-                          [class.bg-slate-100]="!user.profileName"
-                          [class.text-slate-500]="!user.profileName"
-                          [class.bg-teal-50]="!!user.profileName"
-                          [class.text-teal-700]="!!user.profileName"
+                          class="erp-chip"
+                          [class.erp-chip--neutral]="!user.profileName"
+                          [class.erp-chip--info]="!!user.profileName"
                         >
                           {{ user.profileName || 'Sin asignacion' }}
                         </span>
@@ -192,13 +175,13 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
                       <td class="px-4 py-4">
                         <div class="flex min-w-[220px] max-w-[280px] flex-wrap gap-2">
                           @for (assignment of visibleAssignedCompanies(user); track assignment.companyId) {
-                            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                            <span class="erp-chip erp-chip--neutral">
                               {{ assignment.companyName }}
                             </span>
                           }
 
                           @if (remainingAssignedCompanies(user) > 0) {
-                            <span class="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white">
+                            <span class="erp-chip erp-chip--strong">
                               +{{ remainingAssignedCompanies(user) }}
                             </span>
                           }
@@ -206,11 +189,9 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
                       </td>
                       <td class="px-4 py-4">
                         <span
-                          class="rounded-full px-3 py-1 text-xs font-semibold"
-                          [class.bg-emerald-100]="user.status === 'active'"
-                          [class.text-emerald-700]="user.status === 'active'"
-                          [class.bg-slate-200]="user.status === 'inactive'"
-                          [class.text-slate-600]="user.status === 'inactive'"
+                          class="erp-chip"
+                          [class.erp-chip--success]="user.status === 'active'"
+                          [class.erp-chip--warning]="user.status === 'inactive'"
                         >
                           {{ user.status === 'active' ? 'Activo' : 'Inactivo' }}
                         </span>
@@ -219,7 +200,7 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
                         <div class="grid grid-cols-[36px_120px] items-center justify-end gap-2">
                           <button
                             type="button"
-                            class="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-100"
+                            class="erp-icon-button"
                             (click)="editUser(user)"
                             [attr.aria-label]="'Editar ' + user.name"
                             title="Editar"
@@ -255,7 +236,7 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
       </section>
 
       @if (showRolesSection) {
-        <section class="rounded-3xl bg-white p-6 shadow-sm">
+        <section class="erp-panel">
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Roles</p>
@@ -270,23 +251,23 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
             </button>
           </div>
 
-          <div class="mt-6 overflow-hidden rounded-3xl border border-slate-200">
+          <div class="erp-table-shell mt-6">
             @if (loadingRoles) {
-              <div class="flex min-h-[220px] items-center justify-center bg-slate-50">
+              <div class="erp-empty-state min-h-[220px]">
                 <div class="flex flex-col items-center gap-3 text-slate-500">
                   <mat-spinner diameter="32"></mat-spinner>
                   <p class="text-sm">Cargando roles...</p>
                 </div>
               </div>
             } @else if (!roles.length) {
-              <div class="flex min-h-[220px] flex-col items-center justify-center gap-3 bg-slate-50 px-6 text-center text-slate-500">
-                <mat-icon class="!h-10 !w-10 !text-4xl text-slate-300">shield_person</mat-icon>
+              <div class="erp-empty-state min-h-[220px]">
+                <mat-icon class="erp-empty-state__icon !h-10 !w-10 !text-4xl">shield_person</mat-icon>
                 <p class="text-base font-semibold text-slate-700">No hay roles configurados para la empresa activa.</p>
               </div>
             } @else {
               <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-200 text-sm">
-                  <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                <table class="erp-data-table min-w-full text-sm">
+                  <thead>
                     <tr>
                       <th class="px-4 py-4">Rol</th>
                       <th class="px-4 py-4">Descripcion</th>
@@ -294,18 +275,16 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
                       <th class="w-[176px] px-4 py-4 text-right">Acciones</th>
                     </tr>
                   </thead>
-                  <tbody class="divide-y divide-slate-100 bg-white">
+                  <tbody>
                     @for (role of roles; track role.id) {
-                      <tr class="hover:bg-slate-50/70">
+                      <tr>
                         <td class="px-4 py-4 font-semibold text-slate-900">{{ role.name }}</td>
                         <td class="px-4 py-4 text-slate-600">{{ role.description || 'Sin descripcion' }}</td>
                         <td class="px-4 py-4">
                           <span
-                            class="rounded-full px-3 py-1 text-xs font-semibold"
-                            [class.bg-emerald-100]="role.status === 'active'"
-                            [class.text-emerald-700]="role.status === 'active'"
-                            [class.bg-slate-200]="role.status === 'inactive'"
-                            [class.text-slate-600]="role.status === 'inactive'"
+                            class="erp-chip"
+                            [class.erp-chip--success]="role.status === 'active'"
+                            [class.erp-chip--warning]="role.status === 'inactive'"
                           >
                             {{ role.status === 'active' ? 'Activo' : 'Inactivo' }}
                           </span>
@@ -314,7 +293,7 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
                           <div class="grid grid-cols-[36px_120px] items-center justify-end gap-2">
                             <button
                               type="button"
-                              class="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-100"
+                              class="erp-icon-button"
                               (click)="editRole(role)"
                               [attr.aria-label]="'Editar ' + role.name"
                               title="Editar"
@@ -350,7 +329,7 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
         </section>
       }
 
-      <footer class="flex items-center justify-end gap-3 rounded-3xl bg-white p-4 shadow-sm">
+      <footer class="erp-action-bar">
         <div class="flex items-center gap-3">
           <button mat-flat-button color="primary" type="button" (click)="acceptPageState()" [disabled]="!canAcceptPageState()">
             Aceptar

@@ -36,18 +36,16 @@ import { CompanySettingsFacadeService } from '../../services/company-settings.fa
     @let activeCompany = (activeCompany$ | async);
 
     <section class="space-y-6">
-      <header class="rounded-3xl bg-white p-6 shadow-sm">
+      <header class="erp-page-header">
         <div class="flex items-start gap-4">
-          <div class="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-slate-100">
-            <img src="assets/login/Logo1.png" alt="Medussa" class="h-10 w-auto object-contain" />
+          <div class="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-[#0F3460] shadow-sm">
+            <img src="assets/branding/logo-medussa-vertical-white.png" alt="Medussa" class="h-10 w-auto object-contain" />
           </div>
 
           <div>
-            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-teal-600">
-              Configuración
-            </p>
-            <h1 class="mt-2 text-3xl font-bold text-slate-900">Parámetros generales</h1>
-            <p class="mt-2 max-w-2xl text-sm text-slate-500">
+            <p class="erp-page-eyebrow">Configuración</p>
+            <h1 class="erp-page-title">Parámetros generales</h1>
+            <p class="erp-page-description max-w-2xl">
               Administra los datos generales y de contacto de la empresa seleccionada.
             </p>
           </div>
@@ -55,7 +53,7 @@ import { CompanySettingsFacadeService } from '../../services/company-settings.fa
       </header>
 
       @if (loading) {
-        <div class="flex min-h-[320px] items-center justify-center rounded-3xl bg-white shadow-sm">
+        <div class="erp-empty-state">
           <div class="flex flex-col items-center gap-3 text-slate-500">
             <mat-spinner diameter="36"></mat-spinner>
             <p class="text-sm">Cargando parámetros de la empresa activa...</p>
@@ -64,25 +62,25 @@ import { CompanySettingsFacadeService } from '../../services/company-settings.fa
       } @else {
         <form class="space-y-6" [formGroup]="form" (ngSubmit)="save()">
           @if (errorMessage) {
-            <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <div class="erp-alert erp-alert--error">
               {{ errorMessage }}
             </div>
           }
 
           @if (successMessage) {
-            <div class="rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+            <div class="erp-alert erp-alert--success">
               {{ successMessage }}
             </div>
           }
 
           @if (form.dirty) {
-            <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <div class="erp-alert erp-alert--warning">
               Tienes cambios sin guardar. Si cambias de empresa o navegas fuera, se solicitará confirmación.
             </div>
           }
 
           <div class="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
-            <section class="rounded-3xl bg-white p-6 shadow-sm">
+            <section class="erp-panel">
               <div class="grid gap-4 md:grid-cols-2">
                 <mat-form-field appearance="outline">
                   <mat-label>Nombre empresa</mat-label>
@@ -160,7 +158,7 @@ import { CompanySettingsFacadeService } from '../../services/company-settings.fa
             </section>
 
             <aside class="space-y-4">
-              <section class="rounded-3xl bg-white p-6 shadow-sm">
+              <section class="erp-panel">
                 <h2 class="text-lg font-semibold text-slate-900">Logo y branding</h2>
                 <p class="mt-1 text-sm text-slate-500">
                   Placeholder preparado para preview local mientras se define el contrato de upload.
@@ -175,7 +173,7 @@ import { CompanySettingsFacadeService } from '../../services/company-settings.fa
                 </div>
               </section>
 
-              <section class="rounded-3xl bg-white p-6 shadow-sm">
+              <section class="erp-panel">
                 <h2 class="text-lg font-semibold text-slate-900">Estado</h2>
                 <dl class="mt-4 space-y-3 text-sm text-slate-600">
                   <div class="flex items-center justify-between gap-3">
@@ -195,7 +193,7 @@ import { CompanySettingsFacadeService } from '../../services/company-settings.fa
             </aside>
           </div>
 
-          <div class="flex flex-wrap items-center justify-end gap-3 rounded-3xl bg-white p-4 shadow-sm">
+          <div class="erp-action-bar">
             <button mat-stroked-button type="button" (click)="cancel()" [disabled]="saving">
               Cancelar
             </button>
