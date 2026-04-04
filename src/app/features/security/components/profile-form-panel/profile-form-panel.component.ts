@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import {
   Component,
+  DestroyRef,
   EventEmitter,
   Input,
   OnChanges,
@@ -186,6 +187,7 @@ import {
 })
 export class ProfileFormPanelComponent implements OnChanges, OnDestroy {
   private readonly fb = inject(FormBuilder);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly pendingChangesService = inject(PendingChangesService);
 
   @Input() initialValue: ProfileDetailVm | null = null;
@@ -423,7 +425,7 @@ export class ProfileFormPanelComponent implements OnChanges, OnDestroy {
       editControl.valueChanges,
       deleteControl.valueChanges,
     )
-      .pipe(takeUntilDestroyed())
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         const shouldEnableManage =
           !!createControl.value && !!editControl.value && !!deleteControl.value;
@@ -431,7 +433,7 @@ export class ProfileFormPanelComponent implements OnChanges, OnDestroy {
         manageControl.setValue(shouldEnableManage, { emitEvent: false });
       });
 
-    manageControl.valueChanges.pipe(takeUntilDestroyed()).subscribe((enabled) => {
+    manageControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((enabled) => {
       const nextValue = !!enabled;
 
       createControl.setValue(nextValue, { emitEvent: false });
