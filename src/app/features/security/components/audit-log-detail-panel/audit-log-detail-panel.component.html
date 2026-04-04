@@ -1,0 +1,92 @@
+<div class="audit-log-detail-overlay">
+  <button
+    type="button"
+    class="audit-log-detail-backdrop"
+    aria-label="Cerrar panel de detalle"
+    (click)="closePanel.emit()"
+  ></button>
+
+  <aside class="audit-log-detail-panel" aria-label="Detalle del evento de auditoría">
+    <div class="audit-log-detail-header">
+      <div>
+        <p class="audit-log-detail-caption">Detalle del evento</p>
+        <h2 class="audit-log-detail-title">Trazabilidad completa</h2>
+      </div>
+
+      <button
+        type="button"
+        class="audit-log-detail-close"
+        aria-label="Cerrar detalle"
+        (click)="closePanel.emit()"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    @if (loading) {
+      <div class="audit-log-detail-state">
+        <mat-spinner diameter="34"></mat-spinner>
+        <p>Cargando detalle del evento...</p>
+      </div>
+    } @else if (errorMessage) {
+      <div class="audit-log-detail-error">{{ errorMessage }}</div>
+    } @else if (detail) {
+      <div class="audit-log-detail-content">
+        <dl class="audit-log-detail-grid">
+          <div>
+            <dt>ID del evento</dt>
+            <dd>{{ detail.id }}</dd>
+          </div>
+          <div>
+            <dt>Usuario</dt>
+            <dd>{{ detail.user }}</dd>
+          </div>
+          <div>
+            <dt>Empresa</dt>
+            <dd>{{ detail.companyName }}</dd>
+          </div>
+          <div>
+            <dt>Módulo</dt>
+            <dd>{{ moduleLabels[detail.module] }}</dd>
+          </div>
+          <div>
+            <dt>Acción</dt>
+            <dd>{{ actionLabels[detail.action] }}</dd>
+          </div>
+          <div>
+            <dt>Fecha y hora</dt>
+            <dd>{{ formatDate(detail.eventDateTime) }}</dd>
+          </div>
+          <div>
+            <dt>IP origen</dt>
+            <dd>{{ detail.ipAddress }}</dd>
+          </div>
+          <div>
+            <dt>Navegador/agente</dt>
+            <dd>{{ detail.browserAgent }}</dd>
+          </div>
+        </dl>
+
+        <section class="audit-log-detail-section">
+          <h3>Descripción</h3>
+          <p>{{ detail.description }}</p>
+        </section>
+
+        <section class="audit-log-detail-section">
+          <h3>Payload antes</h3>
+          <pre>{{ formatPayload(detail.beforePayload) }}</pre>
+        </section>
+
+        <section class="audit-log-detail-section">
+          <h3>Payload después</h3>
+          <pre>{{ formatPayload(detail.afterPayload) }}</pre>
+        </section>
+      </div>
+    } @else {
+      <div class="audit-log-detail-state">
+        <mat-icon>fact_check</mat-icon>
+        <p>Selecciona un evento para ver su detalle.</p>
+      </div>
+    }
+  </aside>
+</div>

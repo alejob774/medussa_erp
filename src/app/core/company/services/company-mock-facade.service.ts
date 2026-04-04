@@ -60,6 +60,7 @@ const ALL_PERMISSIONS: PermissionKey[] = [
   'security.users.view',
   'security.profiles.view',
   'security.audit.view',
+  'auditoria_export',
 ];
 
 @Injectable({
