@@ -13,77 +13,95 @@ import { CompanyContextService } from '../../../../core/company/services/company
     @let companies = (companies$ | async) ?? [];
     @let session = (session$ | async);
 
-    <div class="min-h-screen bg-slate-950 p-6 text-white">
-      <div class="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1fr_1.3fr]">
-        <section class="rounded-3xl border border-white/10 bg-white/10 p-8 backdrop-blur">
-          <div class="flex items-center gap-3">
-            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-500 text-xl font-black">
-              M
-            </div>
-            <div>
-              <p class="text-xs font-semibold uppercase tracking-[0.3em] text-teal-200">Medussa ERP</p>
-              <h1 class="text-2xl font-semibold">Base multiempresa</h1>
-            </div>
-          </div>
+    <div class="min-h-screen p-6 text-slate-900">
+      <div class="mx-auto grid max-w-7xl gap-6 xl:grid-cols-[0.92fr_1.3fr]">
+        <section class="erp-page-header erp-page-header--dark">
+          <div class="erp-page-header__content space-y-6">
+            <div class="flex items-center gap-4">
+              <img
+                src="assets/branding/logo-medussa-vertical-white.png"
+                alt="Medussa ERP"
+                class="w-28 max-w-full drop-shadow-xl"
+              />
 
-          <div class="mt-8 space-y-4 text-sm text-slate-200">
-            <div class="rounded-2xl border border-white/10 bg-slate-900/40 p-4">
-              <p class="text-xs uppercase tracking-[0.28em] text-slate-400">Usuario</p>
-              <p class="mt-2 text-lg font-semibold text-white">{{ session?.user?.username ?? 'usuario' }}</p>
-              <p class="text-slate-300">{{ session?.user?.email ?? 'sin correo mock' }}</p>
+              <div>
+                <p class="erp-page-eyebrow">Medussa ERP</p>
+                <h1 class="erp-page-title text-[2.2rem]">Acceso por empresa</h1>
+              </div>
             </div>
 
-            <div class="rounded-2xl border border-white/10 bg-slate-900/40 p-4">
-              <p class="text-xs uppercase tracking-[0.28em] text-slate-400">Qué cambia al seleccionar empresa</p>
-              <ul class="mt-2 space-y-2 text-slate-200">
-                <li>• Menú lateral dinámico según empresa y permisos.</li>
-                <li>• Contexto visual y navegación interna protegida.</li>
-                <li>• Empresa activa persistida durante toda la sesión.</li>
-              </ul>
+            <p class="erp-page-description">
+              Selecciona el contexto operativo con el mismo lenguaje visual del resto del ERP.
+              La empresa elegida activará navegación, permisos y vistas internas de la sesión.
+            </p>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div class="rounded-3xl border border-white/10 bg-white/10 p-5 backdrop-blur-sm">
+                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-white/60">Usuario</p>
+                <p class="mt-3 text-lg font-semibold text-white">{{ session?.user?.username ?? 'usuario' }}</p>
+                <p class="mt-1 text-sm text-white/72">{{ session?.user?.email ?? 'sin correo mock' }}</p>
+              </div>
+
+              <div class="rounded-3xl border border-white/10 bg-white/10 p-5 backdrop-blur-sm">
+                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-white/60">Qué cambia</p>
+                <ul class="mt-3 space-y-2 text-sm leading-6 text-white/80">
+                  <li>Menú lateral alineado a permisos y empresa.</li>
+                  <li>Contexto visual persistido durante toda la sesión.</li>
+                  <li>Flujo funcional intacto para continuar al shell.</li>
+                </ul>
+              </div>
             </div>
           </div>
         </section>
 
-        <section class="rounded-3xl bg-white p-6 text-slate-900 shadow-2xl">
-          <div class="mb-6">
-            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-teal-600">Selecciona empresa</p>
-            <h2 class="mt-2 text-3xl font-bold">¿Con cuál empresa quieres entrar?</h2>
-            <p class="mt-2 text-sm text-slate-500">
-              El shell recalculará módulos, submódulos y permisos mock automáticamente.
-            </p>
-          </div>
+        <section class="space-y-6">
+          <header class="erp-page-header">
+            <div class="erp-page-header__content">
+              <p class="erp-page-eyebrow">Selecciona empresa</p>
+              <h2 class="erp-page-title">¿Con cuál empresa quieres entrar?</h2>
+              <p class="erp-page-description">
+                Deja una sola decisión visible y clara: elige la empresa y entra al entorno corporativo de trabajo.
+              </p>
+            </div>
+          </header>
 
-          <div class="grid gap-4 md:grid-cols-2">
-            @for (company of companies; track company.id) {
-              <button
-                type="button"
-                class="rounded-2xl border border-slate-200 p-4 text-left transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg"
-                (click)="selectCompany(company.id)"
-              >
-                <div class="flex items-start justify-between gap-3">
-                  <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
-                      {{ company.code }}
-                    </p>
-                    <h3 class="mt-2 text-lg font-semibold text-slate-900">{{ company.name }}</h3>
+          <section class="erp-panel">
+            <div class="grid gap-4 md:grid-cols-2">
+              @for (company of companies; track company.id) {
+                <button
+                  type="button"
+                  class="rounded-[1.5rem] border border-slate-200 bg-white p-5 text-left shadow-sm transition duration-150 hover:-translate-y-0.5 hover:border-[#6293C5] hover:shadow-xl"
+                  (click)="selectCompany(company.id)"
+                >
+                  <div class="flex items-start justify-between gap-3">
+                    <div>
+                      <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">
+                        {{ company.code }}
+                      </p>
+                      <h3 class="mt-2 text-xl font-semibold text-slate-900">{{ company.name }}</h3>
+                    </div>
+
+                    <span
+                      class="mt-1 inline-block h-3 w-3 rounded-full"
+                      [style.background]="company.accentColor ?? '#0052cc'"
+                    ></span>
                   </div>
-                  <span
-                    class="inline-block h-3 w-3 rounded-full"
-                    [style.background]="company.accentColor ?? '#0f172a'"
-                  ></span>
-                </div>
 
-                <p class="mt-3 text-sm text-slate-500">
-                  {{ company.description || 'Contexto operativo listo para continuar.' }}
-                </p>
+                  <p class="mt-4 min-h-[3.75rem] text-sm leading-6 text-slate-600">
+                    {{ company.description || 'Contexto operativo listo para continuar dentro del ERP.' }}
+                  </p>
 
-                <div class="mt-4 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-3 py-2 text-sm font-medium text-white">
-                  Entrar con esta empresa
-                  <mat-icon class="text-base">arrow_forward</mat-icon>
-                </div>
-              </button>
-            }
-          </div>
+                  <div class="mt-5 flex items-center justify-between gap-3">
+                    <span class="erp-chip erp-chip--neutral">ERP multiempresa</span>
+                    <span class="inline-flex items-center gap-2 text-sm font-semibold text-[#0052CC]">
+                      Entrar
+                      <mat-icon class="text-base">arrow_forward</mat-icon>
+                    </span>
+                  </div>
+                </button>
+              }
+            </div>
+          </section>
         </section>
       </div>
     </div>

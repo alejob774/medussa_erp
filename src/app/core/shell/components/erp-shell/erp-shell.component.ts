@@ -1,11 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthSessionService } from '../../../../features/auth/services/auth-session.service';
 import { CompanyContextService } from '../../../company/services/company-context.service';
-import { NavigationItem, NavigationSection } from '../../../navigation/models/navigation-item.model';
 import { NavigationFacadeService } from '../../../navigation/services/navigation-facade.service';
 
 @Component({
@@ -24,164 +22,134 @@ import { NavigationFacadeService } from '../../../navigation/services/navigation
     @let activeCompany = (activeCompany$ | async);
     @let session = (session$ | async);
 
-    <div class="flex min-h-screen bg-slate-100 text-slate-800">
-      <aside class="flex w-20 flex-col items-center gap-4 bg-slate-950 py-4 text-slate-200">
-        <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-lg">
-          <img [src]="medussaLogo" alt="Medussa" class="h-9 w-auto object-contain" />
-        </div>
-        <div class="text-[10px] font-semibold uppercase tracking-[0.35em] text-slate-400 [writing-mode:vertical-rl] rotate-180">
-          Medussa
-        </div>
+    <div class="erp-shell-layout">
+      <aside class="erp-shell-sidebar">
+        <div class="erp-shell-sidebar__content">
+          <div class="erp-shell-brand">
+            <img [src]="medussaLogo" alt="Medussa ERP" class="erp-shell-brand__logo" />
 
-        <div class="mt-4 flex flex-col gap-3">
-          @for (section of sections; track section.id) {
-            <button
-              type="button"
-              class="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 transition hover:border-teal-400 hover:bg-slate-800"
-              [class.border-teal-400]="selectedSectionId === section.id"
-              [class.bg-slate-800]="selectedSectionId === section.id"
-              (click)="setSelectedSection(section.id)"
-              [attr.aria-label]="section.label"
-              [title]="section.label"
-            >
-              <mat-icon>{{ section.icon }}</mat-icon>
-            </button>
-          }
-        </div>
-      </aside>
+            <div>
+              <p class="erp-shell-brand__eyebrow">Medussa ERP</p>
+              <p class="erp-shell-brand__name">ERP Integral System</p>
+              <p class="erp-shell-brand__subline">
+                Navegación corporativa clara para una operación multiempresa consistente.
+              </p>
+            </div>
+          </div>
 
-      <aside class="hidden w-80 shrink-0 border-r border-slate-200 bg-white xl:block">
-        <div class="border-b border-slate-200 px-5 py-5">
-          <p class="text-xs font-semibold uppercase tracking-[0.28em] text-teal-600">Módulos</p>
-          <h2 class="mt-2 text-xl font-semibold text-slate-900">
-            {{ selectedSectionLabel(sections) }}
-          </h2>
-          <p class="mt-1 text-sm text-slate-500">{{ selectedSectionHint(sections) }}</p>
-        </div>
+          <div class="erp-shell-sidecard">
+            <p class="erp-shell-sidecard__label">Empresa en contexto</p>
+            <p class="erp-shell-sidecard__value">{{ activeCompany?.name ?? 'Selecciona una empresa' }}</p>
+            <p class="erp-shell-sidecard__hint">
+              El menú visible responde a permisos y a la empresa activa de la sesión.
+            </p>
+          </div>
 
-        <nav class="space-y-3 p-4">
-          @for (item of selectedSectionItems(sections); track item.id) {
-            <div class="rounded-2xl border border-slate-200 bg-slate-50/80 p-2">
-              @if (item.children?.length) {
-                <button
-                  type="button"
-                  class="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-white"
-                  (click)="toggleItem(item.id)"
-                >
-                  <span class="flex items-center gap-3">
-                    <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white">
-                      <mat-icon>{{ item.icon }}</mat-icon>
-                    </span>
-                    <span>
-                      <span class="block">{{ item.label }}</span>
-                      <span class="text-xs font-normal text-slate-500">{{ item.description || 'Submódulos disponibles por empresa' }}</span>
-                    </span>
-                  </span>
-                  <mat-icon>{{ isItemExpanded(item.id) ? 'expand_less' : 'expand_more' }}</mat-icon>
-                </button>
+          <nav class="erp-shell-nav" aria-label="Navegación principal de Medussa ERP">
+            @for (section of sections; track section.id) {
+              <section class="erp-nav-section">
+                <p class="erp-nav-section__label">{{ section.label }}</p>
 
-                @if (isItemExpanded(item.id)) {
-                  <div class="mt-2 space-y-1 pl-3">
-                    @for (child of item.children; track child.id) {
+                <div class="erp-nav-list">
+                  @for (item of section.items; track item.id) {
+                    @if (item.children?.length) {
+                      <div class="erp-nav-group">
+                        <div class="erp-nav-group__title">
+                          <mat-icon>{{ item.icon }}</mat-icon>
+                          <span class="erp-nav-group__text">
+                            <span>{{ item.label }}</span>
+                            <span class="erp-nav-group__hint">
+                              {{ item.description || 'Submódulos disponibles' }}
+                            </span>
+                          </span>
+                        </div>
+
+                        <div class="erp-nav-sublist">
+                          @for (child of item.children; track child.id) {
+                            <a
+                              class="erp-nav-sublink"
+                              [routerLink]="child.route ?? '/dashboard'"
+                              routerLinkActive="active"
+                              [routerLinkActiveOptions]="{ exact: true }"
+                            >
+                              <mat-icon>{{ child.icon }}</mat-icon>
+                              <span>{{ child.label }}</span>
+                            </a>
+                          }
+                        </div>
+                      </div>
+                    } @else {
                       <a
-                        class="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-600 transition hover:bg-white hover:text-slate-900"
-                        [routerLink]="child.route ?? '/dashboard'"
-                        routerLinkActive="bg-white font-semibold text-slate-900 shadow-sm"
+                        class="erp-nav-link"
+                        [routerLink]="item.route ?? '/dashboard'"
+                        routerLinkActive="active"
+                        [routerLinkActiveOptions]="{ exact: true }"
                       >
-                        <mat-icon class="text-base">{{ child.icon }}</mat-icon>
-                        <span>{{ child.label }}</span>
+                        <mat-icon>{{ item.icon }}</mat-icon>
+                        <span>{{ item.label }}</span>
                       </a>
                     }
-                  </div>
-                }
-              } @else {
-                <a
-                  class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-white"
-                  [routerLink]="item.route ?? '/dashboard'"
-                  routerLinkActive="bg-white text-slate-900 shadow-sm"
-                >
-                  <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white">
-                    <mat-icon>{{ item.icon }}</mat-icon>
-                  </span>
-                  <span>{{ item.label }}</span>
-                </a>
-              }
-            </div>
-          }
-        </nav>
+                  }
+                </div>
+              </section>
+            }
+          </nav>
+        </div>
       </aside>
 
-      <div class="flex min-w-0 flex-1 flex-col">
-        <header class="border-b border-slate-200 bg-white/90 backdrop-blur">
-          <div class="flex flex-wrap items-center justify-between gap-4 px-6 py-4">
-            <div class="flex min-w-0 items-center gap-4">
-              <div>
-                <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Medussa ERP</p>
-                <h1 class="text-lg font-semibold text-slate-900">Shell multiempresa</h1>
-              </div>
+      <div class="erp-shell-content">
+        <header class="erp-topbar">
+          <div>
+            <p class="erp-topbar__eyebrow">Plataforma corporativa</p>
+            <h1 class="erp-topbar__title">Operación multiempresa</h1>
+            <p class="erp-topbar__description">
+              Header limpio, navegación clara y branding alineado al sistema visual de Medussa.
+            </p>
+          </div>
 
-              <label class="hidden items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 lg:flex">
-                <mat-icon class="text-slate-400">search</mat-icon>
-                <input
-                  type="text"
-                  class="w-72 bg-transparent text-sm outline-none"
-                  placeholder="Buscar módulo, acción o empresa"
-                />
-              </label>
+          <div class="erp-topbar__controls">
+            <div class="erp-company-switcher">
+              <span
+                class="erp-company-switcher__indicator"
+                [style.background]="activeCompany?.accentColor ?? '#0052cc'"
+              ></span>
+
+              <div>
+                <p class="erp-company-switcher__label">Empresa activa</p>
+                <select
+                  class="erp-company-select"
+                  [value]="activeCompany?.id ?? ''"
+                  (change)="switchCompany(($any($event.target)).value)"
+                >
+                  @for (company of companies; track company.id) {
+                    <option [value]="company.id">{{ company.name }}</option>
+                  }
+                </select>
+              </div>
             </div>
 
-            <div class="flex flex-wrap items-center gap-3">
-              <div class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
-                <p class="text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">
-                  Empresa activa
+            <a class="erp-ghost-link" routerLink="/select-company">
+              <mat-icon>swap_horiz</mat-icon>
+              <span>Cambiar empresa</span>
+            </a>
+
+            <div class="erp-user-badge">
+              <div>
+                <p class="erp-user-badge__label">Sesión activa</p>
+                <p class="m-0 mt-1 text-sm font-semibold text-slate-900">
+                  {{ session?.user?.username ?? 'usuario' }}
                 </p>
-                <div class="mt-1 flex items-center gap-2">
-                  <span
-                    class="inline-block h-2.5 w-2.5 rounded-full"
-                    [style.background]="activeCompany?.accentColor ?? '#0f172a'"
-                  ></span>
-                  <select
-                    class="bg-transparent text-sm font-medium text-slate-700 outline-none"
-                    [value]="activeCompany?.id ?? ''"
-                    (change)="switchCompany(($any($event.target)).value)"
-                  >
-                    @for (company of companies; track company.id) {
-                      <option [value]="company.id">{{ company.name }}</option>
-                    }
-                  </select>
-                </div>
+                <p class="m-0 mt-1 text-xs text-slate-500">{{ session?.user?.roles?.[0] ?? 'operador' }}</p>
               </div>
 
-              <button
-                type="button"
-                class="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-600 transition hover:bg-slate-100"
-              >
-                <mat-icon>notifications</mat-icon>
-              </button>
-
-              <button
-                type="button"
-                class="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-600 transition hover:bg-slate-100"
-              >
-                <mat-icon>help</mat-icon>
-              </button>
-
-              <div class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
-                <div class="hidden text-right sm:block">
-                  <p class="text-sm font-semibold text-slate-800">
-                    {{ session?.user?.username ?? 'usuario' }}
-                  </p>
-                  <p class="text-xs text-slate-500">{{ session?.user?.roles?.[0] ?? 'operador' }}</p>
-                </div>
-                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-sm font-bold text-white">
-                  {{ userInitials(session?.user?.username) }}
-                </div>
+              <div class="erp-user-badge__avatar">
+                {{ userInitials(session?.user?.username) }}
               </div>
             </div>
           </div>
         </header>
 
-        <main class="flex-1 overflow-auto p-6">
+        <main class="erp-shell-main">
           <router-outlet />
         </main>
       </div>
@@ -194,77 +162,13 @@ export class ErpShellComponent {
   private readonly authSessionService = inject(AuthSessionService);
 
   readonly sections$ = this.navigationFacade.sections$;
-  readonly medussaLogo = 'assets/login/Logo1.png';
+  readonly medussaLogo = 'assets/branding/logo-medussa-vertical-white.png';
   readonly companies$ = this.companyContextService.companies$;
   readonly activeCompany$ = this.companyContextService.activeCompany$;
   readonly session$ = this.authSessionService.session$;
 
-  selectedSectionId = '';
-  expandedItemIds = new Set<string>();
-
-  constructor() {
-    this.sections$.pipe(takeUntilDestroyed()).subscribe((sections) => {
-      if (!sections.length) {
-        this.selectedSectionId = '';
-        this.expandedItemIds.clear();
-        return;
-      }
-
-      const selectedSection = sections.find(
-        (section) => section.id === this.selectedSectionId,
-      );
-
-      if (!selectedSection) {
-        this.selectedSectionId = sections[0].id;
-      }
-
-      const currentSection = this.getSelectedSection(sections);
-      const expandableIds = currentSection?.items
-        .filter((item) => item.children?.length)
-        .map((item) => item.id) ?? [];
-
-      if (!expandableIds.length) {
-        this.expandedItemIds.clear();
-        return;
-      }
-
-      const hasExpandedItem = expandableIds.some((itemId) =>
-        this.expandedItemIds.has(itemId),
-      );
-
-      if (!hasExpandedItem) {
-        this.expandedItemIds = new Set(expandableIds);
-      }
-    });
-  }
-
-  setSelectedSection(sectionId: string): void {
-    this.selectedSectionId = sectionId;
-  }
-
   switchCompany(companyId: string): void {
     this.companyContextService.setActiveCompany(companyId);
-  }
-
-  toggleItem(itemId: string): void {
-    if (this.expandedItemIds.has(itemId)) {
-      this.expandedItemIds.delete(itemId);
-      return;
-    }
-
-    this.expandedItemIds.add(itemId);
-  }
-
-  selectedSectionLabel(sections: NavigationSection[]): string {
-    return this.getSelectedSection(sections)?.label ?? 'Módulos';
-  }
-
-  selectedSectionHint(sections: NavigationSection[]): string {
-    return this.getSelectedSection(sections)?.hint ?? 'Navegación dinámica por empresa';
-  }
-
-  selectedSectionItems(sections: NavigationSection[]): NavigationItem[] {
-    return this.getSelectedSection(sections)?.items ?? [];
   }
 
   userInitials(username?: string | null): string {
@@ -274,15 +178,5 @@ export class ErpShellComponent {
       .slice(0, 2)
       .map((value) => value[0]?.toUpperCase() ?? '')
       .join('');
-  }
-
-  isItemExpanded(itemId: string): boolean {
-    return this.expandedItemIds.has(itemId);
-  }
-
-  private getSelectedSection(
-    sections: NavigationSection[],
-  ): NavigationSection | undefined {
-    return sections.find((section) => section.id === this.selectedSectionId) ?? sections[0];
   }
 }

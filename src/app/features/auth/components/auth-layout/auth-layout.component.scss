@@ -3,7 +3,9 @@
 }
 
 .auth-layout {
-  background: linear-gradient(180deg, #eef3f8 0%, #f8fafc 100%);
+  background:
+    radial-gradient(circle at top right, rgba(98, 147, 197, 0.18), transparent 24%),
+    linear-gradient(180deg, #f8faff 0%, #edf4ff 100%);
 }
 
 .auth-card {
@@ -13,7 +15,7 @@
 .branding-panel {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(180deg, #0c4e84 0%, #0f68af 100%);
+  background: linear-gradient(180deg, #0f3460 0%, #0052cc 100%);
 }
 
 .branding-panel__logo-wrap {
@@ -51,7 +53,7 @@
 }
 
 .form-panel {
-  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+  background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
 }
 
 @media (max-width: 1279px) {
