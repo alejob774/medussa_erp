@@ -2,16 +2,24 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.models.seguridad import Rol, UsuarioEmpresaRol
-from app.schemas.seguridad import RolBase, RolResponse, AsignacionBase, AsignacionResponse
+from app.schemas.seguridad import RolCreate, RolUpdate, RolResponse
 from app.utils.auditoria import registrar_log
-from typing import List, Optional, Any  # Agrega 'List' aquí
+from typing import List
 
 router = APIRouter()
 
-# --- GESTIÓN DE ROLES ---
-
+# CREATE: Crear un rol único por empresa
 @router.post("/roles/", response_model=RolResponse)
-async def crear_rol(rol_in: RolBase, request: Request, db: Session = Depends(get_db)):
+async def crear_rol(rol_in: RolCreate, request: Request, db: Session = Depends(get_db)):
+    # Escenario 1: Validar nombre único en la empresa
+    existe = db.query(Rol).filter(
+        Rol.nombre == rol_in.nombre, 
+        Rol.empresa_id == rol_in.empresa_id
+    ).first()
+    
+    if existe:
+        raise HTTPException(status_code=400, detail="El nombre del rol ya existe en esta empresa")
+
     nuevo_rol = Rol(**rol_in.model_dump())
     db.add(nuevo_rol)
     db.commit()
@@ -22,32 +30,51 @@ async def crear_rol(rol_in: RolBase, request: Request, db: Session = Depends(get
                         accion="CREATE_ROLE", despues=rol_in.model_dump())
     return nuevo_rol
 
+# READ: Consultar roles de la empresa activa
 @router.get("/roles/empresa/{empresa_id}", response_model=List[RolResponse])
 def obtener_roles_empresa(empresa_id: str, db: Session = Depends(get_db)):
     return db.query(Rol).filter(Rol.empresa_id == empresa_id).all()
 
-# --- GESTIÓN DE PERFILES (ASIGNACIÓN USUARIO-EMPRESA) ---
+# UPDATE: Editar un rol
+@router.put("/roles/{rol_id}", response_model=RolResponse)
+async def editar_rol(rol_id: int, rol_edit: RolUpdate, request: Request, db: Session = Depends(get_db)):
+    db_rol = db.query(Rol).filter(Rol.id == rol_id).first()
+    if not db_rol:
+        raise HTTPException(status_code=404, detail="Rol no encontrado")
+    
+    # Si intenta desactivar, validar que no tenga usuarios activos
+    if rol_edit.estado == "inactivo":
+        usuarios_vinculados = db.query(UsuarioEmpresaRol).filter(
+            UsuarioEmpresaRol.rol_id == rol_id,
+            UsuarioEmpresaRol.estado == "activo"
+        ).first()
+        if usuarios_vinculados:
+            raise HTTPException(status_code=400, detail="No se puede desactivar un rol asignado a usuarios activos")
 
-@router.post("/usuarios/asignar-perfil/", response_model=AsignacionResponse)
-async def asignar_perfil(asig_in: AsignacionBase, request: Request, db: Session = Depends(get_db)):
-    # Evitar duplicados
-    existe = db.query(UsuarioEmpresaRol).filter(
-        UsuarioEmpresaRol.usuario_id == asig_in.usuario_id,
-        UsuarioEmpresaRol.empresa_id == asig_in.empresa_id
+    # Aplicar cambios
+    for key, value in rol_edit.model_dump(exclude_unset=True).items():
+        setattr(db_rol, key, value)
+    
+    db.commit()
+    db.refresh(db_rol)
+    return db_rol
+
+# DELETE: Desactivar un rol (Criterio Escenario 3)
+@router.delete("/roles/{rol_id}")
+async def desactivar_rol(rol_id: int, db: Session = Depends(get_db)):
+    db_rol = db.query(Rol).filter(Rol.id == rol_id).first()
+    if not db_rol:
+        raise HTTPException(status_code=404, detail="Rol no encontrado")
+    
+    # Validar usuarios antes de "borrar" (desactivar)
+    usuarios_vinculados = db.query(UsuarioEmpresaRol).filter(
+        UsuarioEmpresaRol.rol_id == rol_id,
+        UsuarioEmpresaRol.estado == "activo"
     ).first()
     
-    if existe:
-        raise HTTPException(status_code=400, detail="El usuario ya tiene un perfil en esta empresa")
-
-    nueva_asig = UsuarioEmpresaRol(**asig_in.model_dump())
-    db.add(nueva_asig)
-    db.commit()
-    db.refresh(nueva_asig)
+    if usuarios_vinculados:
+        raise HTTPException(status_code=400, detail="No se puede desactivar un rol asignado a usuarios activos")
     
-    return nueva_asig
-
-@router.get("/usuarios/mis-perfiles/{usuario_id}")
-def obtener_perfiles_usuario(usuario_id: int, db: Session = Depends(get_db)):
-    """Este es el endpoint 'espejo': retorna las empresas y roles del usuario"""
-    perfiles = db.query(UsuarioEmpresaRol).filter(UsuarioEmpresaRol.usuario_id == usuario_id).all()
-    return perfiles
+    db_rol.estado = "inactivo"
+    db.commit()
+    return {"message": "Rol desactivado correctamente (trazabilidad mantenida)"}

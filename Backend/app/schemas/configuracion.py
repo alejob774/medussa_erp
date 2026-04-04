@@ -8,21 +8,21 @@ class EmpresaBase(BaseModel):
     direccion: Optional[str] = Field(None, max_length=200)
     telefono: Optional[str] = Field(None, max_length=50)
     email: Optional[EmailStr] = None
-    # CORRECCIÓN: sector ahora es opcional para evitar el ResponseValidationError
-    sector: Optional[str] = Field(None, max_length=100) 
+    sector: Optional[str] = Field(None, max_length=100)
     ciudad: str
     pais: str
     moneda: str
     zona_horaria: str
-    # CORRECCIÓN: configuraciones_iniciales ahora es opcional y acepta cualquier estructura o None
     configuraciones_iniciales: Optional[Any] = Field(
         default_factory=lambda: {"impuestos": "IVA", "idioma": "es"}
     )
 
 class EmpresaCreate(EmpresaBase):
+    """Esquema para la creación de empresas (HU-012)"""
     empresa_id: str = Field(..., description="ID único para el tenant (Ej: MED-BOG-01)")
 
 class EmpresaUpdate(BaseModel):
+    """Esquema para actualizaciones parciales"""
     nombre_empresa: Optional[str] = None
     nit: Optional[str] = None
     direccion: Optional[str] = None
@@ -35,14 +35,14 @@ class EmpresaUpdate(BaseModel):
     zona_horaria: Optional[str] = None
     configuraciones_iniciales: Optional[Any] = None
     logo: Optional[str] = None
-    estado: Optional[bool] = None # Para desactivación lógica (Soft Delete)
+    estado: Optional[bool] = None
 
 class EmpresaResponse(EmpresaBase):
+    """Esquema de salida para la API"""
     id: int
     empresa_id: str
     estado: bool
     logo: Optional[str] = None
-    # Se añade valor por defecto en caso de que registros antiguos no tengan fecha
     fecha_creacion: Optional[datetime] = None 
     
     model_config = {"from_attributes": True}
