@@ -1,8 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from app.db.session import get_db
-from app.models.seguridad import Rol, UsuarioEmpresaRol
-from app.schemas.seguridad import RolCreate, RolUpdate, RolResponse
+from app.models.seguridad import Rol, UsuarioEmpresaRol, Perfil # Actualizar import
+from app.schemas.seguridad import (
+    RolCreate, RolUpdate, RolResponse, 
+    PerfilCreate, PerfilUpdate, PerfilResponse # Agregar estos
+)
 from app.utils.auditoria import registrar_log
 from typing import List
 
@@ -78,3 +81,51 @@ async def desactivar_rol(rol_id: int, db: Session = Depends(get_db)):
     db_rol.estado = "inactivo"
     db.commit()
     return {"message": "Rol desactivado correctamente (trazabilidad mantenida)"}
+    
+@router.post("/empresas/{empresa_id}/perfiles", response_model=PerfilResponse)
+async def crear_perfil(empresa_id: str, perfil_in: PerfilCreate, request: Request, db: Session = Depends(get_db)):
+    # Validar nombre único por empresa [cite: 74, 83]
+    existe = db.query(Perfil).filter(
+        Perfil.nombre == perfil_in.nombre,
+        Perfil.empresa_id == empresa_id
+    ).first()
+    
+    if existe:
+        raise HTTPException(status_code=400, detail="El nombre del perfil ya existe en esta empresa")
+
+    nuevo_perfil = Perfil(**perfil_in.model_dump())
+    db.add(nuevo_perfil)
+    db.commit()
+    db.refresh(nuevo_perfil)
+    
+    await registrar_log(db, request, modulo="SEGURIDAD", accion="CREATE_PROFILE", empresa_id=empresa_id)
+    return nuevo_perfil
+
+@router.get("/empresas/{empresa_id}/perfiles", response_model=List[PerfilResponse])
+def obtener_perfiles_empresa(empresa_id: str, db: Session = Depends(get_db)):
+    # Consulta filtrada por empresa activa [cite: 81]
+    return db.query(Perfil).filter(Perfil.empresa_id == empresa_id).all()
+
+@router.put("/empresas/{empresa_id}/perfiles/{perfil_id}", response_model=PerfilResponse)
+async def actualizar_perfil(empresa_id: str, perfil_id: int, perfil_edit: PerfilUpdate, db: Session = Depends(get_db)):
+    db_perfil = db.query(Perfil).filter(Perfil.id == perfil_id, Perfil.empresa_id == empresa_id).first()
+    if not db_perfil:
+        raise HTTPException(status_code=404, detail="Perfil no encontrado")
+    
+    for key, value in perfil_edit.model_dump(exclude_unset=True).items():
+        setattr(db_perfil, key, value)
+    
+    db.commit()
+    db.refresh(db_perfil)
+    return db_perfil
+
+@router.delete("/empresas/{empresa_id}/perfiles/{perfil_id}")
+async def desactivar_perfil(empresa_id: str, perfil_id: int, db: Session = Depends(get_db)):
+    # Escenario 3: No eliminar, solo desactivar [cite: 79]
+    db_perfil = db.query(Perfil).filter(Perfil.id == perfil_id, Perfil.empresa_id == empresa_id).first()
+    if not db_perfil:
+        raise HTTPException(status_code=404, detail="Perfil no encontrado")
+    
+    db_perfil.estado = False
+    db.commit()
+    return {"message": "Perfil desactivado correctamente"}

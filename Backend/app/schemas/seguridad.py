@@ -41,3 +41,28 @@ class AsignacionResponse(AsignacionBase):
     id: int
     class Config:
         from_attributes = True
+class PerfilBase(BaseModel):
+    nombre: str = Field(..., max_length=100)
+    descripcion: Optional[str] = Field(None, max_length=300)
+    empresa_id: str
+    permisos: Any # Soporta el árbol de módulos/pantallas [cite: 93]
+    estado: bool = True
+
+class PerfilCreate(PerfilBase):
+    pass
+
+class PerfilUpdate(BaseModel):
+    nombre: Optional[str] = Field(None, max_length=100)
+    descripcion: Optional[str] = Field(None, max_length=300)
+    permisos: Optional[Any] = None
+    estado: Optional[bool] = None
+
+class PerfilResponse(BaseModel):
+    id: int
+    nombre: str
+    empresa_id: str
+    permisos: Any
+    estado: bool
+
+    class Config:
+        from_attributes = True
