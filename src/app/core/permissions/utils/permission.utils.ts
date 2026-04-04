@@ -3,6 +3,7 @@ import { LegacyPermissionKey, PermissionKey } from '../models/permission.model';
 const LEGACY_TO_BACKEND_PERMISSION_ALIASES: Partial<
   Record<LegacyPermissionKey, string[]>
 > = {
+  'settings.companies.view': ['empresas_view'],
   'settings.general.view': ['configuracion_view'],
   'security.users.view': ['usuarios_view', 'roles_view'],
   'security.profiles.view': ['perfiles_view'],

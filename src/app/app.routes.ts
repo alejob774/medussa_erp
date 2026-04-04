@@ -6,6 +6,7 @@ import { ErpShellComponent } from './core/shell/components/erp-shell/erp-shell.c
 import { authGuard } from './features/auth/guards/auth.guard';
 import { LoginPageComponent } from './features/auth/pages/login-page/login-page.component';
 import { CompanySelectorPageComponent } from './features/company/pages/company-selector-page/company-selector-page.component';
+import { CompaniesPageComponent } from './features/companies/presentation/pages/companies-page/companies-page.component';
 import { DashboardPageComponent } from './features/dashboard/pages/dashboard-page/dashboard-page.component';
 import { ModulePlaceholderPageComponent } from './features/dashboard/pages/module-placeholder-page/module-placeholder-page.component';
 import { AuditLogsPageComponent } from './features/security/pages/audit-logs-page/audit-logs-page.component';
@@ -133,6 +134,15 @@ export const routes: Routes = [
           description: 'Placeholder para stock, conteos y trazabilidad.',
           hint: 'HU siguiente: stock en tiempo real y alertas.',
           permission: 'inventory.view',
+        },
+      },
+      {
+        path: 'configuracion/empresas',
+        component: CompaniesPageComponent,
+        canActivate: [permissionGuard],
+        canDeactivate: [pendingChangesGuard],
+        data: {
+          permission: 'settings.companies.view',
         },
       },
       {

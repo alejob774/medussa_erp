@@ -1,0 +1,17 @@
+:host {
+  display: block;
+}
+
+.companies-date-input {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.9rem;
+  background: #ffffff;
+  padding: 0.72rem 0.85rem;
+  color: #0f172a;
+}
+
+.companies-date-input:focus {
+  outline: 2px solid rgba(13, 148, 136, 0.16);
+  outline-offset: 2px;
+}

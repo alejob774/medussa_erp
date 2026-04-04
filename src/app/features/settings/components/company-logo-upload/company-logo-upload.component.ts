@@ -36,7 +36,7 @@ import { MatIconModule } from '@angular/material/icon';
               class="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white"
             >
               <mat-icon class="text-base">upload</mat-icon>
-              Seleccionar imagen
+              {{ previewUrl ? 'Reemplazar logo' : 'Cargar logo' }}
               <input
                 type="file"
                 accept="image/*"

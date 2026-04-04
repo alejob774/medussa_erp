@@ -1,0 +1,281 @@
+<section class="space-y-6">
+  <header class="rounded-3xl bg-white p-6 shadow-sm">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div class="flex items-start gap-4">
+        <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+          <mat-icon>apartment</mat-icon>
+        </div>
+
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-[0.3em] text-teal-600">
+            Administración global
+          </p>
+          <h1 class="mt-2 text-3xl font-bold text-slate-900">Empresas (Multiempresa)</h1>
+          <p class="mt-2 max-w-3xl text-sm text-slate-500">
+            Gestiona el catálogo global de empresas, su estado operativo y la configuración base preparada para backend real.
+          </p>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-start gap-3">
+        <div class="rounded-2xl bg-slate-100 px-4 py-3 text-sm text-slate-700">
+          <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Catálogo global</p>
+          <dl class="mt-2 space-y-2">
+            <div class="flex items-center justify-between gap-4">
+              <dt>Total</dt>
+              <dd class="font-semibold text-slate-900">{{ totalCompanies }}</dd>
+            </div>
+            <div class="flex items-center justify-between gap-4">
+              <dt>Activas</dt>
+              <dd class="font-semibold text-slate-900">{{ activeCompanies }}</dd>
+            </div>
+            <div class="flex items-center justify-between gap-4">
+              <dt>Sectores</dt>
+              <dd class="font-semibold text-slate-900">{{ representedSectors }}</dd>
+            </div>
+          </dl>
+        </div>
+
+        <button mat-flat-button color="primary" type="button" class="min-h-12" (click)="openNewCompany()">
+          Crear empresa
+        </button>
+      </div>
+    </div>
+  </header>
+
+  @if (errorMessage && companies.length) {
+    <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+      {{ errorMessage }}
+    </div>
+  }
+
+  @if (successMessage) {
+    <div class="rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+      {{ successMessage }}
+    </div>
+  }
+
+  <section class="rounded-3xl bg-white p-6 shadow-sm">
+    <form class="space-y-4" [formGroup]="filterForm" (ngSubmit)="applyFilters()">
+      <div class="flex flex-wrap items-center gap-3 xl:flex-nowrap">
+        <mat-form-field appearance="outline" class="min-w-[280px] flex-1">
+          <mat-label>Búsqueda general</mat-label>
+          <input matInput formControlName="search" placeholder="Nombre, NIT, sector, ciudad o correo" />
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+
+        <button mat-stroked-button type="button" class="min-h-12" (click)="clearFilters()">
+          Limpiar filtros
+        </button>
+
+        <button mat-flat-button color="primary" type="submit" class="min-h-12">
+          Filtrar
+        </button>
+      </div>
+
+      <div class="grid gap-3 lg:grid-cols-2 xl:grid-cols-[1fr_1fr_1.1fr_auto] xl:items-start">
+        <mat-form-field appearance="outline">
+          <mat-label>Estado</mat-label>
+          <mat-select formControlName="status">
+            <mat-option value="all">Todos</mat-option>
+            <mat-option value="active">Activas</mat-option>
+            <mat-option value="inactive">Inactivas</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Sector</mat-label>
+          <mat-select formControlName="sector" [disabled]="loadingCatalogs">
+            <mat-option value="all">Todos</mat-option>
+            @for (sector of catalogs.sectors; track sector.value) {
+              <mat-option [value]="sector.value">{{ sector.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <div class="grid grid-cols-2 gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
+          <div class="space-y-2">
+            <label class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Desde</label>
+            <input class="companies-date-input" type="date" formControlName="dateFrom" />
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Hasta</label>
+            <input class="companies-date-input" type="date" formControlName="dateTo" />
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 xl:mt-1">
+          Este catálogo no depende de la empresa activa para listar registros.
+        </div>
+      </div>
+    </form>
+
+    <div class="mt-6 overflow-hidden rounded-3xl border border-slate-200 bg-white">
+      @if (loading) {
+        <div class="flex min-h-[320px] items-center justify-center bg-slate-50">
+          <div class="flex flex-col items-center gap-3 text-slate-500">
+            <mat-spinner diameter="34"></mat-spinner>
+            <p class="text-sm">Cargando empresas...</p>
+          </div>
+        </div>
+      } @else if (errorMessage && !companies.length) {
+        <div class="flex min-h-[320px] flex-col items-center justify-center gap-3 bg-slate-50 px-6 text-center text-slate-500">
+          <mat-icon class="!h-10 !w-10 !text-4xl text-red-300">error_outline</mat-icon>
+          <div>
+            <p class="text-base font-semibold text-slate-700">No fue posible cargar el catálogo.</p>
+            <p class="mt-1 text-sm">{{ errorMessage }}</p>
+          </div>
+
+          <button mat-stroked-button type="button" (click)="applyFilters()">Reintentar</button>
+        </div>
+      } @else if (!companies.length && hasActiveFilters()) {
+        <div class="flex min-h-[320px] flex-col items-center justify-center gap-3 bg-slate-50 px-6 text-center text-slate-500">
+          <mat-icon class="!h-10 !w-10 !text-4xl text-slate-300">travel_explore</mat-icon>
+          <div>
+            <p class="text-base font-semibold text-slate-700">No hay resultados para los filtros aplicados.</p>
+            <p class="mt-1 text-sm">Prueba con otro sector, estado o rango de fechas.</p>
+          </div>
+        </div>
+      } @else if (!companies.length) {
+        <div class="flex min-h-[320px] flex-col items-center justify-center gap-3 bg-slate-50 px-6 text-center text-slate-500">
+          <mat-icon class="!h-10 !w-10 !text-4xl text-slate-300">domain_disabled</mat-icon>
+          <div>
+            <p class="text-base font-semibold text-slate-700">No hay empresas registradas todavía.</p>
+            <p class="mt-1 text-sm">Crea la primera empresa del catálogo global para iniciar la parametrización.</p>
+          </div>
+        </div>
+      } @else {
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-slate-200 text-sm">
+            <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+              <tr>
+                <th class="px-4 py-4">Logo</th>
+                <th class="px-4 py-4">Nombre empresa</th>
+                <th class="px-4 py-4">NIT</th>
+                <th class="px-4 py-4">Sector</th>
+                <th class="px-4 py-4">Ciudad / País</th>
+                <th class="px-4 py-4">Estado</th>
+                <th class="px-4 py-4">Usuarios asociados</th>
+                <th class="px-4 py-4">Fecha de creación</th>
+                <th class="w-[176px] px-4 py-4 text-right">Acciones</th>
+              </tr>
+            </thead>
+
+            <tbody class="divide-y divide-slate-100 bg-white">
+              @for (company of companies; track company.id) {
+                <tr class="hover:bg-slate-50/70">
+                  <td class="px-4 py-4">
+                    <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-slate-100 text-slate-500">
+                      @if (company.logoUrl) {
+                        <img [src]="company.logoUrl" [alt]="company.companyName" class="h-full w-full object-cover" />
+                      } @else {
+                        <mat-icon>image</mat-icon>
+                      }
+                    </div>
+                  </td>
+
+                  <td class="px-4 py-4">
+                    <div class="font-semibold text-slate-900">{{ company.companyName }}</div>
+                    <div class="mt-1 text-xs text-slate-500">{{ company.email || 'Sin correo principal' }}</div>
+                  </td>
+
+                  <td class="px-4 py-4 text-slate-600">{{ company.nit }}</td>
+
+                  <td class="px-4 py-4">
+                    <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                      {{ company.sector }}
+                    </span>
+                  </td>
+
+                  <td class="px-4 py-4 text-slate-600">{{ locationLabel(company) }}</td>
+
+                  <td class="px-4 py-4">
+                    <span
+                      class="rounded-full px-3 py-1 text-xs font-semibold"
+                      [class.bg-emerald-100]="company.status === 'active'"
+                      [class.text-emerald-700]="company.status === 'active'"
+                      [class.bg-slate-200]="company.status === 'inactive'"
+                      [class.text-slate-600]="company.status === 'inactive'"
+                    >
+                      {{ company.status === 'active' ? 'Activa' : 'Inactiva' }}
+                    </span>
+                  </td>
+
+                  <td class="px-4 py-4">
+                    <div class="min-w-[220px] max-w-[280px] space-y-2">
+                      <div class="flex flex-wrap gap-2">
+                        @for (user of visibleAssociatedUsers(company); track user.userId) {
+                          <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                            {{ user.fullName }}
+                          </span>
+                        }
+
+                        @if (remainingAssociatedUsers(company) > 0) {
+                          <span class="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white">
+                            +{{ remainingAssociatedUsers(company) }}
+                          </span>
+                        }
+                      </div>
+
+                      <div class="text-xs text-slate-500">{{ company.associatedUsersCount }} usuarios relacionados</div>
+                    </div>
+                  </td>
+
+                  <td class="px-4 py-4 text-slate-600">{{ formatDate(company.createdAt) }}</td>
+
+                  <td class="w-[176px] px-4 py-4">
+                    <div class="grid grid-cols-[36px_120px] items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        class="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-100"
+                        (click)="editCompany(company)"
+                        [attr.aria-label]="'Editar ' + company.companyName"
+                        title="Editar"
+                      >
+                        <mat-icon>edit</mat-icon>
+                      </button>
+
+                      <button
+                        type="button"
+                        class="inline-flex min-h-9 w-[120px] items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition hover:bg-slate-100"
+                        [class.border-amber-200]="company.status === 'active'"
+                        [class.text-amber-700]="company.status === 'active'"
+                        [class.bg-amber-50]="company.status === 'active'"
+                        [class.border-emerald-200]="company.status === 'inactive'"
+                        [class.text-emerald-700]="company.status === 'inactive'"
+                        [class.bg-emerald-50]="company.status === 'inactive'"
+                        [disabled]="isUpdatingStatus(company.id)"
+                        (click)="toggleCompanyStatus(company)"
+                        [attr.aria-label]="rowActionLabel(company.status) + ' empresa'"
+                        [title]="rowActionLabel(company.status)"
+                      >
+                        <mat-icon class="text-base">
+                          {{ company.status === 'active' ? 'toggle_off' : 'published_with_changes' }}
+                        </mat-icon>
+                        <span>
+                          {{ isUpdatingStatus(company.id) ? 'Procesando...' : rowActionLabel(company.status) }}
+                        </span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </section>
+
+  @if (panelOpen) {
+    <app-company-form-panel
+      [catalogs]="catalogs"
+      [existingCompanies]="companies"
+      [initialValue]="selectedCompany"
+      [loading]="panelLoading"
+      [saving]="savingCompany"
+      (saveCompany)="saveCompany($event)"
+      (closePanel)="closePanel()"
+    ></app-company-form-panel>
+  }
+</section>

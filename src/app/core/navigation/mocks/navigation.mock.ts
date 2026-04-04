@@ -126,6 +126,14 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
         companyIds: ALL_COMPANIES,
         children: [
           {
+            id: 'empresas',
+            label: 'Empresas',
+            route: '/configuracion/empresas',
+            icon: 'apartment',
+            requiredPermissions: ['settings.companies.view'],
+            companyIds: ALL_COMPANIES,
+          },
+          {
             id: 'parametros-generales',
             label: 'Parámetros generales',
             route: '/configuracion/parametros-generales',

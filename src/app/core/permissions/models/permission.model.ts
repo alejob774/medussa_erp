@@ -9,6 +9,7 @@ export type LegacyPermissionKey =
   | 'marketing.view'
   | 'warehouse.view'
   | 'inventory.view'
+  | 'settings.companies.view'
   | 'settings.general.view'
   | 'security.users.view'
   | 'security.profiles.view'
