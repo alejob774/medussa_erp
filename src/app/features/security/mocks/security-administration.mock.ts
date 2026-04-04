@@ -13,17 +13,11 @@ export interface SecurityPermissionModuleCatalogItem {
 }
 
 export const SECURITY_PERMISSION_MODULES: readonly SecurityPermissionModuleCatalogItem[] = [
-  { key: 'general', name: 'General' },
-  { key: 'customer-service', name: 'Atención al cliente' },
-  { key: 'production', name: 'Producción' },
-  { key: 'supply-chain', name: 'Supply Chain Management' },
-  { key: 'inventory', name: 'Inventarios' },
-  { key: 'warehouse', name: 'Almacén' },
-  { key: 'purchases', name: 'Compras' },
-  { key: 'finance', name: 'Finanzas' },
-  { key: 'hr', name: 'RRHH' },
-  { key: 'bi', name: 'Business Intelligence' },
-  { key: 'settings', name: 'Configuración' },
+  { key: 'usuarios', name: 'Usuarios' },
+  { key: 'roles', name: 'Roles' },
+  { key: 'perfiles', name: 'Perfiles' },
+  { key: 'configuracion', name: 'Configuración' },
+  { key: 'auditoria', name: 'Auditoría' },
 ];
 
 export function createEmptyPermissionActionSet(): PermissionActionSet {
@@ -225,11 +219,11 @@ const MOCK_PROFILES: ProfileDetailVm[] = [
     description: 'Perfil reusable para dirección administrativa y aprobaciones.',
     status: 'active',
     permissions: buildPermissionMatrix({
-      general: { view: true, manage: true },
-      finance: { view: true, edit: true, approve: true },
-      purchases: { view: true, create: true, edit: true, approve: true },
-      settings: { view: true, manage: true },
-      bi: { view: true },
+      usuarios: { view: true, create: true, edit: true, delete: true },
+      roles: { view: true, create: true, edit: true },
+      perfiles: { view: true, create: true, edit: true, delete: true },
+      configuracion: { view: true, edit: true, approve: true },
+      auditoria: { view: true, export: true },
     }),
   },
   {
@@ -239,9 +233,10 @@ const MOCK_PROFILES: ProfileDetailVm[] = [
     description: 'Consulta, edición y análisis para control financiero.',
     status: 'inactive',
     permissions: buildPermissionMatrix({
-      finance: { view: true, edit: true },
-      bi: { view: true, create: true },
-      general: { view: true },
+      usuarios: { view: true },
+      perfiles: { view: true },
+      configuracion: { view: true },
+      auditoria: { view: true, export: true },
     }),
   },
   {
@@ -251,9 +246,9 @@ const MOCK_PROFILES: ProfileDetailVm[] = [
     description: 'Resuelve casos, seguimiento de clientes y escalaciones.',
     status: 'active',
     permissions: buildPermissionMatrix({
-      'customer-service': { view: true, create: true, edit: true, approve: true },
-      general: { view: true },
-      bi: { view: true },
+      usuarios: { view: true, create: true },
+      perfiles: { view: true },
+      auditoria: { view: true },
     }),
   },
   {
@@ -263,11 +258,11 @@ const MOCK_PROFILES: ProfileDetailVm[] = [
     description: 'Opera producción, almacén y soporte de abastecimiento.',
     status: 'active',
     permissions: buildPermissionMatrix({
-      production: { view: true, create: true, edit: true, approve: true },
-      warehouse: { view: true, create: true, edit: true, manage: true },
-      inventory: { view: true, create: true, edit: true },
-      'supply-chain': { view: true, approve: true },
-      purchases: { view: true, create: true },
+      usuarios: { view: true, create: true, edit: true },
+      roles: { view: true },
+      perfiles: { view: true, edit: true },
+      configuracion: { view: true },
+      auditoria: { view: true, export: true },
     }),
   },
   {
@@ -277,10 +272,11 @@ const MOCK_PROFILES: ProfileDetailVm[] = [
     description: 'Configura personal, aprobaciones y mantenimiento administrativo.',
     status: 'active',
     permissions: buildPermissionMatrix({
-      hr: { view: true, create: true, edit: true, approve: true, manage: true },
-      general: { view: true },
-      settings: { view: true, manage: true },
-      finance: { view: true },
+      usuarios: { view: true, create: true, edit: true, delete: true },
+      roles: { view: true, create: true, edit: true, delete: true },
+      perfiles: { view: true, create: true, edit: true, delete: true },
+      configuracion: { view: true, create: true, edit: true, delete: true },
+      auditoria: { view: true, export: true },
     }),
   },
   {
@@ -290,11 +286,11 @@ const MOCK_PROFILES: ProfileDetailVm[] = [
     description: 'Consulta transversal para control y revisión de cumplimiento.',
     status: 'inactive',
     permissions: buildPermissionMatrix({
-      general: { view: true },
-      finance: { view: true },
-      hr: { view: true },
-      settings: { view: true },
-      bi: { view: true },
+      usuarios: { view: true },
+      roles: { view: true },
+      perfiles: { view: true },
+      configuracion: { view: true },
+      auditoria: { view: true, export: true },
     }),
   },
 ];

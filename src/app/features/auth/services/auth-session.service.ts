@@ -3,6 +3,7 @@ import { BehaviorSubject } from 'rxjs';
 import { Company } from '../../../core/company/models/company.model';
 import { LoginResponse } from '../models/login-response.model';
 import { SessionUser } from '../models/session-user.model';
+import { resolveCompanyIdentityState } from '../utils/auth.mapper';
 
 @Injectable({
   providedIn: 'root',
@@ -47,6 +48,7 @@ export class AuthSessionService {
       ...session.user,
       companies: session.companies ?? [],
       activeCompanyId: session.activeCompanyId ?? null,
+      activeBackendCompanyId: session.activeBackendCompanyId ?? null,
     };
   }
 
@@ -66,6 +68,14 @@ export class AuthSessionService {
     return this.sessionSubject.value?.activeCompanyId ?? null;
   }
 
+  getActiveBackendCompanyId(): string | null {
+    return this.sessionSubject.value?.activeBackendCompanyId ?? null;
+  }
+
+  getPreferredCompanyIdForRequest(): string | null {
+    return this.getActiveBackendCompanyId() ?? this.getActiveCompanyId();
+  }
+
   updateSession(session: LoginResponse): void {
     const normalizedSession = this.normalizeSession(session);
 
@@ -80,9 +90,13 @@ export class AuthSessionService {
       return;
     }
 
+    const nextBackendCompanyId =
+      currentSession.companies?.find((company) => company.id === companyId)?.backendId ?? null;
+
     const updatedSession = this.normalizeSession({
       ...currentSession,
       activeCompanyId: companyId,
+      activeBackendCompanyId: nextBackendCompanyId,
       requiresCompanySelection: false,
     });
 
@@ -132,16 +146,19 @@ export class AuthSessionService {
   }
 
   private normalizeSession(session: LoginResponse): LoginResponse {
-    const companies = session.companies ?? [];
-    const activeCompanyId =
-      session.activeCompanyId ?? (companies.length === 1 ? companies[0].id : null);
+    const companyState = resolveCompanyIdentityState(session.companies ?? [], {
+      activeCompanyId: session.activeCompanyId ?? null,
+      activeBackendCompanyId: session.activeBackendCompanyId ?? null,
+    });
 
     return {
       ...session,
-      activeCompanyId,
+      companies: companyState.companies,
+      activeCompanyId: companyState.activeCompanyId,
+      activeBackendCompanyId: companyState.activeBackendCompanyId,
       requiresCompanySelection:
-        session.requiresCompanySelection ?? (companies.length > 1 && !activeCompanyId),
-      companies,
+        session.requiresCompanySelection ??
+        (companyState.companies.length > 1 && !companyState.activeCompanyId),
     };
   }
 

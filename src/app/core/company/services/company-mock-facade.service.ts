@@ -12,6 +12,7 @@ export interface MockSessionContext {
 const COMPANY_CATALOG: Record<string, Company> = {
   'medussa-holding': {
     id: 'medussa-holding',
+    backendId: 'EMP-001',
     name: 'Medussa Holding',
     code: 'HOLD',
     description: 'Vista corporativa y financiera del grupo.',

@@ -9,6 +9,7 @@ export interface LoginResponse {
   user?: AuthUser;
 
   activeCompanyId?: string | null;
+  activeBackendCompanyId?: string | null;
   requiresCompanySelection?: boolean;
   companies?: Company[];
 }

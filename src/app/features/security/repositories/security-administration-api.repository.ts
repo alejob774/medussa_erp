@@ -2,6 +2,7 @@ import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http'
 import { Injectable, inject } from '@angular/core';
 import { catchError, forkJoin, map, Observable, of, switchMap, throwError } from 'rxjs';
 import { environment } from '../../../../environments/environment';
+import { AuthSessionService } from '../../auth/services/auth-session.service';
 import {
   createEmptyPermissionActionSet,
   SECURITY_PERMISSION_MODULES,
@@ -92,6 +93,7 @@ export class SecurityAdministrationApiRepository
   implements SecurityAdministrationRepository
 {
   private readonly http = inject(HttpClient);
+  private readonly authSessionService = inject(AuthSessionService);
   private readonly mockRepository = inject(SecurityAdministrationMockRepository);
   private readonly usersUrl = `${environment.apiUrl}/usuarios`;
   private readonly rolesUrl = `${environment.apiUrl}/roles`;
@@ -501,7 +503,9 @@ export class SecurityAdministrationApiRepository
     roles: readonly RoleRowVm[],
     profiles: readonly BackendProfileDto[],
   ): UserRowVm | null {
-    const assignment = user.empresas?.find((candidate) => candidate.empresa_id === companyId);
+    const assignment = user.empresas?.find((candidate) =>
+      this.matchesRequestedCompanyId(candidate.empresa_id, companyId),
+    );
 
     if (!assignment) {
       return null;
@@ -531,7 +535,7 @@ export class SecurityAdministrationApiRepository
 
     return {
       id: this.resolveId(role.id, 'rol'),
-      companyId: isGlobal ? null : role.empresa_id ?? companyId,
+      companyId: isGlobal ? null : companyId,
       name: role.nombre?.trim() || 'Rol sin nombre',
       description: role.descripcion?.trim() || '',
       status: this.resolveStatus(role.estado ?? role.activo),
@@ -545,7 +549,7 @@ export class SecurityAdministrationApiRepository
 
     return {
       id: this.resolveId(profile.id, 'perfil'),
-      companyId: profile.empresa_id ?? companyId,
+      companyId,
       name: profile.nombre?.trim() || 'Perfil sin nombre',
       description: profile.descripcion?.trim() || '',
       status: this.resolveStatus(profile.estado ?? profile.activo),
@@ -570,9 +574,18 @@ export class SecurityAdministrationApiRepository
     permissionCodes: readonly string[],
     permissionCatalog: readonly BackendPermissionDto[] = [],
   ): ModulePermissionVm[] {
-    const modules = new Map<string, ModulePermissionVm>();
     const fallbackModuleNames = new Map(
       SECURITY_PERMISSION_MODULES.map((module) => [module.key, module.name]),
+    );
+    const modules = new Map<string, ModulePermissionVm>(
+      SECURITY_PERMISSION_MODULES.map((module) => [
+        module.key,
+        {
+          moduleKey: module.key,
+          moduleName: module.name,
+          actions: createEmptyPermissionActionSet(),
+        },
+      ]),
     );
 
     permissionCatalog.forEach((permission) => {
@@ -677,6 +690,13 @@ export class SecurityAdministrationApiRepository
     permissions: readonly ModulePermissionVm[],
     permissionCatalog: readonly BackendPermissionDto[],
   ): Array<number | string> {
+    if (!permissionCatalog.length) {
+      throw new HttpErrorResponse({
+        status: 404,
+        statusText: 'Permission catalog unavailable',
+      });
+    }
+
     const permissionIdMap = new Map<string, number | string>();
 
     permissionCatalog.forEach((permission) => {
@@ -762,7 +782,7 @@ export class SecurityAdministrationApiRepository
     profileId: string | null,
   ): BackendCompanyAssignmentDto {
     return {
-      empresa_id: companyId,
+      empresa_id: this.resolveRequestCompanyId(companyId),
       rol_id: this.toBackendId(roleId),
       perfil_id: this.toBackendId(profileId),
     };
@@ -929,6 +949,39 @@ export class SecurityAdministrationApiRepository
       .filter(Boolean)
       .map((segment) => segment[0]?.toUpperCase() + segment.slice(1))
       .join(' ');
+  }
+
+  private matchesRequestedCompanyId(
+    backendCompanyId: string | null | undefined,
+    companyId: string,
+  ): boolean {
+    const normalizedBackendCompanyId = backendCompanyId?.trim();
+
+    if (!normalizedBackendCompanyId) {
+      return false;
+    }
+
+    const requestedCompanyId = this.resolveRequestCompanyId(companyId);
+
+    return (
+      normalizedBackendCompanyId === requestedCompanyId ||
+      normalizedBackendCompanyId === companyId
+    );
+  }
+
+  private resolveRequestCompanyId(companyId: string): string {
+    const session = this.authSessionService.getSession();
+    const company = session?.companies?.find((candidate) => candidate.id === companyId);
+
+    if (company?.backendId) {
+      return company.backendId;
+    }
+
+    if (session?.activeCompanyId === companyId && session.activeBackendCompanyId) {
+      return session.activeBackendCompanyId;
+    }
+
+    return companyId;
   }
 
   private withFallback<T>(

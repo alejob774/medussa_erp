@@ -12,7 +12,7 @@ export const authTokenInterceptor: HttpInterceptorFn = (req, next) => {
   }
 
   const accessToken = authSessionService.getAccessToken();
-  const activeCompanyId = authSessionService.getActiveCompanyId();
+  const activeCompanyId = authSessionService.getPreferredCompanyIdForRequest();
 
   if (!accessToken && !activeCompanyId) {
     return next(req);

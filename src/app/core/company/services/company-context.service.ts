@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { combineLatest, distinctUntilChanged, map, Observable } from 'rxjs';
 import { LoginResponse } from '../../../features/auth/models/login-response.model';
+import { resolveCompanyIdentityState } from '../../../features/auth/utils/auth.mapper';
 import { AuthService } from '../../../features/auth/services/auth.service';
 import { AuthSessionService } from '../../../features/auth/services/auth-session.service';
 import { PendingChangesService } from '../../forms/services/pending-changes.service';
@@ -52,11 +53,20 @@ export class CompanyContextService {
       new Set([...(session.user?.permissions ?? []), ...mockContext.permissions]),
     );
     const normalizedUsername = username ?? session.user?.username ?? 'usuario';
-    const activeCompanyId =
-      session.activeCompanyId ??
-      (companies.length === 1
-        ? companies[0].id
+    const initialCompanyState = resolveCompanyIdentityState(companies, {
+      activeCompanyId: session.activeCompanyId ?? null,
+      activeBackendCompanyId: session.activeBackendCompanyId ?? null,
+    });
+    const preferredActiveCompanyId =
+      initialCompanyState.activeCompanyId ??
+      (initialCompanyState.companies.length === 1
+        ? initialCompanyState.companies[0].id
         : mockContext.defaultCompanyId ?? null);
+    const companyState = resolveCompanyIdentityState(initialCompanyState.companies, {
+      activeCompanyId: preferredActiveCompanyId,
+      activeBackendCompanyId:
+        session.activeBackendCompanyId ?? initialCompanyState.activeBackendCompanyId,
+    });
 
     return {
       ...session,
@@ -67,9 +77,11 @@ export class CompanyContextService {
         roles,
         permissions,
       },
-      companies,
-      activeCompanyId,
-      requiresCompanySelection: companies.length > 1 && !activeCompanyId,
+      companies: companyState.companies,
+      activeCompanyId: companyState.activeCompanyId,
+      activeBackendCompanyId: companyState.activeBackendCompanyId,
+      requiresCompanySelection:
+        companyState.companies.length > 1 && !companyState.activeCompanyId,
     };
   }
 

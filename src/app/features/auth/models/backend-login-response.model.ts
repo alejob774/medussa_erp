@@ -8,7 +8,7 @@ export interface BackendLoginResponse {
   expires_in?: number;
   user?: BackendAuthUser;
 
-  // TODO backend multiempresa:
+  empresa_id?: string | null;
   active_company_id?: string | null;
   requires_company_selection?: boolean;
   companies?: Company[];
