@@ -10,6 +10,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { distinctUntilChanged, finalize, map } from 'rxjs/operators';
 import { PendingChangesService } from '../../../../core/forms/services/pending-changes.service';
+import { buildPermissionMatrix } from '../../mocks/security-administration.mock';
 import { ProfileFormPanelComponent } from '../../components/profile-form-panel/profile-form-panel.component';
 import {
   ModulePermissionVm,
@@ -460,7 +461,7 @@ export class ProfilesPermissionsPageComponent {
       .pipe(finalize(() => (this.loadingBasePermissions = false)))
       .subscribe({
         next: (permissions) => {
-          this.basePermissions = permissions;
+          this.basePermissions = permissions.length ? permissions : buildPermissionMatrix();
           onReady();
         },
         error: (error: unknown) => {

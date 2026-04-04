@@ -38,6 +38,7 @@ export class SecurityAdministrationMockRepository
 
     const users = this.readStore()
       .users.map((user) => this.mapUserRow(user, companyId))
+      .filter((user) => !!user.activeAssignment)
       .filter((user) => {
         const matchesStatus = filters.status === 'all' || user.status === filters.status;
         const matchesSearch =
@@ -277,7 +278,11 @@ export class SecurityAdministrationMockRepository
         )
       : undefined;
 
-    if (!payload.permissions.some((permission) => Object.values(permission.actions).some(Boolean))) {
+    const hasEnabledPermissions = payload.permissions.some((permission) =>
+      Object.values(permission.actions).some(Boolean),
+    );
+
+    if (!currentProfile && !hasEnabledPermissions) {
       return throwError(() => new Error('Debes activar al menos un permiso para guardar el perfil.'));
     }
 
@@ -300,7 +305,11 @@ export class SecurityAdministrationMockRepository
       name: payload.name.trim(),
       description: payload.description.trim(),
       status: payload.status,
-      permissions: clonePermissionMatrix(payload.permissions),
+      permissions: clonePermissionMatrix(
+        hasEnabledPermissions
+          ? payload.permissions
+          : currentProfile?.permissions ?? payload.permissions,
+      ),
     };
 
     this.writeStore({

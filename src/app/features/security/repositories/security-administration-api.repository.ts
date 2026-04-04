@@ -120,6 +120,7 @@ export class SecurityAdministrationApiRepository
           map(({ users, roles, profiles }) =>
             users
               .map((user) => this.mapUserRow(user, companyId, roles, profiles))
+              .filter((user) => !!user.activeAssignment)
               .filter((user) => this.matchesUserFilters(user, filters))
               .sort((left, right) => left.name.localeCompare(right.name)),
           ),
@@ -387,11 +388,21 @@ export class SecurityAdministrationApiRepository
     payload: ProfileFormValue,
     profileId?: string,
   ): Observable<ProfileDetailVm> {
+    const hasEnabledPermissions = payload.permissions.some((permission) =>
+      Object.values(permission.actions).some(Boolean),
+    );
+
     return this.withFallback(
       () =>
         this.fetchPermissionsCatalog().pipe(
           switchMap((permissionCatalog) => {
-            const permissionIds = this.resolvePermissionIds(payload.permissions, permissionCatalog);
+            if (!profileId && !hasEnabledPermissions) {
+              throw new Error('Debes activar al menos un permiso para guardar el perfil.');
+            }
+
+            const permissionIds = hasEnabledPermissions
+              ? this.resolvePermissionIds(payload.permissions, permissionCatalog)
+              : [];
             const requestBody = {
               nombre: payload.name.trim(),
               descripcion: payload.description.trim(),
@@ -407,14 +418,18 @@ export class SecurityAdministrationApiRepository
                   );
 
             return profileRequest$.pipe(
-              switchMap((resolvedProfileId) =>
-                this.http
+              switchMap((resolvedProfileId) => {
+                if (!hasEnabledPermissions) {
+                  return of(resolvedProfileId);
+                }
+
+                return this.http
                   .post<void>(
                     `${this.withTrailingSlash(this.profilesUrl)}${resolvedProfileId}/permisos`,
                     { permisos_ids: permissionIds },
                   )
-                  .pipe(map(() => resolvedProfileId)),
-              ),
+                  .pipe(map(() => resolvedProfileId));
+              }),
               switchMap((resolvedProfileId) => {
                 if (payload.status === 'active') {
                   return of(resolvedProfileId);
