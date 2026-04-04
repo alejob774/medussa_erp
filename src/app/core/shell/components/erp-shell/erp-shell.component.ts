@@ -1,10 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthSessionService } from '../../../../features/auth/services/auth-session.service';
 import { CompanyContextService } from '../../../company/services/company-context.service';
+import { NavigationItem } from '../../../navigation/models/navigation-item.model';
 import { NavigationFacadeService } from '../../../navigation/services/navigation-facade.service';
+import { map } from 'rxjs';
 
 @Component({
   selector: 'app-erp-shell',
@@ -17,7 +19,7 @@ import { NavigationFacadeService } from '../../../navigation/services/navigation
     RouterOutlet,
   ],
   template: `
-    @let sections = (sections$ | async) ?? [];
+    @let navItems = (navigationItems$ | async) ?? [];
     @let companies = (companies$ | async) ?? [];
     @let activeCompany = (activeCompany$ | async);
     @let session = (session$ | async);
@@ -27,83 +29,75 @@ import { NavigationFacadeService } from '../../../navigation/services/navigation
         <div class="erp-shell-sidebar__content">
           <div class="erp-shell-brand">
             <img [src]="medussaLogo" alt="Medussa ERP" class="erp-shell-brand__logo" />
-
-            <div>
-              <p class="erp-shell-brand__eyebrow">Medussa ERP</p>
-              <p class="erp-shell-brand__name">ERP Integral System</p>
-              <p class="erp-shell-brand__subline">
-                Navegación corporativa clara para una operación multiempresa consistente.
-              </p>
-            </div>
           </div>
 
-          <div class="erp-shell-sidecard">
-            <p class="erp-shell-sidecard__label">Empresa en contexto</p>
-            <p class="erp-shell-sidecard__value">{{ activeCompany?.name ?? 'Selecciona una empresa' }}</p>
-            <p class="erp-shell-sidecard__hint">
-              El menú visible responde a permisos y a la empresa activa de la sesión.
-            </p>
-          </div>
-
-          <nav class="erp-shell-nav" aria-label="Navegación principal de Medussa ERP">
-            @for (section of sections; track section.id) {
-              <section class="erp-nav-section">
-                <p class="erp-nav-section__label">{{ section.label }}</p>
-
-                <div class="erp-nav-list">
-                  @for (item of section.items; track item.id) {
-                    @if (item.children?.length) {
-                      <div class="erp-nav-group">
-                        <div class="erp-nav-group__title">
-                          <mat-icon>{{ item.icon }}</mat-icon>
-                          <span class="erp-nav-group__text">
-                            <span>{{ item.label }}</span>
-                            <span class="erp-nav-group__hint">
-                              {{ item.description || 'Submódulos disponibles' }}
-                            </span>
-                          </span>
-                        </div>
-
-                        <div class="erp-nav-sublist">
-                          @for (child of item.children; track child.id) {
-                            <a
-                              class="erp-nav-sublink"
-                              [routerLink]="child.route ?? '/dashboard'"
-                              routerLinkActive="active"
-                              [routerLinkActiveOptions]="{ exact: true }"
-                            >
-                              <mat-icon>{{ child.icon }}</mat-icon>
-                              <span>{{ child.label }}</span>
-                            </a>
-                          }
-                        </div>
-                      </div>
-                    } @else {
-                      <a
-                        class="erp-nav-link"
-                        [routerLink]="item.route ?? '/dashboard'"
-                        routerLinkActive="active"
-                        [routerLinkActiveOptions]="{ exact: true }"
-                      >
+          <nav class="erp-shell-nav" aria-label="Navegacion principal">
+            <div class="erp-nav-list">
+              @for (item of navItems; track item.id) {
+                @if (item.children?.length) {
+                  <div
+                    class="erp-nav-group"
+                    [class.erp-nav-group--open]="isGroupExpanded(item)"
+                    [class.erp-nav-group--active]="groupHasActiveChild(item)"
+                  >
+                    <button
+                      type="button"
+                      class="erp-nav-group__button"
+                      (click)="toggleGroup(item.id)"
+                      [attr.aria-expanded]="isGroupExpanded(item)"
+                    >
+                      <span class="erp-nav-group__title">
                         <mat-icon>{{ item.icon }}</mat-icon>
-                        <span>{{ item.label }}</span>
-                      </a>
+                        <span class="erp-nav-group__text">
+                          <span>{{ item.label }}</span>
+                        </span>
+                      </span>
+
+                      <mat-icon class="erp-nav-group__chevron">
+                        {{ isGroupExpanded(item) ? 'expand_less' : 'expand_more' }}
+                      </mat-icon>
+                    </button>
+
+                    @if (isGroupExpanded(item)) {
+                      <div class="erp-nav-sublist">
+                        @for (child of item.children; track child.id) {
+                          <a
+                            class="erp-nav-sublink"
+                            [routerLink]="child.route ?? '/dashboard'"
+                            routerLinkActive="active"
+                            [routerLinkActiveOptions]="{ exact: true }"
+                          >
+                            <mat-icon>{{ child.icon }}</mat-icon>
+                            <span>{{ child.label }}</span>
+                          </a>
+                        }
+                      </div>
                     }
-                  }
-                </div>
-              </section>
-            }
+                  </div>
+                } @else {
+                  <a
+                    class="erp-nav-link"
+                    [routerLink]="item.route ?? '/dashboard'"
+                    routerLinkActive="active"
+                    [routerLinkActiveOptions]="{ exact: true }"
+                  >
+                    <mat-icon>{{ item.icon }}</mat-icon>
+                    <span>{{ item.label }}</span>
+                  </a>
+                }
+              }
+            </div>
           </nav>
-        </div>
+          </div>
       </aside>
 
       <div class="erp-shell-content">
         <header class="erp-topbar">
           <div>
-            <p class="erp-topbar__eyebrow">Plataforma corporativa</p>
-            <h1 class="erp-topbar__title">Operación multiempresa</h1>
-            <p class="erp-topbar__description">
-              Header limpio, navegación clara y branding alineado al sistema visual de Medussa.
+            <p class="erp-topbar__eyebrow">Medussa ERP</p>
+            <h1 class="erp-topbar__title">Operación multiempresa centralizada</h1>
+            <p class="erp-topbar__subtitle">
+              Navegación compacta, contexto por empresa activa y una superficie de trabajo más clara para la operación diaria.
             </p>
           </div>
 
@@ -116,22 +110,19 @@ import { NavigationFacadeService } from '../../../navigation/services/navigation
 
               <div>
                 <p class="erp-company-switcher__label">Empresa activa</p>
-                <select
-                  class="erp-company-select"
-                  [value]="activeCompany?.id ?? ''"
-                  (change)="switchCompany(($any($event.target)).value)"
-                >
-                  @for (company of companies; track company.id) {
-                    <option [value]="company.id">{{ company.name }}</option>
-                  }
-                </select>
+                <p class="erp-company-switcher__value">{{ activeCompany?.name ?? 'Selecciona una empresa' }}</p>
               </div>
-            </div>
 
-            <a class="erp-ghost-link" routerLink="/select-company">
-              <mat-icon>swap_horiz</mat-icon>
-              <span>Cambiar empresa</span>
-            </a>
+              <select
+                class="erp-company-select"
+                [value]="activeCompany?.id ?? ''"
+                (change)="switchCompany(($any($event.target)).value)"
+              >
+                @for (company of companies; track company.id) {
+                  <option [value]="company.id">{{ company.name }}</option>
+                }
+              </select>
+            </div>
 
             <div class="erp-user-badge">
               <div>
@@ -160,15 +151,41 @@ export class ErpShellComponent {
   private readonly navigationFacade = inject(NavigationFacadeService);
   private readonly companyContextService = inject(CompanyContextService);
   private readonly authSessionService = inject(AuthSessionService);
+  private readonly router = inject(Router);
 
   readonly sections$ = this.navigationFacade.sections$;
+  readonly navigationItems$ = this.sections$.pipe(
+    map((sections) => sections.flatMap((section) => section.items)),
+  );
   readonly medussaLogo = 'assets/branding/logo-medussa-vertical-white.png';
   readonly companies$ = this.companyContextService.companies$;
   readonly activeCompany$ = this.companyContextService.activeCompany$;
   readonly session$ = this.authSessionService.session$;
+  readonly expandedGroupIds = new Set<string>();
 
   switchCompany(companyId: string): void {
     this.companyContextService.setActiveCompany(companyId);
+  }
+
+  toggleGroup(groupId: string): void {
+    if (this.expandedGroupIds.has(groupId)) {
+      this.expandedGroupIds.delete(groupId);
+      return;
+    }
+
+    this.expandedGroupIds.add(groupId);
+  }
+
+  isGroupExpanded(item: NavigationItem): boolean {
+    return this.expandedGroupIds.has(item.id) || this.groupHasActiveChild(item);
+  }
+
+  groupHasActiveChild(item: NavigationItem): boolean {
+    return item.children?.some((child) => this.isRouteActive(child.route)) ?? false;
+  }
+
+  private isRouteActive(route?: string): boolean {
+    return !!route && this.router.url === route;
   }
 
   userInitials(username?: string | null): string {

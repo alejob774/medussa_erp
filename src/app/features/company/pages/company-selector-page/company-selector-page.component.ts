@@ -30,26 +30,10 @@ import { CompanyContextService } from '../../../../core/company/services/company
               </div>
             </div>
 
-            <p class="erp-page-description">
-              Selecciona el contexto operativo con el mismo lenguaje visual del resto del ERP.
-              La empresa elegida activará navegación, permisos y vistas internas de la sesión.
-            </p>
-
-            <div class="grid gap-4 sm:grid-cols-2">
-              <div class="rounded-3xl border border-white/10 bg-white/10 p-5 backdrop-blur-sm">
-                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-white/60">Usuario</p>
-                <p class="mt-3 text-lg font-semibold text-white">{{ session?.user?.username ?? 'usuario' }}</p>
-                <p class="mt-1 text-sm text-white/72">{{ session?.user?.email ?? 'sin correo mock' }}</p>
-              </div>
-
-              <div class="rounded-3xl border border-white/10 bg-white/10 p-5 backdrop-blur-sm">
-                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-white/60">Qué cambia</p>
-                <ul class="mt-3 space-y-2 text-sm leading-6 text-white/80">
-                  <li>Menú lateral alineado a permisos y empresa.</li>
-                  <li>Contexto visual persistido durante toda la sesión.</li>
-                  <li>Flujo funcional intacto para continuar al shell.</li>
-                </ul>
-              </div>
+            <div class="rounded-3xl border border-white/10 bg-white/10 p-5 backdrop-blur-sm">
+              <p class="text-xs font-semibold uppercase tracking-[0.28em] text-white/60">Usuario</p>
+              <p class="mt-3 text-lg font-semibold text-white">{{ session?.user?.username ?? 'usuario' }}</p>
+              <p class="mt-1 text-sm text-white/72">{{ session?.user?.email ?? 'sin correo mock' }}</p>
             </div>
           </div>
         </section>
