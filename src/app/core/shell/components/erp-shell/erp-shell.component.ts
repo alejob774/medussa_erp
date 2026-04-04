@@ -95,7 +95,7 @@ import { map } from 'rxjs';
 
       <div class="erp-shell-content">
         <header class="erp-topbar">
-          <div>
+          <div class="erp-topbar__intro">
             <p class="erp-topbar__eyebrow">Medussa ERP</p>
             <h1 class="erp-topbar__title">Operación multiempresa centralizada</h1>
             <p class="erp-topbar__subtitle">
