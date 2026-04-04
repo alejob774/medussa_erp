@@ -428,13 +428,14 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 7rem;
-  padding: 0.25rem 0 0.75rem;
+  min-height: 7.4rem;
+  padding: 0.35rem 0 0.85rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .erp-shell-brand__logo {
-  width: 8.25rem;
+  width: 9rem;
+  max-width: 100%;
   flex: none;
   filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.22));
 }
@@ -655,14 +656,55 @@ a {
   color: var(--erp-text);
 }
 
-.erp-company-select {
-  margin-top: 0.25rem;
-  border: 0;
-  background: transparent;
-  color: var(--erp-text);
-  font-size: 0.92rem;
+.erp-company-switcher {
+  min-width: min(20rem, 100%);
+}
+
+.erp-company-switcher__details {
+  min-width: 0;
+  flex: 1;
+}
+
+.erp-company-switcher__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  align-self: flex-start;
+  border: 1px solid rgba(0, 82, 204, 0.12);
+  border-radius: 0.85rem;
+  background: rgba(0, 82, 204, 0.08);
+  padding: 0.55rem 0.8rem;
+  color: var(--medussa-blue);
+  font-size: 0.78rem;
   font-weight: 700;
-  outline: none;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease, transform 150ms ease;
+}
+
+.erp-company-switcher__action:hover:not(:disabled) {
+  border-color: rgba(0, 82, 204, 0.18);
+  background: rgba(0, 82, 204, 0.12);
+  transform: translateY(-1px);
+}
+
+.erp-company-switcher__action:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.erp-company-switcher__action mat-icon {
+  height: 1rem;
+  width: 1rem;
+  font-size: 1rem;
+}
+
+.erp-company-menu__swatch {
+  display: inline-block;
+  height: 0.65rem;
+  width: 0.65rem;
+  border-radius: 999px;
+  flex: none;
 }
 
 .erp-user-badge__avatar {

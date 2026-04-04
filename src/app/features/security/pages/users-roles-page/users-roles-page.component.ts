@@ -43,7 +43,7 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
   template: `
     <section class="space-y-6">
       <header class="erp-page-header">
-        <div class="flex flex-wrap items-start justify-between gap-4">
+        <div class="flex flex-wrap items-start gap-4">
           <div class="flex items-start gap-4">
             <div class="erp-page-icon">
               <mat-icon>manage_accounts</mat-icon>
@@ -55,17 +55,6 @@ import { SecurityAdministrationFacadeService } from '../../services/security-adm
               <p class="erp-page-description max-w-3xl">
                 Administra usuarios del sistema y su acceso por empresa.
               </p>
-            </div>
-          </div>
-
-          <div class="erp-meta-card">
-            <p class="erp-meta-card__label">Empresa activa</p>
-            <div class="mt-2 flex items-center gap-2 font-semibold text-slate-900">
-              <span
-                class="inline-block h-2.5 w-2.5 rounded-full"
-                [style.background]="activeCompany?.accentColor ?? '#0052cc'"
-              ></span>
-              <span>{{ activeCompany?.name ?? 'Sin empresa activa' }}</span>
             </div>
           </div>
         </div>

@@ -1,6 +1,5 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
-import { CompanyContextService } from '../../../../core/company/services/company-context.service';
 import { AuthSessionService } from '../../../auth/services/auth-session.service';
 
 @Component({
@@ -8,29 +7,17 @@ import { AuthSessionService } from '../../../auth/services/auth-session.service'
   standalone: true,
   imports: [CommonModule],
   template: `
-    @let activeCompany = (activeCompany$ | async);
     @let session = (session$ | async);
 
     <section class="space-y-6">
       <header class="erp-page-header erp-page-header--dark">
-        <div class="erp-page-header__content flex flex-wrap items-start justify-between gap-6">
+        <div class="erp-page-header__content">
           <div>
             <p class="erp-page-eyebrow">Inicio</p>
             <h1 class="erp-page-title">Centro operativo del ERP</h1>
             <p class="erp-page-description">
               El entorno de trabajo está organizado para operar por empresa, con navegación compacta y foco en los módulos activos del ERP.
             </p>
-          </div>
-
-          <div class="min-w-[260px] rounded-3xl border border-white/10 bg-white/10 px-5 py-4 text-sm backdrop-blur-sm">
-            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-white/60">Empresa activa</p>
-            <div class="mt-3 flex items-center gap-3">
-              <span
-                class="inline-block h-3 w-3 rounded-full"
-                [style.background]="activeCompany?.accentColor ?? '#6293C5'"
-              ></span>
-              <span class="text-base font-semibold text-white">{{ activeCompany?.name ?? 'Sin empresa activa' }}</span>
-            </div>
           </div>
         </div>
       </header>
@@ -70,9 +57,7 @@ import { AuthSessionService } from '../../../auth/services/auth-session.service'
   `,
 })
 export class DashboardPageComponent {
-  private readonly companyContextService = inject(CompanyContextService);
   private readonly authSessionService = inject(AuthSessionService);
 
-  readonly activeCompany$ = this.companyContextService.activeCompany$;
   readonly session$ = this.authSessionService.session$;
 }

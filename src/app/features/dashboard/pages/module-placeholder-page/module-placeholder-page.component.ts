@@ -2,34 +2,19 @@ import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
-import { CompanyContextService } from '../../../../core/company/services/company-context.service';
 
 @Component({
   selector: 'app-module-placeholder-page',
   standalone: true,
   imports: [CommonModule, RouterLink, MatIconModule],
   template: `
-    @let activeCompany = (activeCompany$ | async);
-
     <section class="space-y-6">
       <header class="erp-page-header">
-        <div class="erp-page-header__content flex flex-wrap items-start justify-between gap-6">
+        <div class="erp-page-header__content">
           <div>
             <p class="erp-page-eyebrow">Módulo preparado</p>
             <h1 class="erp-page-title">{{ title }}</h1>
             <p class="erp-page-description">{{ description }}</p>
-          </div>
-
-          <div class="erp-meta-card min-w-[260px]">
-            <p class="erp-meta-card__label">Empresa activa</p>
-            <p class="erp-meta-card__value flex items-center gap-3">
-              <span
-                class="inline-block h-3 w-3 rounded-full"
-                [style.background]="activeCompany?.accentColor ?? '#0052cc'"
-              ></span>
-              <span>{{ activeCompany?.name ?? 'Sin empresa activa' }}</span>
-            </p>
-            <p class="erp-meta-card__hint">La ruta está protegida y lista para evolucionar con lógica real.</p>
           </div>
         </div>
       </header>
@@ -64,9 +49,6 @@ import { CompanyContextService } from '../../../../core/company/services/company
 })
 export class ModulePlaceholderPageComponent {
   private readonly route = inject(ActivatedRoute);
-  private readonly companyContextService = inject(CompanyContextService);
-
-  readonly activeCompany$ = this.companyContextService.activeCompany$;
 
   get title(): string {
     return this.route.snapshot.data['title'] ?? 'Módulo';

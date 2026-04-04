@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthSessionService } from '../../../../features/auth/services/auth-session.service';
 import { CompanyContextService } from '../../../company/services/company-context.service';
@@ -14,6 +15,7 @@ import { map } from 'rxjs';
   imports: [
     CommonModule,
     MatIconModule,
+    MatMenuModule,
     RouterLink,
     RouterLinkActive,
     RouterOutlet,
@@ -108,21 +110,34 @@ import { map } from 'rxjs';
                 [style.background]="activeCompany?.accentColor ?? '#0052cc'"
               ></span>
 
-              <div>
+              <div class="erp-company-switcher__details">
                 <p class="erp-company-switcher__label">Empresa activa</p>
                 <p class="erp-company-switcher__value">{{ activeCompany?.name ?? 'Selecciona una empresa' }}</p>
               </div>
 
-              <select
-                class="erp-company-select"
-                [value]="activeCompany?.id ?? ''"
-                (change)="switchCompany(($any($event.target)).value)"
+              <button
+                type="button"
+                class="erp-company-switcher__action"
+                [matMenuTriggerFor]="companyMenu"
+                [disabled]="companies.length < 2"
+                aria-label="Cambiar empresa activa"
               >
-                @for (company of companies; track company.id) {
-                  <option [value]="company.id">{{ company.name }}</option>
-                }
-              </select>
+                <span>Cambiar</span>
+                <mat-icon>expand_more</mat-icon>
+              </button>
             </div>
+
+            <mat-menu #companyMenu="matMenu" xPosition="before">
+              @for (company of companies; track company.id) {
+                <button type="button" mat-menu-item (click)="switchCompany(company.id)">
+                  <span
+                    class="erp-company-menu__swatch"
+                    [style.background]="company.accentColor ?? '#0052cc'"
+                  ></span>
+                  <span>{{ company.name }}</span>
+                </button>
+              }
+            </mat-menu>
 
             <div class="erp-user-badge">
               <div>
