@@ -8,6 +8,7 @@ import { LoginPageComponent } from './features/auth/pages/login-page/login-page.
 import { CompanySelectorPageComponent } from './features/company/pages/company-selector-page/company-selector-page.component';
 import { DashboardPageComponent } from './features/dashboard/pages/dashboard-page/dashboard-page.component';
 import { ModulePlaceholderPageComponent } from './features/dashboard/pages/module-placeholder-page/module-placeholder-page.component';
+import { AuditLogsPageComponent } from './features/security/pages/audit-logs-page/audit-logs-page.component';
 import { ProfilesPermissionsPageComponent } from './features/security/pages/profiles-permissions-page/profiles-permissions-page.component';
 import { UsersRolesPageComponent } from './features/security/pages/users-roles-page/users-roles-page.component';
 import { GeneralSettingsPageComponent } from './features/settings/pages/general-settings-page/general-settings-page.component';
@@ -161,12 +162,9 @@ export const routes: Routes = [
       },
       {
         path: 'seguridad/auditoria',
-        component: ModulePlaceholderPageComponent,
+        component: AuditLogsPageComponent,
         canActivate: [permissionGuard],
         data: {
-          title: 'Seguridad · Auditoría',
-          description: 'Vista placeholder para eventos, trazas y bitácora del sistema.',
-          hint: 'HU siguiente: timeline de auditoría y filtros.',
           permission: 'security.audit.view',
         },
       },

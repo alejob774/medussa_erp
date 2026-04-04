@@ -3,4 +3,6 @@ export const environment = {
   useCompanySettingsMock: true,
   useSecurityAdministrationMock: false,
   enableSecurityAdministrationFallback: true,
+  useAuditLogsMock: true,
+  enableAuditLogsFallback: true,
 };
