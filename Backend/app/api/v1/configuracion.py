@@ -1,54 +1,70 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
-from sqlalchemy import text
+from typing import List
 from app.db.session import get_db
+from app.models.configuracion import Configuracion
+from app.schemas.configuracion import EmpresaCreate, EmpresaUpdate, EmpresaResponse
+from app.utils.auditoria import registrar_log
 
 router = APIRouter()
 
-@router.get("/menu-lateral/{rol_id}")
-def obtener_menu_por_rol(rol_id: int, db: Session = Depends(get_db)):
-    try:
-        # Consulta para traer la estructura jerárquica
-        query = text("""
-            SELECT 
-                m.nombre as modulo_nombre, 
-                m.icono as modulo_icono,
-                me.nombre as menu_nombre, 
-                me.url as menu_url, 
-                me.icono as menu_icono
-            FROM configuracion.modulos m
-            JOIN configuracion.menus me ON m.id = me.modulo_id
-            JOIN seguridad.rol_permisos rp ON m.id = rp.modulo_id
-            WHERE rp.rol_id = :rol_id 
-              AND m.estado = true 
-              AND rp.puede_leer = true
-            ORDER BY m.orden, me.orden
-        """)
-        
-        resultado = db.execute(query, {"rol_id": rol_id}).fetchall()
-        
-        # Agrupamiento dinámico por módulo
-        menu_final = []
-        modulos_dict = {}
+@router.post("/", response_model=EmpresaResponse, status_code=201)
+async def crear_empresa(request: Request, emp_in: EmpresaCreate, db: Session = Depends(get_db)):
+    # Validar duplicados [cite: 60, 61]
+    if db.query(Configuracion).filter(Configuracion.nit == emp_in.nit).first():
+        raise HTTPException(status_code=400, detail="El NIT ya existe para otra empresa")
+    
+    nueva_empresa = Configuracion(**emp_in.model_dump())
+    db.add(nueva_empresa)
+    db.commit()
+    db.refresh(nueva_empresa)
+    
+    # Auditoría HU-012 [cite: 80]
+    await registrar_log(db, request, 0, "SISTEMA", emp_in.empresa_id, "EMPRESAS", "CREATE", 
+                        antes=None, despues=emp_in.model_dump())
+    
+    return nueva_empresa
 
-        for fila in resultado:
-            if fila.modulo_nombre not in modulos_dict:
-                nuevo_modulo = {
-                    "modulo": fila.modulo_nombre,
-                    "icono": fila.modulo_icono,
-                    "submenus": []
-                }
-                modulos_dict[fila.modulo_nombre] = nuevo_modulo
-                menu_final.append(nuevo_modulo)
-            
-            modulos_dict[fila.modulo_nombre]["submenus"].append({
-                "nombre": fila.menu_nombre,
-                "url": fila.menu_url,
-                "icono": fila.menu_icono
-            })
-            
-        return menu_final
+@router.get("/", response_model=List[EmpresaResponse])
+def listar_empresas(db: Session = Depends(get_db)):
+    # El admin global puede ver todas, activas e inactivas [cite: 39]
+    return db.query(Configuracion).all()
 
-    except Exception as e:
-        print(f"DEBUG ERROR CONFIG: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error al cargar menú: {str(e)}")
+@router.put("/{id}", response_model=EmpresaResponse)
+async def actualizar_empresa(id: int, request: Request, emp_in: EmpresaUpdate, db: Session = Depends(get_db)):
+    empresa = db.query(Configuracion).filter(Configuracion.id == id).first()
+    if not empresa:
+        raise HTTPException(status_code=404, detail="Empresa no encontrada")
+    
+    antes = {c.name: getattr(empresa, c.name) for c in empresa.__table__.columns}
+    
+    for campo, valor in emp_in.model_dump(exclude_unset=True).items():
+        setattr(empresa, campo, valor)
+    
+    db.commit()
+    db.refresh(empresa)
+    despues = {c.name: getattr(empresa, c.name) for c in empresa.__table__.columns}
+    
+    await registrar_log(db, request, 0, "ADMIN", empresa.empresa_id, "EMPRESAS", "UPDATE", 
+                        antes=antes, despues=despues)
+    return empresa
+
+@router.delete("/{id}")
+async def desactivar_empresa(id: int, request: Request, db: Session = Depends(get_db)):
+    empresa = db.query(Configuracion).filter(Configuracion.id == id).first()
+    # No permitir eliminación total 
+    empresa.estado = False
+    db.commit()
+    
+    await registrar_log(
+        db, 
+        request, 
+        user_id=None, # Cambiamos 0 por None
+        user_name="SISTEMA", 
+        empresa_id=emp_in.empresa_id, 
+        modulo="EMPRESAS", 
+        accion="CREATE",
+        antes=None, 
+        despues=emp_in.model_dump()
+    )
+    return {"message": "Empresa desactivada correctamente"}

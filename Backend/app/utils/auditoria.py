@@ -6,18 +6,20 @@ from app.models.auditoria import Auditoria
 async def registrar_log(
     db: Session,
     request: Request,
-    user_id: int,
-    user_name: str,
-    empresa_id: str,
-    modulo: str,
-    accion: str,
+    user_id: int = None, # Cambiado a opcional
+    user_name: str = "SISTEMA",
+    empresa_id: str = "GENERAL",
+    modulo: str = "GENERAL",
+    accion: str = "ACCION",
     descripcion: str = None,
     antes: dict = None,
     despues: dict = None
 ):
-    # Esta función centraliza la creación del registro
+    # Si viene 0, lo tratamos como None para que no rompa la FK si no existe el usuario
+    final_user_id = user_id if user_id != 0 else None
+    
     log = Auditoria(
-        user_id=user_id,
+        user_id=final_user_id,
         user_name=user_name,
         empresa_id=empresa_id,
         modulo=modulo,

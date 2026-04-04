@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.db.session import get_db
-from app.models.usuarios import Usuario, UsuarioEmpresaRol
+from app.models.usuarios import Usuario, UsuarioEmpresaConfig
 from app.schemas.usuarios import UsuarioCreate, UsuarioResponse
 from passlib.context import CryptContext
 from app.utils.auditoria import registrar_log  # Importación de la HU-004
@@ -94,7 +94,7 @@ async def login(
         raise HTTPException(status_code=400, detail="Usuario inactivo")
 
     # 4. Obtener empresa activa para el log (HU-002/HU-004)
-    relacion = db.query(UsuarioEmpresaRol).filter(UsuarioEmpresaRol.usuario_id == usuario.id).first()
+    relacion = db.query(UsuarioEmpresaConfig).filter(UsuarioEmpresaConfig.usuario_id == usuario.id).first()
     empresa_id = relacion.empresa_id if relacion else "SISTEMA"
 
     # 5. Registro de Auditoría de Login (HU-004)
