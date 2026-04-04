@@ -1,6 +1,6 @@
 -- 1. Crear el usuario con su contraseña
 -- Cambia 'tu_password_seguro' por el que tengas en tu archivo .env
-CREATE ROLE medussa_user WITH LOGIN PASSWORD '0';
+CREATE ROLE medussa_user WITH LOGIN PASSWORD 'secure_password';
 
 -- 2. Darle permisos para crear bases de datos (opcional, pero útil para desarrollo)
 ALTER ROLE medussa_user CREATEDB;
