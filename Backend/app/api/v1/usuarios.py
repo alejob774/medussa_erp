@@ -26,7 +26,7 @@ async def crear_usuario(request: Request, user_in: UsuarioCreate, db: Session = 
             cargo=user_in.cargo,
             celular=user_in.celular,
             telefono_fijo=user_in.telefono_fijo,
-            hashed_password = get_password_hash(user_in.password),
+            password_hash = get_password_hash(user_in.password),
             estado=True
         )
         db.add(nuevo_usuario)
