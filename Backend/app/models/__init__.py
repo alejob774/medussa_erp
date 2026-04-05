@@ -1,4 +1,4 @@
-# app/models/__init__.py
-
-from .usuarios import Usuario
-from .configuracion import Configuracion # <--- CAMBIA 'ParametrosGenerales' por 'Configuracion'
+from .configuracion import Configuracion, Modulo, Menu, EmpresaSector
+from .seguridad import Rol, Perfil, UsuarioEmpresaRol
+from .usuarios import Usuario, UsuarioEmpresaConfig
+from .auditoria import Auditoria

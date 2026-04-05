@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, JSON
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text, text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 from app.db.session import Base
 
@@ -7,36 +8,54 @@ class Configuracion(Base):
     __table_args__ = {"schema": "configuracion"} 
 
     id = Column(Integer, primary_key=True, index=True)
-    nombre_empresa = Column(String(200), nullable=False, unique=True) # 
-    nit = Column(String(50), nullable=False, unique=True) # [cite: 43, 60]
-    direccion = Column(String(200), nullable=True)
-    telefono = Column(String(50), nullable=True)
-    email = Column(String(100), nullable=True)
-    logo = Column(String(255), nullable=True) # URL o path del logo 
-    sector = Column(String(100), nullable=False) # 
-    estado = Column(Boolean, default=True, nullable=False) # [cite: 43, 47]
-    
-    # Parámetros Multiempresa
+    nombre_empresa = Column(String(100), unique=True, nullable=False)
+    nit = Column(String(20), unique=True, nullable=False)
+    direccion = Column(String(150), nullable=False)
     ciudad = Column(String(100), nullable=False)
     pais = Column(String(100), nullable=False)
     moneda = Column(String(10), nullable=False)
     zona_horaria = Column(String(50), nullable=False)
-    fecha_inicio_operacion = Column(DateTime, nullable=True)
-    configuraciones_iniciales = Column(JSON, nullable=False) # 
+    formato_fecha = Column(String(20), nullable=True)
+    telefono = Column(String(20), nullable=True)
+    email = Column(String(100), nullable=True)
+    logo = Column(String(255), nullable=True)
     
-    empresa_id = Column(String(50), unique=True, index=True, nullable=False) 
+    # CORRECCIÓN: Se agrega unique=True para permitir llaves foráneas desde otras tablas
+    empresa_id = Column(String, index=True, unique=True, nullable=False) 
+    
+    sector = Column(String(100), nullable=True)
+    estado = Column(Boolean, server_default=text('true'))
+    fecha_inicio_operacion = Column(DateTime, nullable=True)
+    configuraciones_iniciales = Column(JSONB, nullable=True)
+    
     fecha_creacion = Column(DateTime(timezone=True), server_default=func.now())
-    fecha_modificacion = Column(DateTime(timezone=True), onupdate=func.now())
+    fecha_modificacion = Column(DateTime(timezone=True), onupdate=func.now())    
 
-class EmpresaSector(Base): # Catálogo para el selector de Juan Camilo [cite: 68, 75]
+class Modulo(Base):
+    __tablename__ = "modulos"
+    __table_args__ = {"schema": "configuracion"}
+    id = Column(Integer, primary_key=True, index=True)
+    nombre = Column(String(100), nullable=False)
+    icono = Column(String(50), nullable=True)
+    orden = Column(Integer, default=0)
+    estado = Column(Boolean, server_default=text('true'))
+
+class Menu(Base):
+    __tablename__ = "menus"
+    __table_args__ = {"schema": "configuracion"}
+    id = Column(Integer, primary_key=True, index=True)
+    nombre = Column(String(100), nullable=False)
+    modulo_id = Column(Integer, ForeignKey("configuracion.modulos.id"))
+
+class EmpresaSector(Base):
     __tablename__ = "empresa_sector"
     __table_args__ = {"schema": "configuracion"}
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String(100), unique=True, nullable=False)
 
-class Rol(Base):
-    __tablename__ = "roles"
-    __table_args__ = {"schema": "seguridad"}
+class ParametroGeneral(Base):
+    __tablename__ = "parametros_generales"
+    __table_args__ = {"schema": "configuracion"}
     id = Column(Integer, primary_key=True, index=True)
-    nombre = Column(String(50), unique=True, nullable=False)
-    descripcion = Column(String(255), nullable=True)
+    clave = Column(String(100), unique=True, nullable=False)
+    valor = Column(Text, nullable=True)

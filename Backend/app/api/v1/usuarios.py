@@ -3,10 +3,11 @@ from sqlalchemy.orm import Session
 from typing import List
 from app.db.session import get_db
 from app.models.usuarios import Usuario, UsuarioEmpresaConfig
-from app.models.configuracion import Configuracion, Rol
+from app.models.configuracion import Configuracion
+from app.models.seguridad import Rol
 from app.schemas.usuarios import UsuarioCreate, UsuarioResponse, UsuarioDetalleResponse
 from app.utils.auditoria import registrar_log
-from app.api.v1.auth import pwd_context 
+from app.core.security import get_password_hash
 
 router = APIRouter()
 
@@ -25,7 +26,7 @@ async def crear_usuario(request: Request, user_in: UsuarioCreate, db: Session = 
             cargo=user_in.cargo,
             celular=user_in.celular,
             telefono_fijo=user_in.telefono_fijo,
-            password_hash=pwd_context.hash(user_in.password),
+            hashed_password = get_password_hash(user_in.password),
             estado=True
         )
         db.add(nuevo_usuario)
