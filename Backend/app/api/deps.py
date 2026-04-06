@@ -1,41 +1,43 @@
-from typing import Generator
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import jwt, JWTError
+from jose import JWTError, jwt
 from sqlalchemy.orm import Session
-import os
-
 from app.db.session import get_db
 from app.models.usuarios import Usuario
-from app.core.security import ALGORITHM, SECRET_KEY
+from app.core.config import settings
 
-# Este es el endpoint que FastAPI usará para leer el token del Header
+# La URL debe ser relativa al prefijo definido en main.py
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login")
 
-async def get_current_user(
-    db: Session = Depends(get_db), 
-    token: str = Depends(oauth2_scheme)
-) -> Usuario:
+async def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="No se pudo validar el token",
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        # Decodificamos el token JWT
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
+        # Validación de firma usando la SECRET_KEY de config.py
+        payload = jwt.decode(
+            token, 
+            settings.SECRET_KEY, 
+            algorithms=[settings.ALGORITHM]
+        )
+        username: str = payload.get("sub")
+        
+        if username is None:
+            print("DEBUG: Token sin campo 'sub'")
             raise credentials_exception
-    except JWTError:
+            
+    except JWTError as e:
+        # Aquí es donde verás "Signature verification failed" si las llaves no coinciden
+        print(f"DEBUG: Error de validación: {e}")
         raise credentials_exception
 
-    # Buscamos el usuario en la base de datos
-    user = db.query(Usuario).filter(Usuario.email == email).first()
-    if user is None:
-        raise credentials_exception
+    # Búsqueda del usuario por el username extraído del token
+    user = db.query(Usuario).filter(Usuario.username == username).first()
     
-    if not user.estado:
-        raise HTTPException(status_code=400, detail="Usuario inactivo")
+    if user is None:
+        print(f"DEBUG: Usuario {username} no encontrado en DB")
+        raise credentials_exception
         
     return user

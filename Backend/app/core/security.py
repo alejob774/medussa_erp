@@ -1,9 +1,12 @@
 import os
-import bcrypt
-from datetime import datetime, timedelta, timezone
-from typing import Optional, Union
+from datetime import datetime, timedelta
+from typing import Any, Union
 from jose import jwt
+from passlib.context import CryptContext
+from app.core.config import settings # Importación vital
 from dotenv import load_dotenv
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Carga de variables de entorno para manejar SECRET_KEY de forma segura
 load_dotenv()
@@ -29,35 +32,16 @@ def get_password_hash(password: str) -> str:
     return hashed.decode('utf-8')
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """
-    Verifica si una contraseña en texto plano coincide con el hash almacenado.
-    Retorna False si hay cualquier error en el formato del hash.
-    """
-    try:
-        if not hashed_password:
-            return False
-            
-        pwd_bytes = plain_password.encode('utf-8')
-        if len(pwd_bytes) > 72:
-            pwd_bytes = pwd_bytes[:72]
-            
-        return bcrypt.checkpw(pwd_bytes, hashed_password.encode('utf-8'))
-    except (ValueError, TypeError, Exception):
-        # Captura errores si el hash en la DB no es un formato válido de bcrypt
-        return False
-
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
-    """
-    Crea un token JWT firmado para la sesión del usuario.
-    Incluye una fecha de expiración automática.
-    """
-    to_encode = data.copy()
+    return pwd_context.verify(plain_password, hashed_password)
     
+def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None) -> str:
+    to_encode = data.copy()
     if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
+        expire = datetime.utcnow() + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-        
+        expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    # Se usa la KEY y el ALGORITHM del archivo centralizado
+    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
