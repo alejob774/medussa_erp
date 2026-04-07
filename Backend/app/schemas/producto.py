@@ -1,37 +1,31 @@
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from decimal import Decimal
 
 class ProductoBase(BaseModel):
-    producto_nom: str = Field(..., max_length=50)
-    producto_sku: str = Field(..., max_length=50)
-    producto_fam: str = Field(..., max_length=50)
-    producto_descrip: str = Field(..., max_length=200)
-    uom_base: str = Field(..., max_length=10)
-    producto_ref: Optional[str] = None
-    maneja_lote: bool = False
-    maneja_venc: bool = False
-    vida_util: Optional[int] = None
-    producto_status: str = "Activo"
-    fact_convers: Optional[Decimal] = None
-    empresa_id: str
-
-    @validator('vida_util')
-    def validar_vida_util(cls, v, values):
-        if values.get('maneja_venc') is True and v is None:
-            raise ValueError('La vida útil es obligatoria cuando el producto maneja vencimiento') [cite: 51]
-        return v
-
-class ProductoCreate(ProductoBase):
-    pass
-
-class ProductoUpdate(ProductoBase):
     producto_nom: Optional[str] = None
     producto_sku: Optional[str] = None
-    # Permitir actualizaciones parciales
+    producto_fam: Optional[str] = None
+    producto_descrip: Optional[str] = None
+    uom_base: Optional[str] = None
+    producto_ref: Optional[str] = None
+    maneja_lote: Optional[bool] = False
+    maneja_venc: Optional[bool] = False
+    vida_util: Optional[int] = None
+    producto_status: Optional[str] = "Activo"
+    fact_convers: Optional[Decimal] = None
+    empresa_id: Optional[str] = None
+
+class ProductoCreate(ProductoBase):
+    producto_nom: str
+    producto_sku: str
+    uom_base: str
+    empresa_id: str
+
+class ProductoUpdate(ProductoBase):
+    # Al heredar de ProductoBase, todos los campos ya son opcionales
+    pass
 
 class ProductoResponse(ProductoBase):
     id: int
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

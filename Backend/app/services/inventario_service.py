@@ -1,35 +1,40 @@
 from sqlalchemy.orm import Session
 from app.models.inventario import Producto
 from app.schemas.producto import ProductoCreate, ProductoUpdate
-from fastapi import HTTPException
 
 async def crear_producto(db: Session, obj_in: ProductoCreate):
-    # Validar SKU único por empresa [cite: 45, 77]
-    check_sku = db.query(Producto).filter(
-        Producto.producto_sku == obj_in.producto_sku,
-        Producto.empresa_id == obj_in.empresa_id
-    ).first()
-    if check_sku:
-        raise HTTPException(status_code=400, detail="El SKU ya existe para esta empresa")
-    
-    db_obj = Producto(**obj_in.dict())
+    db_obj = Producto(**obj_in.model_dump())
     db.add(db_obj)
     db.commit()
     db.refresh(db_obj)
     return db_obj
 
-async def eliminar_producto(db: Session, producto_id: int):
-    producto = db.query(Producto).filter(Producto.id == producto_id).first()
-    if not producto:
-        raise HTTPException(status_code=404, detail="Producto no encontrado")
+# ESTA ES LA FUNCIÓN QUE FALTABA O TENÍA OTRO NOMBRE
+async def obtener_productos(db: Session, empresa_id: str, skip: int = 0, limit: int = 100):
+    return db.query(Producto).filter(
+        Producto.empresa_id == empresa_id
+    ).offset(skip).limit(limit).all()
 
-    # Simulación de validación de movimientos (HU-BE-016C) [cite: 78]
-    tiene_movimientos = False # Aquí iría un count de tablas de inventario
-    if tiene_movimientos:
-        producto.producto_status = "Inactivo" [cite: 29, 47]
-        db.commit()
-        return {"message": "Producto inactivado por tener movimientos previos"}
+async def obtener_producto_por_id(db: Session, producto_id: int):
+    return db.query(Producto).filter(Producto.id == producto_id).first()
+
+async def actualizar_producto(db: Session, producto_id: int, obj_in: ProductoUpdate):
+    db_obj = db.query(Producto).filter(Producto.id == producto_id).first()
+    if not db_obj:
+        return None
     
-    db.delete(producto)
+    update_data = obj_in.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_obj, field, value)
+    
     db.commit()
-    return {"message": "Producto eliminado exitosamente"}
+    db.refresh(db_obj)
+    return db_obj
+
+async def eliminar_producto(db: Session, producto_id: int):
+    db_obj = db.query(Producto).filter(Producto.id == producto_id).first()
+    if db_obj:
+        db_obj.producto_status = "Inactivo"
+        db.commit()
+        db.refresh(db_obj)
+    return db_obj
