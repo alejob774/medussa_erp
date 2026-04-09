@@ -6,6 +6,7 @@ import { AuthSessionService } from './auth-session.service';
 import { BackendAuthMeResponse } from '../models/backend-auth-me-response.model';
 import { BackendLoginResponse } from '../models/backend-login-response.model';
 import { LoginRequest } from '../models/login-request.model';
+import { LoginRequestBackend } from '../models/login-request-backend.model';
 import { LoginResponse } from '../models/login-response.model';
 import {
   mapBackendLoginResponseToLoginResponse,
@@ -22,10 +23,15 @@ export class AuthService {
   private readonly authMeUrl = `${environment.apiUrl}/auth/me`;
 
   login(payload: LoginRequest): Observable<LoginResponse> {
+    const requestPayload: LoginRequestBackend = {
+      username: payload.username.trim().toLowerCase(),
+      password: payload.password,
+    };
+
     const body = new HttpParams({
       fromObject: {
-        username: payload.username,
-        password: payload.password,
+        username: requestPayload.username,
+        password: requestPayload.password,
       },
     });
 

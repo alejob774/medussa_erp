@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { Company } from '../../../../core/company/models/company.model';
 import { environment } from '../../../../../environments/environment';
 import {
   CompanyDetailVm,
@@ -19,6 +20,10 @@ import { CompaniesMockRepository } from '../../infrastructure/repositories/compa
 export class CompaniesFacadeService {
   private readonly mockRepository = inject(CompaniesMockRepository);
   private readonly apiRepository = inject(CompaniesApiRepository);
+
+  listContextCompanies(): Observable<Company[]> {
+    return this.repository.listContextCompanies();
+  }
 
   listCompanies(filters: CompanyListFilters): Observable<CompanyRowVm[]> {
     return this.repository.listCompanies(filters);

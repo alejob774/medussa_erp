@@ -1,3 +1,4 @@
+import { Company } from '../../../../core/company/models/company.model';
 import { Observable } from 'rxjs';
 import {
   CompanyDetailVm,
@@ -9,6 +10,7 @@ import {
 } from '../models/company-administration.model';
 
 export interface CompaniesRepository {
+  listContextCompanies(): Observable<Company[]>;
   listCompanies(filters: CompanyListFilters): Observable<CompanyRowVm[]>;
   getCompany(companyId: string): Observable<CompanyDetailVm>;
   getFormCatalogs(): Observable<CompanyFormCatalogs>;

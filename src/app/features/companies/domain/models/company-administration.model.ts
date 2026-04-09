@@ -14,6 +14,7 @@ export interface CompanyAssociatedUserVm {
 
 export interface CompanyRowVm {
   id: string;
+  dbId?: string | null;
   backendId?: string | null;
   code: string;
   companyName: string;

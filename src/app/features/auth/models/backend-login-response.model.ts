@@ -1,7 +1,7 @@
 import { Company } from '../../../core/company/models/company.model';
 import { BackendAuthUser } from './backend-auth-user.model';
 
-export interface BackendLoginResponse {
+export interface LoginResponseBackend {
   access_token: string;
   refresh_token: string;
   token_type: string;
@@ -13,3 +13,5 @@ export interface BackendLoginResponse {
   requires_company_selection?: boolean;
   companies?: Company[];
 }
+
+export type BackendLoginResponse = LoginResponseBackend;

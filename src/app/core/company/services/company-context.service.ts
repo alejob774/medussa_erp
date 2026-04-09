@@ -41,13 +41,34 @@ export class CompanyContextService {
     distinctUntilChanged((previous, current) => previous?.id === current?.id),
   );
 
+  hydrateSessionCompanies(
+    session: LoginResponse,
+    companies: readonly Company[],
+  ): LoginResponse {
+    const mergedCompanies = this.mergeCompanies(companies, session.companies ?? []);
+    const companyState = resolveCompanyIdentityState(mergedCompanies, {
+      activeCompanyId: session.activeCompanyId ?? null,
+      activeBackendCompanyId: session.activeBackendCompanyId ?? null,
+    });
+
+    return {
+      ...session,
+      companies: companyState.companies,
+      activeCompanyId: companyState.activeCompanyId,
+      activeBackendCompanyId: companyState.activeBackendCompanyId,
+      requiresCompanySelection:
+        companyState.companies.length > 1 && !companyState.activeCompanyId,
+    };
+  }
+
   enrichSession(session: LoginResponse, username?: string): LoginResponse {
     const mockContext = this.companyMockFacade.getSessionContext(
       username ?? session.user?.username,
     );
-    const companies = session.companies?.length
-      ? session.companies
-      : mockContext.companies;
+    const companies = this.ensureActiveBackendCompanyPlaceholder(
+      this.mergeCompanies(session.companies ?? [], mockContext.companies),
+      session.activeBackendCompanyId ?? null,
+    );
     const roles = session.user?.roles?.length ? session.user.roles : mockContext.roles;
     const permissions = Array.from(
       new Set([...(session.user?.permissions ?? []), ...mockContext.permissions]),
@@ -170,5 +191,75 @@ export class CompanyContextService {
 
   getUserPermissions(): string[] {
     return this.authSessionService.getSession()?.user?.permissions ?? [];
+  }
+
+  private mergeCompanies(
+    preferredCompanies: readonly Company[],
+    fallbackCompanies: readonly Company[],
+  ): Company[] {
+    const mergedCompanies = new Map<string, Company>();
+
+    const upsertCompany = (company: Company, replace: boolean): void => {
+      const companyKey = company.backendId?.trim() || company.id;
+      const currentCompany = mergedCompanies.get(companyKey);
+
+      if (!currentCompany) {
+        mergedCompanies.set(companyKey, {
+          ...company,
+          dbId: company.dbId ?? null,
+          backendId: company.backendId ?? null,
+        });
+        return;
+      }
+
+      if (!replace) {
+        return;
+      }
+
+      mergedCompanies.set(companyKey, {
+        ...currentCompany,
+        ...company,
+        dbId: company.dbId ?? currentCompany.dbId ?? null,
+        backendId: company.backendId ?? currentCompany.backendId ?? null,
+      });
+    };
+
+    fallbackCompanies.forEach((company) => upsertCompany(company, false));
+    preferredCompanies.forEach((company) => upsertCompany(company, true));
+
+    return Array.from(mergedCompanies.values());
+  }
+
+  private ensureActiveBackendCompanyPlaceholder(
+    companies: readonly Company[],
+    activeBackendCompanyId: string | null,
+  ): Company[] {
+    const normalizedBackendCompanyId = activeBackendCompanyId?.trim();
+
+    if (!normalizedBackendCompanyId) {
+      return [...companies];
+    }
+
+    if (
+      companies.some(
+        (company) =>
+          company.backendId === normalizedBackendCompanyId ||
+          company.id === normalizedBackendCompanyId,
+      )
+    ) {
+      return [...companies];
+    }
+
+    return [
+      {
+        id: normalizedBackendCompanyId,
+        dbId: null,
+        backendId: normalizedBackendCompanyId,
+        name: `Empresa ${normalizedBackendCompanyId}`,
+        code: normalizedBackendCompanyId,
+        description: 'Contexto parcial cargado desde login. Se completará con el catálogo real cuando esté disponible.',
+      },
+      ...companies,
+    ];
   }
 }

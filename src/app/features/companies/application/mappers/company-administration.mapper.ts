@@ -1,3 +1,4 @@
+import { Company } from '../../../../core/company/models/company.model';
 import {
   CompanyAssociatedUserVm,
   CompanyDetailVm,
@@ -20,7 +21,7 @@ export interface BackendCompanyUserDto {
   photo_url?: string | null;
 }
 
-export interface BackendCompanyDto {
+export interface EmpresaBackendResponse {
   id?: number | string | null;
   backend_id?: number | string | null;
   empresa_id?: number | string | null;
@@ -77,7 +78,7 @@ export interface BackendCompanyCatalogsDto {
   idiomas?: Array<{ value?: string | null; label?: string | null } | string>;
 }
 
-export interface BackendSaveCompanyPayload {
+interface EmpresaBackendRequestBase {
   nombre_empresa: string;
   nit: string;
   sector: string;
@@ -96,15 +97,26 @@ export interface BackendSaveCompanyPayload {
   logo: string | null;
 }
 
-export function mapBackendCompanyToDetail(dto: BackendCompanyDto): CompanyDetailVm {
+export interface EmpresaCreateBackendRequest extends EmpresaBackendRequestBase {}
+
+export interface EmpresaUpdateBackendRequest extends EmpresaBackendRequestBase {}
+
+export type BackendCompanyDto = EmpresaBackendResponse;
+
+export type BackendSaveCompanyPayload = EmpresaCreateBackendRequest;
+
+export function mapBackendCompanyToDetail(dto: EmpresaBackendResponse): CompanyDetailVm {
   const companyName = resolveText(dto.nombre_empresa, dto.nombre, dto.name, 'Empresa sin nombre');
   const associatedUsers = mapAssociatedUsers(
     dto.usuarios_asociados ?? dto.associated_users ?? [],
   );
+  const dbId = resolveNullableText(dto.id, dto.backend_id);
+  const backendCompanyId = resolveNullableText(dto.empresa_id, dto.backend_id);
 
   return {
-    id: resolveId(dto.id, dto.empresa_id, companyName),
-    backendId: resolveNullableText(dto.backend_id),
+    id: resolveId(dbId, backendCompanyId, companyName),
+    dbId,
+    backendId: backendCompanyId,
     code: resolveText(dto.codigo, dto.code, buildCompanyCode(companyName)),
     companyName,
     nit: resolveText(dto.nit, 'Sin NIT'),
@@ -145,9 +157,20 @@ export function mapCompanyDetailToRow(company: CompanyDetailVm): CompanyRowVm {
   };
 }
 
+export function mapCompanyDetailToContextCompany(company: CompanyDetailVm): Company {
+  return {
+    id: company.backendId ?? company.id,
+    dbId: company.dbId ?? company.id,
+    backendId: company.backendId ?? company.id,
+    name: company.companyName,
+    code: company.code,
+    description: [company.sector, company.city].filter(Boolean).join(' · '),
+  };
+}
+
 export function mapCompanyPayloadToBackend(
   payload: SaveCompanyPayload,
-): BackendSaveCompanyPayload {
+): EmpresaCreateBackendRequest {
   return {
     nombre_empresa: payload.companyName.trim(),
     nit: payload.nit.trim(),

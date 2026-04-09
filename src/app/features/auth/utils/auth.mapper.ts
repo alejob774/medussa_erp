@@ -157,11 +157,14 @@ export function mapBackendLoginResponseToLoginResponse(
 ): LoginResponse {
   const companies = response.companies ?? [];
   const loginCompanyId = normalizeNullableString(response.active_company_id);
+  const loginBackendCompanyId = normalizeNullableString(
+    response.user?.empresa_id ?? response.empresa_id,
+  );
   const hasLocalCompanyId = !!loginCompanyId && companies.some((company) => company.id === loginCompanyId);
   const companyState = resolveCompanyIdentityState(companies, {
     activeCompanyId: hasLocalCompanyId ? loginCompanyId : null,
     activeBackendCompanyId:
-      response.empresa_id ?? (hasLocalCompanyId ? null : loginCompanyId) ?? null,
+      loginBackendCompanyId ?? (hasLocalCompanyId ? null : loginCompanyId) ?? null,
   });
 
   return {
