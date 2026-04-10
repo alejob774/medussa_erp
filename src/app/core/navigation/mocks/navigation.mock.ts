@@ -56,11 +56,11 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
       },
       {
         id: 'inventarios',
-        label: 'Inventarios',
+        label: 'Productos',
         route: '/inventarios',
         icon: 'inventory_2',
-        requiredPermissions: ['inventory.view'],
-        companyIds: ['medussa-holding', 'medussa-industrial'],
+        requiredPermissions: ['products.view'],
+        companyIds: ALL_COMPANIES,
       },
       {
         id: 'almacen',

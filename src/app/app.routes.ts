@@ -138,13 +138,14 @@ export const routes: Routes = [
       },
       {
         path: 'inventarios',
-        component: ModulePlaceholderPageComponent,
+        loadComponent: () =>
+          import('./features/products/presentation/pages/products-page/products-page.component').then(
+            (module) => module.ProductsPageComponent,
+          ),
         canActivate: [permissionGuard],
+        canDeactivate: [pendingChangesGuard],
         data: {
-          title: 'Manejo de inventarios',
-          description: 'Placeholder para stock, conteos y trazabilidad.',
-          hint: 'HU siguiente: stock en tiempo real y alertas.',
-          permission: 'inventory.view',
+          permission: 'products.view',
         },
       },
       {

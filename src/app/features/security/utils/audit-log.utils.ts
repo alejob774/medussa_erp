@@ -11,6 +11,7 @@ export const AUDIT_MODULE_LABELS: Record<AuditLogModuleKey, string> = {
   perfiles: 'Perfiles',
   configuracion: 'Configuración',
   auditoria: 'Auditoría',
+  productos: 'Productos',
 };
 
 export const AUDIT_ACTION_LABELS: Record<AuditLogActionKey, string> = {

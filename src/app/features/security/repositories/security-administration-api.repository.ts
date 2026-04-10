@@ -1,12 +1,25 @@
-import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { catchError, forkJoin, map, Observable, of, switchMap, throwError } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { AuthSessionService } from '../../auth/services/auth-session.service';
 import {
+  buildPermissionMatrix,
   createEmptyPermissionActionSet,
   SECURITY_PERMISSION_MODULES,
 } from '../mocks/security-administration.mock';
+import {
+  PerfilBackendResponse,
+  PerfilCreateBackendRequest,
+  PerfilUpdateBackendRequest,
+  RolBackendResponse,
+  RolCreateBackendRequest,
+  RolUpdateBackendRequest,
+  UsuarioBackendListItem,
+  UsuarioCreateBackendRequest,
+  UsuarioDetalleBackendResponse,
+  UsuarioEmpresaBackendMembership,
+} from '../models/security-backend.model';
 import {
   ModulePermissionVm,
   PermissionActionKey,
@@ -29,62 +42,6 @@ import {
 import { SecurityAdministrationMockRepository } from './security-administration-mock.repository';
 import { SecurityAdministrationRepository } from './security-administration.repository';
 
-interface BackendCompanyAssignmentDto {
-  empresa_id: string;
-  rol_id?: number | string | null;
-  perfil_id?: number | string | null;
-}
-
-interface BackendUserDto {
-  id: number | string;
-  nombre?: string;
-  apellido?: string;
-  username?: string;
-  email: string;
-  cargo?: string;
-  celular?: string;
-  telefono?: string;
-  telefono_fijo?: string;
-  foto?: string;
-  foto_url?: string;
-  avatar_url?: string;
-  imagen_url?: string;
-  estado?: boolean;
-  empresas?: BackendCompanyAssignmentDto[];
-}
-
-interface BackendRoleDto {
-  id: number | string;
-  nombre?: string;
-  descripcion?: string;
-  estado?: boolean;
-  activo?: boolean;
-  empresa_id?: string | null;
-  global?: boolean;
-}
-
-interface BackendProfileDto {
-  id: number | string;
-  nombre?: string;
-  descripcion?: string;
-  estado?: boolean;
-  activo?: boolean;
-  empresa_id?: string | null;
-  permisos?: string[];
-}
-
-interface BackendPermissionDto {
-  id: number | string;
-  codigo?: string;
-  clave?: string;
-  permiso?: string;
-  modulo_accion?: string;
-  nombre?: string;
-  modulo?: string;
-  modulo_nombre?: string;
-  accion?: string;
-}
-
 const SECURITY_MODULE_LABELS: Record<string, string> = {
   usuarios: 'Usuarios',
   roles: 'Roles',
@@ -92,6 +49,13 @@ const SECURITY_MODULE_LABELS: Record<string, string> = {
   configuracion: 'Configuración',
   auditoria: 'Auditoría',
 };
+
+interface UserShadowRecord {
+  userId: string;
+  row: UserRowVm;
+  deletedRemotely: boolean;
+  updatedAt: string;
+}
 
 @Injectable({
   providedIn: 'root',
@@ -103,9 +67,9 @@ export class SecurityAdministrationApiRepository
   private readonly authSessionService = inject(AuthSessionService);
   private readonly mockRepository = inject(SecurityAdministrationMockRepository);
   private readonly usersUrl = `${environment.apiUrl}/usuarios`;
-  private readonly rolesUrl = `${environment.apiUrl}/roles`;
-  private readonly profilesUrl = `${environment.apiUrl}/perfiles`;
-  private readonly permissionsUrl = `${environment.apiUrl}/permisos`;
+  private readonly rolesUrl = `${environment.apiUrl}/seguridad/roles`;
+  private readonly profilesUrl = `${environment.apiUrl}/seguridad/empresas`;
+  private readonly userShadowStorageKey = 'medussa.erp.security.user-shadow';
 
   listUsers(companyId: string, filters: SecurityListFilters): Observable<UserRowVm[]> {
     return this.withFallback(
@@ -118,9 +82,12 @@ export class SecurityAdministrationApiRepository
           ),
         }).pipe(
           map(({ users, roles, profiles }) =>
-            users
-              .map((user) => this.mapUserRow(user, companyId, roles, profiles))
-              .filter((user) => !!user.activeAssignment)
+            this.mergeUserRowsWithShadow(
+              companyId,
+              users
+                .map((user) => this.mapUserRow(user, companyId, roles, profiles))
+                .filter((user) => !!user.activeAssignment),
+            )
               .filter((user) => this.matchesUserFilters(user, filters))
               .sort((left, right) => left.name.localeCompare(right.name)),
           ),
@@ -164,9 +131,7 @@ export class SecurityAdministrationApiRepository
               ),
             ),
           ),
-        ).pipe(
-          map((entries) => Object.fromEntries(entries) as Record<string, RoleRowVm[]>),
-        );
+        ).pipe(map((entries) => Object.fromEntries(entries) as Record<string, RoleRowVm[]>));
       },
       () => this.mockRepository.listRoleCatalogs(companyIds),
       'catalogo de roles',
@@ -194,9 +159,7 @@ export class SecurityAdministrationApiRepository
               ),
             ),
           ),
-        ).pipe(
-          map((entries) => Object.fromEntries(entries) as Record<string, ProfileRowVm[]>),
-        );
+        ).pipe(map((entries) => Object.fromEntries(entries) as Record<string, ProfileRowVm[]>));
       },
       () => this.mockRepository.listProfileCatalogs(companyIds),
       'catalogo de perfiles',
@@ -226,7 +189,7 @@ export class SecurityAdministrationApiRepository
 
             if (!userId) {
               return this.http
-                .post<BackendUserDto>(
+                .post<UsuarioBackendListItem>(
                   this.withTrailingSlash(this.usersUrl),
                   this.buildCreateUserPayload(payload),
                 )
@@ -242,14 +205,34 @@ export class SecurityAdministrationApiRepository
                 );
             }
 
-            return this.http
-              .put<BackendUserDto>(
-                `${this.withTrailingSlash(this.usersUrl)}${userId}`,
-                this.buildUpdateUserPayload(payload),
-              )
-              .pipe(
-                switchMap(() => this.loadUserRow(userId, companyId, activeRoles, activeProfiles)),
-              );
+            return this.fetchUserDetail(userId).pipe(
+              map((user) => this.mapUserRow(user, companyId, activeRoles, activeProfiles)),
+              catchError(() =>
+                of(
+                  this.buildUserRowFromPayload(
+                    userId,
+                    companyId,
+                    payload,
+                    roles,
+                    profiles,
+                  ),
+                ),
+              ),
+              map((currentUser) =>
+                this.buildUserRowFromPayload(
+                  userId,
+                  companyId,
+                  payload,
+                  roles,
+                  profiles,
+                  currentUser,
+                ),
+              ),
+              map((shadowRow) => {
+                this.upsertUserShadow(shadowRow, false);
+                return shadowRow;
+              }),
+            );
           }),
         ),
       () => this.mockRepository.saveUser(companyId, payload, userId),
@@ -263,21 +246,57 @@ export class SecurityAdministrationApiRepository
     status: SecurityRecordStatus,
   ): Observable<UserRowVm> {
     return this.withFallback(
-      () =>
-        forkJoin({
+      () => {
+        if (status === 'active') {
+          const shadow = this.getUserShadow(userId);
+
+          if (shadow) {
+            const restoredRow: UserRowVm = {
+              ...shadow.row,
+              status: 'active',
+            };
+
+            this.upsertUserShadow(restoredRow, false);
+            return of(restoredRow);
+          }
+
+          return forkJoin({
+            roles: this.fetchRolesCatalog(companyId, true),
+            profiles: this.fetchProfilesCatalog(companyId, true).pipe(
+              map((profiles) => profiles.map((profile) => this.mapProfileRow(profile, companyId))),
+            ),
+          }).pipe(
+            switchMap(({ roles, profiles }) => this.loadUserRow(userId, companyId, roles, profiles)),
+          );
+        }
+
+        return forkJoin({
           roles: this.fetchRolesCatalog(companyId, true),
           profiles: this.fetchProfilesCatalog(companyId, true).pipe(
             map((profiles) => profiles.map((profile) => this.mapProfileRow(profile, companyId))),
           ),
         }).pipe(
           switchMap(({ roles, profiles }) =>
-            this.http
-              .put<void>(`${this.withTrailingSlash(this.usersUrl)}${userId}`, {
-                estado: status === 'active',
-              })
-              .pipe(switchMap(() => this.loadUserRow(userId, companyId, roles, profiles))),
+            this.loadUserRow(userId, companyId, roles, profiles).pipe(
+              switchMap((currentUser) =>
+                this.http
+                  .delete<void>(`${this.withTrailingSlash(this.usersUrl)}${userId}`)
+                  .pipe(
+                    map(() => {
+                      const inactiveUser: UserRowVm = {
+                        ...currentUser,
+                        status: 'inactive',
+                      };
+
+                      this.upsertUserShadow(inactiveUser, true);
+                      return inactiveUser;
+                    }),
+                  ),
+              ),
+            ),
           ),
-        ),
+        );
+      },
       () => this.mockRepository.updateUserStatus(companyId, userId, status),
       'usuario',
     );
@@ -290,11 +309,7 @@ export class SecurityAdministrationApiRepository
   ): Observable<RoleRowVm> {
     return this.withFallback(
       () => {
-        const requestBody = {
-          nombre: payload.name.trim(),
-          descripcion: payload.description.trim(),
-          estado: payload.status === 'active',
-        };
+        const requestBody = this.buildRolePayload(companyId, payload);
 
         if (roleId) {
           return this.http
@@ -303,19 +318,11 @@ export class SecurityAdministrationApiRepository
         }
 
         return this.http
-          .post<BackendRoleDto>(this.withTrailingSlash(this.rolesUrl), requestBody)
+          .post<RolBackendResponse>(this.withTrailingSlash(this.rolesUrl), requestBody)
           .pipe(
-            switchMap((createdRole) => {
-              const createdRoleId = this.resolveId(createdRole?.id, 'rol');
-
-              if (payload.status === 'inactive') {
-                return this.http
-                  .delete<void>(`${this.withTrailingSlash(this.rolesUrl)}${createdRoleId}`)
-                  .pipe(switchMap(() => this.loadRoleById(companyId, createdRoleId)));
-              }
-
-              return this.loadRoleById(companyId, createdRoleId);
-            }),
+            switchMap((createdRole) =>
+              this.loadRoleById(companyId, this.resolveId(createdRole?.id, 'rol')),
+            ),
           );
       },
       () => this.mockRepository.saveRole(companyId, payload, roleId),
@@ -330,14 +337,26 @@ export class SecurityAdministrationApiRepository
   ): Observable<RoleRowVm> {
     return this.withFallback(
       () => {
-        const request$ =
-          status === 'inactive'
-            ? this.http.delete<void>(`${this.withTrailingSlash(this.rolesUrl)}${roleId}`)
-            : this.http.put<void>(`${this.withTrailingSlash(this.rolesUrl)}${roleId}`, {
-                estado: true,
-              });
+        if (status === 'inactive') {
+          return this.http
+            .delete<void>(`${this.withTrailingSlash(this.rolesUrl)}${roleId}`)
+            .pipe(map(() => this.buildInactiveRoleFallback(companyId, roleId)));
+        }
 
-        return request$.pipe(switchMap(() => this.loadRoleById(companyId, roleId)));
+        return this.loadRoleById(companyId, roleId).pipe(
+          switchMap((role) =>
+            this.http
+              .put<void>(
+                `${this.withTrailingSlash(this.rolesUrl)}${roleId}`,
+                this.buildRolePayload(companyId, {
+                  name: role.name,
+                  description: role.description ?? '',
+                  status,
+                }),
+              )
+              .pipe(switchMap(() => this.loadRoleById(companyId, roleId))),
+          ),
+        );
       },
       () => this.mockRepository.updateRoleStatus(companyId, roleId, status),
       'rol',
@@ -362,11 +381,8 @@ export class SecurityAdministrationApiRepository
   getProfile(companyId: string, profileId: string): Observable<ProfileDetailVm> {
     return this.withFallback(
       () =>
-        forkJoin({
-          profiles: this.fetchProfilesCatalog(companyId, true),
-          permissionCatalog: this.fetchPermissionsCatalog().pipe(catchError(() => of([]))),
-        }).pipe(
-          map(({ profiles, permissionCatalog }) => {
+        this.fetchProfilesCatalog(companyId, true).pipe(
+          map((profiles) => {
             const profile = profiles.find(
               (candidate) => this.resolveId(candidate.id, 'perfil') === profileId,
             );
@@ -375,7 +391,7 @@ export class SecurityAdministrationApiRepository
               throw new Error('No se encontró el perfil solicitado.');
             }
 
-            return this.mapProfileDetail(profile, companyId, permissionCatalog);
+            return this.mapProfileDetail(profile, companyId);
           }),
         ),
       () => this.mockRepository.getProfile(companyId, profileId),
@@ -388,63 +404,27 @@ export class SecurityAdministrationApiRepository
     payload: ProfileFormValue,
     profileId?: string,
   ): Observable<ProfileDetailVm> {
-    const hasEnabledPermissions = payload.permissions.some((permission) =>
-      Object.values(permission.actions).some(Boolean),
-    );
-
     return this.withFallback(
-      () =>
-        this.fetchPermissionsCatalog().pipe(
-          switchMap((permissionCatalog) => {
-            if (!profileId && !hasEnabledPermissions) {
-              throw new Error('Debes activar al menos un permiso para guardar el perfil.');
-            }
+      () => {
+        const requestBody = this.buildProfilePayload(companyId, payload);
 
-            const permissionIds = hasEnabledPermissions
-              ? this.resolvePermissionIds(payload.permissions, permissionCatalog)
-              : [];
-            const requestBody = {
-              nombre: payload.name.trim(),
-              descripcion: payload.description.trim(),
-              estado: payload.status === 'active',
-            };
+        if (profileId) {
+          return this.http
+            .put<void>(
+              `${this.getProfilesByCompanyUrl(companyId)}/${profileId}`,
+              requestBody,
+            )
+            .pipe(switchMap(() => this.loadProfileById(companyId, profileId)));
+        }
 
-            const profileRequest$ = profileId
-              ? this.http.put<void>(`${this.withTrailingSlash(this.profilesUrl)}${profileId}`, requestBody).pipe(map(() => profileId))
-              : this.http
-                  .post<BackendProfileDto>(this.withTrailingSlash(this.profilesUrl), requestBody)
-                  .pipe(
-                    map((createdProfile) => this.resolveId(createdProfile?.id, 'perfil')),
-                  );
-
-            return profileRequest$.pipe(
-              switchMap((resolvedProfileId) => {
-                if (!hasEnabledPermissions) {
-                  return of(resolvedProfileId);
-                }
-
-                return this.http
-                  .post<void>(
-                    `${this.withTrailingSlash(this.profilesUrl)}${resolvedProfileId}/permisos`,
-                    { permisos_ids: permissionIds },
-                  )
-                  .pipe(map(() => resolvedProfileId));
-              }),
-              switchMap((resolvedProfileId) => {
-                if (payload.status === 'active') {
-                  return of(resolvedProfileId);
-                }
-
-                return this.http
-                  .delete<void>(`${this.withTrailingSlash(this.profilesUrl)}${resolvedProfileId}`)
-                  .pipe(map(() => resolvedProfileId));
-              }),
-              switchMap((resolvedProfileId) =>
-                this.loadProfileById(companyId, resolvedProfileId, permissionCatalog),
-              ),
-            );
-          }),
-        ),
+        return this.http
+          .post<PerfilBackendResponse>(this.getProfilesByCompanyUrl(companyId), requestBody)
+          .pipe(
+            switchMap((createdProfile) =>
+              this.loadProfileById(companyId, this.resolveId(createdProfile?.id, 'perfil')),
+            ),
+          );
+      },
       () => this.mockRepository.saveProfile(companyId, payload, profileId),
       'perfil',
     );
@@ -456,45 +436,51 @@ export class SecurityAdministrationApiRepository
     status: SecurityRecordStatus,
   ): Observable<ProfileDetailVm> {
     return this.withFallback(
-      () =>
-        this.fetchPermissionsCatalog().pipe(
-          catchError(() => of([])),
-          switchMap((permissionCatalog) => {
-        const request$ =
-          status === 'inactive'
-            ? this.http.delete<void>(`${this.withTrailingSlash(this.profilesUrl)}${profileId}`)
-            : this.http.put<void>(`${this.withTrailingSlash(this.profilesUrl)}${profileId}`, {
-                estado: true,
-              });
+      () => {
+        if (status === 'inactive') {
+          return this.http
+            .delete<void>(`${this.getProfilesByCompanyUrl(companyId)}/${profileId}`)
+            .pipe(map(() => this.buildInactiveProfileFallback(companyId, profileId)));
+        }
 
-            return request$.pipe(
-              switchMap(() => this.loadProfileById(companyId, profileId, permissionCatalog)),
-            );
-          }),
-        ),
+        return this.loadProfileById(companyId, profileId).pipe(
+          switchMap((profile) =>
+            this.http
+              .put<void>(
+                `${this.getProfilesByCompanyUrl(companyId)}/${profileId}`,
+                this.buildProfilePayload(companyId, {
+                  name: profile.name,
+                  description: profile.description ?? '',
+                  status,
+                  permissions: profile.permissions,
+                }),
+              )
+              .pipe(switchMap(() => this.loadProfileById(companyId, profileId))),
+          ),
+        );
+      },
       () => this.mockRepository.updateProfileStatus(companyId, profileId, status),
       'perfil',
     );
   }
 
   listPermissionModules(): Observable<ModulePermissionVm[]> {
-    return this.withFallback(
-      () =>
-        this.fetchPermissionsCatalog().pipe(
-          map((permissions) => this.buildPermissionModules([], permissions)),
-        ),
-      () => this.mockRepository.listPermissionModules(),
+    return of(
+      buildPermissionMatrix().map((permission) => ({
+        ...permission,
+        actions: normalizePermissionActionSet(permission.actions),
+      })),
     );
   }
 
-  private fetchUsers(): Observable<BackendUserDto[]> {
+  private fetchUsers(): Observable<UsuarioBackendListItem[]> {
     return this.http
       .get<unknown>(this.withTrailingSlash(this.usersUrl))
-      .pipe(map((response) => this.extractArrayPayload<BackendUserDto>(response)));
+      .pipe(map((response) => this.extractArrayPayload<UsuarioBackendListItem>(response)));
   }
 
-  private fetchUserDetail(userId: string): Observable<BackendUserDto> {
-    return this.http.get<BackendUserDto>(`${this.withTrailingSlash(this.usersUrl)}${userId}`);
+  private fetchUserDetail(userId: string): Observable<UsuarioDetalleBackendResponse> {
+    return this.http.get<UsuarioDetalleBackendResponse>(`${this.withTrailingSlash(this.usersUrl)}${userId}`);
   }
 
   private fetchRolesCatalog(
@@ -502,14 +488,12 @@ export class SecurityAdministrationApiRepository
     includeInactive: boolean,
   ): Observable<RoleRowVm[]> {
     return this.http
-      .get<unknown>(
-        this.withTrailingSlash(this.rolesUrl),
-        this.buildScopedRequestOptions(companyId, includeInactive),
-      )
+      .get<unknown>(`${this.withTrailingSlash(this.rolesUrl)}empresa/${this.resolveRequestCompanyId(companyId)}`)
       .pipe(
         map((response) =>
-          this.extractArrayPayload<BackendRoleDto>(response)
+          this.extractArrayPayload<RolBackendResponse>(response)
             .map((role) => this.mapRoleRow(role, companyId))
+            .filter((role) => includeInactive || role.status === 'active')
             .sort((left, right) => left.name.localeCompare(right.name)),
         ),
       );
@@ -518,19 +502,20 @@ export class SecurityAdministrationApiRepository
   private fetchProfilesCatalog(
     companyId: string,
     includeInactive: boolean,
-  ): Observable<BackendProfileDto[]> {
+  ): Observable<PerfilBackendResponse[]> {
     return this.http
-      .get<unknown>(
-        this.withTrailingSlash(this.profilesUrl),
-        this.buildScopedRequestOptions(companyId, includeInactive),
-      )
-      .pipe(map((response) => this.extractArrayPayload<BackendProfileDto>(response)));
+      .get<unknown>(this.getProfilesByCompanyUrl(companyId))
+      .pipe(
+        map((response) =>
+          this.extractArrayPayload<PerfilBackendResponse>(response).filter((profile) =>
+            includeInactive ? true : this.resolveStatus(profile.estado ?? profile.activo) === 'active',
+          ),
+        ),
+      );
   }
 
-  private fetchPermissionsCatalog(): Observable<BackendPermissionDto[]> {
-    return this.http
-      .get<unknown>(this.withTrailingSlash(this.permissionsUrl))
-      .pipe(map((response) => this.extractArrayPayload<BackendPermissionDto>(response)));
+  private getProfilesByCompanyUrl(companyId: string): string {
+    return `${this.withTrailingSlash(this.profilesUrl)}${this.resolveRequestCompanyId(companyId)}/perfiles`;
   }
 
   private loadUserRow(
@@ -561,11 +546,7 @@ export class SecurityAdministrationApiRepository
     );
   }
 
-  private loadProfileById(
-    companyId: string,
-    profileId: string,
-    permissionCatalog: readonly BackendPermissionDto[],
-  ): Observable<ProfileDetailVm> {
+  private loadProfileById(companyId: string, profileId: string): Observable<ProfileDetailVm> {
     return this.fetchProfilesCatalog(companyId, true).pipe(
       map((profiles) => {
         const profile = profiles.find(
@@ -576,13 +557,13 @@ export class SecurityAdministrationApiRepository
           throw new Error('No se encontró el perfil solicitado.');
         }
 
-        return this.mapProfileDetail(profile, companyId, permissionCatalog);
+        return this.mapProfileDetail(profile, companyId);
       }),
     );
   }
 
   private mapUserRow(
-    user: BackendUserDto,
+    user: UsuarioBackendListItem,
     companyId: string,
     roles: readonly RoleRowVm[],
     profiles: readonly ProfileRowVm[],
@@ -617,21 +598,23 @@ export class SecurityAdministrationApiRepository
     };
   }
 
-  private mapRoleRow(role: BackendRoleDto, companyId: string): RoleRowVm {
-    const isGlobal = role.global === true || role.empresa_id === null;
+  private mapRoleRow(role: RolBackendResponse, companyId: string): RoleRowVm {
+    const resolvedCompanyId = role.empresa_id
+      ? this.resolveFrontendCompanyId(role.empresa_id)
+      : companyId;
 
     return {
       id: this.resolveId(role.id, 'rol'),
-      companyId: isGlobal ? null : companyId,
+      companyId: resolvedCompanyId,
       name: role.nombre?.trim() || 'Rol sin nombre',
       description: role.descripcion?.trim() || '',
       status: this.resolveStatus(role.estado ?? role.activo),
-      scope: isGlobal ? 'global' : 'company',
+      scope: 'company',
     };
   }
 
-  private mapProfileRow(profile: BackendProfileDto, companyId: string): ProfileRowVm {
-    const permissions = this.buildPermissionModules(profile.permisos ?? []);
+  private mapProfileRow(profile: PerfilBackendResponse, companyId: string): ProfileRowVm {
+    const permissions = this.buildPermissionModules(profile.permisos);
     const summary = summarizeProfilePermissions(permissions);
 
     return {
@@ -647,68 +630,119 @@ export class SecurityAdministrationApiRepository
   }
 
   private mapProfileDetail(
-    profile: BackendProfileDto,
+    profile: PerfilBackendResponse,
     companyId: string,
-    permissionCatalog: readonly BackendPermissionDto[] = [],
   ): ProfileDetailVm {
     return {
       ...this.mapProfileRow(profile, companyId),
-      permissions: this.buildPermissionModules(profile.permisos ?? [], permissionCatalog),
+      permissions: this.buildPermissionModules(profile.permisos),
     };
   }
 
-  private buildPermissionModules(
-    permissionCodes: readonly string[],
-    permissionCatalog: readonly BackendPermissionDto[] = [],
-  ): ModulePermissionVm[] {
-    const fallbackModuleNames = new Map(
-      SECURITY_PERMISSION_MODULES.map((module) => [module.key, module.name]),
-    );
+  private buildPermissionModules(permissionSource: unknown): ModulePermissionVm[] {
     const modules = new Map<string, ModulePermissionVm>(
-      SECURITY_PERMISSION_MODULES.map((module) => [
-        module.key,
-        {
-          moduleKey: module.key,
-          moduleName: module.name,
-          actions: createEmptyPermissionActionSet(),
-        },
-      ]),
+      buildPermissionMatrix().map((module) => [module.moduleKey, {
+        ...module,
+        actions: normalizePermissionActionSet(module.actions),
+      }]),
     );
 
-    permissionCatalog.forEach((permission) => {
-      const parsedPermission = this.parsePermissionCode(this.resolvePermissionCode(permission));
+    const applyAction = (moduleKey: string, action: PermissionActionKey, enabled: boolean): void => {
+      const normalizedModuleKey = moduleKey.trim().toLowerCase();
 
-      if (!parsedPermission) {
+      if (!normalizedModuleKey) {
         return;
       }
 
-      this.ensurePermissionModule(
-        modules,
-        parsedPermission.moduleKey,
-        permission.modulo_nombre?.trim() ||
-          permission.modulo?.trim() ||
-          fallbackModuleNames.get(parsedPermission.moduleKey) ||
-          this.humanizeModuleKey(parsedPermission.moduleKey),
-      );
-    });
+      const currentModule = modules.get(normalizedModuleKey) ?? {
+        moduleKey: normalizedModuleKey,
+        moduleName:
+          SECURITY_MODULE_LABELS[normalizedModuleKey] ??
+          SECURITY_PERMISSION_MODULES.find((module) => module.key === normalizedModuleKey)?.name ??
+          this.humanizeModuleKey(normalizedModuleKey),
+        actions: createEmptyPermissionActionSet(),
+      };
 
-    permissionCodes.forEach((permissionCode) => {
-      const parsedPermission = this.parsePermissionCode(permissionCode);
+      currentModule.actions[action] = enabled;
+      modules.set(normalizedModuleKey, currentModule);
+    };
 
-      if (!parsedPermission) {
+    const applyFromEntry = (entry: unknown): void => {
+      if (!entry) {
         return;
       }
 
-      const permissionModule = this.ensurePermissionModule(
-        modules,
-        parsedPermission.moduleKey,
-        fallbackModuleNames.get(parsedPermission.moduleKey) ||
-          SECURITY_MODULE_LABELS[parsedPermission.moduleKey] ||
-          this.humanizeModuleKey(parsedPermission.moduleKey),
-      );
+      if (typeof entry === 'string') {
+        const parsedPermission = this.parsePermissionCode(entry);
 
-      permissionModule.actions[parsedPermission.action] = true;
-    });
+        if (parsedPermission) {
+          applyAction(parsedPermission.moduleKey, parsedPermission.action, true);
+        }
+
+        return;
+      }
+
+      if (Array.isArray(entry)) {
+        entry.forEach((item) => applyFromEntry(item));
+        return;
+      }
+
+      if (typeof entry !== 'object') {
+        return;
+      }
+
+      const permissionObject = entry as Record<string, unknown>;
+      const moduleKeyCandidate =
+        typeof permissionObject['modulo'] === 'string'
+          ? permissionObject['modulo']
+          : typeof permissionObject['module'] === 'string'
+            ? permissionObject['module']
+            : null;
+      const actionCandidate =
+        typeof permissionObject['accion'] === 'string'
+          ? permissionObject['accion']
+          : typeof permissionObject['action'] === 'string'
+            ? permissionObject['action']
+            : null;
+
+      if (moduleKeyCandidate && actionCandidate) {
+        const normalizedAction = actionCandidate.trim().toLowerCase() as PermissionActionKey;
+
+        if (SECURITY_REAL_PERMISSION_ACTION_KEYS.includes(normalizedAction)) {
+          applyAction(moduleKeyCandidate, normalizedAction, true);
+          return;
+        }
+      }
+
+      Object.entries(permissionObject).forEach(([moduleKey, value]) => {
+        if (Array.isArray(value)) {
+          value.forEach((actionValue) => {
+            if (typeof actionValue !== 'string') {
+              return;
+            }
+
+            const normalizedAction = actionValue.trim().toLowerCase() as PermissionActionKey;
+
+            if (SECURITY_REAL_PERMISSION_ACTION_KEYS.includes(normalizedAction)) {
+              applyAction(moduleKey, normalizedAction, true);
+            }
+          });
+          return;
+        }
+
+        if (value && typeof value === 'object') {
+          Object.entries(value as Record<string, unknown>).forEach(([actionKey, enabled]) => {
+            const normalizedAction = actionKey.trim().toLowerCase() as PermissionActionKey;
+
+            if (SECURITY_REAL_PERMISSION_ACTION_KEYS.includes(normalizedAction)) {
+              applyAction(moduleKey, normalizedAction, !!enabled);
+            }
+          });
+        }
+      });
+    };
+
+    applyFromEntry(permissionSource);
 
     return Array.from(modules.values())
       .map((permission) => ({
@@ -716,27 +750,6 @@ export class SecurityAdministrationApiRepository
         actions: normalizePermissionActionSet(permission.actions),
       }))
       .sort((left, right) => left.moduleName.localeCompare(right.moduleName));
-  }
-
-  private ensurePermissionModule(
-    modules: Map<string, ModulePermissionVm>,
-    moduleKey: string,
-    moduleName: string,
-  ): ModulePermissionVm {
-    const currentModule = modules.get(moduleKey);
-
-    if (currentModule) {
-      return currentModule;
-    }
-
-    const nextModule: ModulePermissionVm = {
-      moduleKey,
-      moduleName,
-      actions: createEmptyPermissionActionSet(),
-    };
-
-    modules.set(moduleKey, nextModule);
-    return nextModule;
   }
 
   private parsePermissionCode(
@@ -749,8 +762,8 @@ export class SecurityAdministrationApiRepository
     }
 
     const separatorIndex = normalizedCode.lastIndexOf('_');
-    const moduleKey = normalizedCode.slice(0, separatorIndex);
-    const actionKey = normalizedCode.slice(separatorIndex + 1) as PermissionActionKey;
+    const moduleKey = normalizedCode.slice(0, separatorIndex).toLowerCase();
+    const actionKey = normalizedCode.slice(separatorIndex + 1).toLowerCase() as PermissionActionKey;
 
     if (!moduleKey || !SECURITY_REAL_PERMISSION_ACTION_KEYS.includes(actionKey)) {
       return null;
@@ -762,60 +775,20 @@ export class SecurityAdministrationApiRepository
     };
   }
 
-  private resolvePermissionCode(permission: BackendPermissionDto): string | null {
-    const candidates = [
-      permission.codigo,
-      permission.modulo_accion,
-      permission.clave,
-      permission.permiso,
-    ];
-
-    return candidates.find((candidate) => !!candidate?.trim())?.trim() ?? null;
-  }
-
-  private resolvePermissionIds(
+  private serializePermissionMatrix(
     permissions: readonly ModulePermissionVm[],
-    permissionCatalog: readonly BackendPermissionDto[],
-  ): Array<number | string> {
-    if (!permissionCatalog.length) {
-      throw new HttpErrorResponse({
-        status: 404,
-        statusText: 'Permission catalog unavailable',
-      });
-    }
-
-    const permissionIdMap = new Map<string, number | string>();
-
-    permissionCatalog.forEach((permission) => {
-      const permissionCode = this.resolvePermissionCode(permission);
-
-      if (!permissionCode) {
-        return;
-      }
-
-      permissionIdMap.set(permissionCode, permission.id);
-    });
-
-    const requestedCodes = permissions.flatMap((permission) =>
-      SECURITY_REAL_PERMISSION_ACTION_KEYS.filter(
-        (action) => permission.actions[action],
-      ).map((action) => `${permission.moduleKey}_${action}`),
+  ): Record<string, string[]> {
+    return Object.fromEntries(
+      permissions
+        .map((permission) => [
+          permission.moduleKey,
+          SECURITY_REAL_PERMISSION_ACTION_KEYS.filter((action) => permission.actions[action]),
+        ] as const)
+        .filter(([, actions]) => actions.length > 0),
     );
-
-    const missingCodes = requestedCodes.filter((permissionCode) => !permissionIdMap.has(permissionCode));
-
-    if (missingCodes.length) {
-      throw new Error(
-        `No fue posible resolver los permisos del backend para: ${missingCodes.join(', ')}.`,
-      );
-    }
-
-    return requestedCodes
-      .map((permissionCode) => permissionIdMap.get(permissionCode))
-      .filter((permissionId): permissionId is number | string => permissionId !== undefined);
   }
 
-  private buildCreateUserPayload(payload: UserFormValue): Record<string, unknown> {
+  private buildCreateUserPayload(payload: UserFormValue): UsuarioCreateBackendRequest {
     const normalizedEmail = payload.email.trim().toLowerCase();
 
     return {
@@ -830,27 +803,34 @@ export class SecurityAdministrationApiRepository
       cargo: payload.position.trim(),
       celular: payload.mobilePhone.trim(),
       telefono_fijo: payload.landlinePhone.trim() || undefined,
-      foto_url: payload.photoUrl ?? undefined,
-      estado: payload.status === 'active',
       empresas: payload.assignedCompanies.map((assignment) =>
         this.buildCompanyAssignment(assignment.companyId, assignment.roleId, assignment.profileId),
       ),
     };
   }
 
-  private buildUpdateUserPayload(payload: UserFormValue): Record<string, unknown> {
+  private buildRolePayload(
+    companyId: string,
+    payload: RoleFormValue,
+  ): RolCreateBackendRequest | RolUpdateBackendRequest {
     return {
-      nombre: payload.firstName.trim(),
-      apellido: payload.lastName.trim(),
-      email: payload.email.trim().toLowerCase(),
-      cargo: payload.position.trim(),
-      celular: payload.mobilePhone.trim(),
-      telefono_fijo: payload.landlinePhone.trim() || undefined,
-      foto_url: payload.photoUrl ?? undefined,
-      estado: payload.status === 'active',
-      empresas: payload.assignedCompanies.map((assignment) =>
-        this.buildCompanyAssignment(assignment.companyId, assignment.roleId, assignment.profileId),
-      ),
+      empresa_id: this.resolveRequestCompanyId(companyId),
+      nombre: payload.name.trim(),
+      descripcion: payload.description.trim(),
+      estado: payload.status === 'active' ? 'activo' : 'inactivo',
+    };
+  }
+
+  private buildProfilePayload(
+    companyId: string,
+    payload: ProfileFormValue,
+  ): PerfilCreateBackendRequest | PerfilUpdateBackendRequest {
+    return {
+      empresa_id: this.resolveRequestCompanyId(companyId),
+      nombre: payload.name.trim(),
+      descripcion: payload.description.trim(),
+      estado: payload.status === 'active' ? 'activo' : 'inactivo',
+      permisos: this.serializePermissionMatrix(payload.permissions),
     };
   }
 
@@ -858,12 +838,167 @@ export class SecurityAdministrationApiRepository
     companyId: string,
     roleId: string | null,
     profileId: string | null,
-  ): BackendCompanyAssignmentDto {
+  ): UsuarioEmpresaBackendMembership {
     return {
       empresa_id: this.resolveRequestCompanyId(companyId),
       rol_id: this.toBackendId(roleId),
       perfil_id: this.toBackendId(profileId),
     };
+  }
+
+  private buildUserRowFromPayload(
+    userId: string,
+    activeCompanyId: string,
+    payload: UserFormValue,
+    roleCatalogs: Record<string, RoleRowVm[]>,
+    profileCatalogs: Record<string, ProfileRowVm[]>,
+    currentUser?: UserRowVm,
+  ): UserRowVm {
+    const assignedCompanies = payload.assignedCompanies.map((assignment) => {
+      const role = roleCatalogs[assignment.companyId]?.find((item) => item.id === assignment.roleId) ?? null;
+      const profile = profileCatalogs[assignment.companyId]?.find((item) => item.id === assignment.profileId) ?? null;
+
+      return {
+        companyId: assignment.companyId,
+        companyName: this.resolveCompanyName(assignment.companyId),
+        roleId: assignment.roleId,
+        roleName: role?.name ?? null,
+        profileId: assignment.profileId,
+        profileName: profile?.name ?? null,
+      } satisfies UserCompanyAssignmentVm;
+    });
+    const activeAssignment = assignedCompanies.find(
+      (assignment) => assignment.companyId === activeCompanyId,
+    ) ?? null;
+
+    return {
+      userId,
+      firstName: payload.firstName.trim() || currentUser?.firstName || 'Usuario',
+      lastName: payload.lastName.trim() || currentUser?.lastName || '',
+      name: `${payload.firstName.trim()} ${payload.lastName.trim()}`.trim() || currentUser?.name || 'Usuario',
+      position: payload.position.trim(),
+      email: payload.email.trim().toLowerCase(),
+      mobilePhone: payload.mobilePhone.trim(),
+      landlinePhone: payload.landlinePhone.trim(),
+      photoUrl: payload.photoUrl ?? currentUser?.photoUrl ?? null,
+      status: payload.status,
+      assignedCompanies,
+      activeAssignment,
+      roleId: activeAssignment?.roleId ?? null,
+      roleName: activeAssignment?.roleName ?? null,
+      profileId: activeAssignment?.profileId ?? null,
+      profileName: activeAssignment?.profileName ?? null,
+    };
+  }
+
+  private buildInactiveRoleFallback(companyId: string, roleId: string): RoleRowVm {
+    return {
+      id: roleId,
+      companyId,
+      name: 'Rol inactivado',
+      description: '',
+      status: 'inactive',
+      scope: 'company',
+    };
+  }
+
+  private buildInactiveProfileFallback(companyId: string, profileId: string): ProfileDetailVm {
+    return {
+      id: profileId,
+      companyId,
+      name: 'Perfil inactivado',
+      description: '',
+      status: 'inactive',
+      modulesSummary: [],
+      permissionsSummary: [],
+      permissionCount: 0,
+      permissions: buildPermissionMatrix(),
+    };
+  }
+
+  private mapUserAssignments(
+    user: UsuarioBackendListItem,
+    activeCompanyId: string,
+    roles: readonly RoleRowVm[],
+    profiles: readonly ProfileRowVm[],
+  ): UserCompanyAssignmentVm[] {
+    return (user.empresas ?? []).map((assignment) => {
+      const resolvedCompanyId = this.resolveFrontendCompanyId(assignment.empresa_id);
+      const roleId = this.resolveOptionalId(assignment.rol_id);
+      const profileId = this.resolveOptionalId(assignment.perfil_id);
+      const isActiveCompanyAssignment = resolvedCompanyId === activeCompanyId;
+
+      return {
+        companyId: resolvedCompanyId,
+        companyName: this.resolveCompanyName(resolvedCompanyId),
+        roleId,
+        roleName: isActiveCompanyAssignment
+          ? roles.find((role) => role.id === roleId)?.name ?? null
+          : null,
+        profileId,
+        profileName: isActiveCompanyAssignment
+          ? profiles.find((profile) => profile.id === profileId)?.name ?? null
+          : null,
+      };
+    });
+  }
+
+  private mergeUserRowsWithShadow(
+    companyId: string,
+    users: readonly UserRowVm[],
+  ): UserRowVm[] {
+    const mergedUsers = new Map<string, UserRowVm>(users.map((user) => [user.userId, user]));
+
+    this.listUserShadowsForCompany(companyId).forEach((shadow) => {
+      const currentUser = mergedUsers.get(shadow.userId);
+
+      mergedUsers.set(shadow.userId, currentUser ? { ...currentUser, ...shadow.row } : shadow.row);
+    });
+
+    return Array.from(mergedUsers.values()).filter((user) => !!user.activeAssignment);
+  }
+
+  private matchesUserFilters(user: UserRowVm, filters: SecurityListFilters): boolean {
+    const normalizedSearch = filters.search.trim().toLowerCase();
+    const matchesStatus = filters.status === 'all' || user.status === filters.status;
+
+    if (!normalizedSearch) {
+      return matchesStatus;
+    }
+
+    return (
+      matchesStatus &&
+      [
+        user.name,
+        user.email,
+        user.position,
+        user.roleName ?? '',
+        user.profileName ?? '',
+        ...user.assignedCompanies.map((assignment) => assignment.companyName),
+      ].some((value) => value.toLowerCase().includes(normalizedSearch))
+    );
+  }
+
+  private matchesProfileFilters(
+    profile: ProfileRowVm,
+    filters: SecurityListFilters,
+  ): boolean {
+    const normalizedSearch = filters.search.trim().toLowerCase();
+    const matchesStatus = filters.status === 'all' || profile.status === filters.status;
+
+    if (!normalizedSearch) {
+      return matchesStatus;
+    }
+
+    return (
+      matchesStatus &&
+      [
+        profile.name,
+        profile.description ?? '',
+        ...(profile.modulesSummary ?? []),
+        ...(profile.permissionsSummary ?? []),
+      ].some((value) => value.toLowerCase().includes(normalizedSearch))
+    );
   }
 
   private validateUserReferences(
@@ -907,7 +1042,7 @@ export class SecurityAdministrationApiRepository
       }
 
       if (!roleCatalogs[assignment.companyId]?.some((role) => role.id === assignment.roleId)) {
-        throw new Error('Selecciona un rol valido para la empresa asignada.');
+        throw new Error('Selecciona un rol válido para la empresa asignada.');
       }
 
       if (
@@ -915,84 +1050,25 @@ export class SecurityAdministrationApiRepository
           (profile) => profile.id === assignment.profileId,
         )
       ) {
-        throw new Error('Selecciona un perfil valido para la empresa asignada.');
+        throw new Error('Selecciona un perfil válido para la empresa asignada.');
       }
     });
   }
 
-  private mapUserAssignments(
-    user: BackendUserDto,
-    activeCompanyId: string,
-    roles: readonly RoleRowVm[],
-    profiles: readonly ProfileRowVm[],
-  ): UserCompanyAssignmentVm[] {
-    return (user.empresas ?? []).map((assignment) => {
-      const resolvedCompanyId = this.resolveFrontendCompanyId(assignment.empresa_id);
-      const roleId = this.resolveOptionalId(assignment.rol_id);
-      const profileId = this.resolveOptionalId(assignment.perfil_id);
-      const isActiveCompanyAssignment = resolvedCompanyId === activeCompanyId;
-
-      return {
-        companyId: resolvedCompanyId,
-        companyName: this.resolveCompanyName(resolvedCompanyId),
-        roleId,
-        roleName: isActiveCompanyAssignment
-          ? roles.find((role) => role.id === roleId)?.name ?? null
-          : null,
-        profileId,
-        profileName: isActiveCompanyAssignment
-          ? profiles.find((profile) => profile.id === profileId)?.name ?? null
-          : null,
-      };
-    });
-  }
-
-  private matchesUserFilters(user: UserRowVm, filters: SecurityListFilters): boolean {
-    const normalizedSearch = filters.search.trim().toLowerCase();
-    const matchesStatus = filters.status === 'all' || user.status === filters.status;
-
-    if (!normalizedSearch) {
-      return matchesStatus;
-    }
-
-    return (
-      matchesStatus &&
-      [
-        user.name,
-        user.email,
-        user.position,
-        user.roleName ?? '',
-        user.profileName ?? '',
-        ...user.assignedCompanies.map((assignment) => assignment.companyName),
-      ]
-        .some((value) => value.toLowerCase().includes(normalizedSearch))
-    );
-  }
-
-  private matchesProfileFilters(
-    profile: ProfileRowVm,
-    filters: SecurityListFilters,
-  ): boolean {
-    const normalizedSearch = filters.search.trim().toLowerCase();
-    const matchesStatus = filters.status === 'all' || profile.status === filters.status;
-
-    if (!normalizedSearch) {
-      return matchesStatus;
-    }
-
-    return (
-      matchesStatus &&
-      [
-        profile.name,
-        profile.description ?? '',
-        ...(profile.modulesSummary ?? []),
-        ...(profile.permissionsSummary ?? []),
-      ].some((value) => value.toLowerCase().includes(normalizedSearch))
-    );
-  }
-
   private resolveStatus(value: unknown): SecurityRecordStatus {
-    return value === false || value === 0 || value === 'inactive' ? 'inactive' : 'active';
+    if (value === false || value === 0) {
+      return 'inactive';
+    }
+
+    if (typeof value === 'string') {
+      const normalizedValue = value.trim().toLowerCase();
+
+      if (['inactivo', 'inactive', '0', 'false'].includes(normalizedValue)) {
+        return 'inactive';
+      }
+    }
+
+    return 'active';
   }
 
   private composePersonName(
@@ -1047,24 +1123,6 @@ export class SecurityAdministrationApiRepository
     return [];
   }
 
-  private buildInactiveParams(includeInactive: boolean): HttpParams | undefined {
-    return includeInactive
-      ? new HttpParams().set('incluir_inactivos', 'true')
-      : undefined;
-  }
-
-  private buildScopedRequestOptions(
-    companyId: string,
-    includeInactive: boolean,
-  ): { headers: HttpHeaders; params?: HttpParams } {
-    return {
-      headers: new HttpHeaders({
-        'X-Company-ID': this.resolveRequestCompanyId(companyId),
-      }),
-      params: this.buildInactiveParams(includeInactive),
-    };
-  }
-
   private withTrailingSlash(url: string): string {
     return url.endsWith('/') ? url : `${url}/`;
   }
@@ -1095,13 +1153,6 @@ export class SecurityAdministrationApiRepository
       .filter(Boolean)
       .map((segment) => segment[0]?.toUpperCase() + segment.slice(1))
       .join(' ');
-  }
-
-  private matchesRequestedCompanyId(
-    backendCompanyId: string | null | undefined,
-    companyId: string,
-  ): boolean {
-    return this.resolveFrontendCompanyId(backendCompanyId) === companyId;
   }
 
   private resolveFrontendCompanyId(backendCompanyId: string | null | undefined): string {
@@ -1147,6 +1198,56 @@ export class SecurityAdministrationApiRepository
     return companyId;
   }
 
+  private readUserShadowStore(): Record<string, UserShadowRecord> {
+    if (typeof window === 'undefined') {
+      return {};
+    }
+
+    const raw = localStorage.getItem(this.userShadowStorageKey);
+
+    if (!raw) {
+      return {};
+    }
+
+    try {
+      return JSON.parse(raw) as Record<string, UserShadowRecord>;
+    } catch {
+      localStorage.removeItem(this.userShadowStorageKey);
+      return {};
+    }
+  }
+
+  private writeUserShadowStore(store: Record<string, UserShadowRecord>): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    localStorage.setItem(this.userShadowStorageKey, JSON.stringify(store));
+  }
+
+  private upsertUserShadow(row: UserRowVm, deletedRemotely: boolean): void {
+    const store = this.readUserShadowStore();
+
+    store[row.userId] = {
+      userId: row.userId,
+      row,
+      deletedRemotely,
+      updatedAt: new Date().toISOString(),
+    };
+
+    this.writeUserShadowStore(store);
+  }
+
+  private getUserShadow(userId: string): UserShadowRecord | null {
+    return this.readUserShadowStore()[userId] ?? null;
+  }
+
+  private listUserShadowsForCompany(companyId: string): UserShadowRecord[] {
+    return Object.values(this.readUserShadowStore()).filter((shadow) =>
+      shadow.row.assignedCompanies.some((assignment) => assignment.companyId === companyId),
+    );
+  }
+
   private withFallback<T>(
     apiOperation: () => Observable<T>,
     mockOperation: () => Observable<T>,
@@ -1154,7 +1255,6 @@ export class SecurityAdministrationApiRepository
   ): Observable<T> {
     return apiOperation().pipe(
       catchError((error: unknown) => {
-        // Temporary fallback while security endpoints are progressively deployed in another branch.
         if (environment.enableSecurityAdministrationFallback && this.shouldFallbackToMock(error)) {
           return mockOperation();
         }
@@ -1220,21 +1320,14 @@ export class SecurityAdministrationApiRepository
   }
 
   private extractValidationDetail(error: HttpErrorResponse): string | null {
-    const detail = error.error?.detail;
-
-    if (typeof detail === 'string') {
-      return detail;
+    if (!Array.isArray(error.error?.detail)) {
+      return this.extractBackendDetail(error);
     }
 
-    if (!Array.isArray(detail)) {
-      return null;
-    }
-
-    return detail
-      .map((entry) => {
-        const location = Array.isArray(entry?.loc) ? entry.loc.join('.') : 'campo';
-        const message = typeof entry?.msg === 'string' ? entry.msg : 'valor inválido';
-        return `${location}: ${message}`;
+    return error.error.detail
+      .map((issue: { loc?: unknown[]; msg?: string }) => {
+        const field = Array.isArray(issue.loc) ? issue.loc.join('.') : 'campo';
+        return `${field}: ${issue.msg ?? 'Error de validación'}`;
       })
       .join(' | ');
   }

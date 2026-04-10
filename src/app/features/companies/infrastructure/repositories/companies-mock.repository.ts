@@ -1,6 +1,10 @@
 import { Injectable } from '@angular/core';
 import { delay, Observable, of, throwError } from 'rxjs';
-import { mapCompanyDetailToRow } from '../../application/mappers/company-administration.mapper';
+import { Company } from '../../../../core/company/models/company.model';
+import {
+  mapCompanyDetailToContextCompany,
+  mapCompanyDetailToRow,
+} from '../../application/mappers/company-administration.mapper';
 import {
   CompanyDetailVm,
   CompanyFormCatalogs,
@@ -18,6 +22,14 @@ import { INITIAL_COMPANIES_STORE } from '../data/companies.mock';
 })
 export class CompaniesMockRepository implements CompaniesRepository {
   private readonly storageKey = 'medussa.erp.mock.companies-administration';
+
+  listContextCompanies(): Observable<Company[]> {
+    return of(
+      this.readStore().companies
+        .map((company) => this.cloneCompany(company))
+        .map((company) => mapCompanyDetailToContextCompany(company)),
+    ).pipe(delay(120));
+  }
 
   listCompanies(filters: CompanyListFilters): Observable<CompanyRowVm[]> {
     const normalizedSearch = normalizeValue(filters.search);
@@ -75,6 +87,7 @@ export class CompaniesMockRepository implements CompaniesRepository {
 
     const nextCompany: CompanyDetailVm = {
       id: currentCompany?.id ?? this.buildCompanyId(payload.companyName),
+      dbId: currentCompany?.dbId ?? currentCompany?.id ?? null,
       backendId: currentCompany?.backendId ?? null,
       code: currentCompany?.code ?? this.buildCompanyCode(payload.companyName, store),
       companyName: payload.companyName.trim(),

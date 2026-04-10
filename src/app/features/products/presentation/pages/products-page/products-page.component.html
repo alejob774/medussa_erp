@@ -1,0 +1,96 @@
+<section class="space-y-6">
+  <header class="erp-page-header">
+    <div class="erp-page-header__content flex flex-wrap items-start justify-between gap-6">
+      <div class="flex items-start gap-4">
+        <div class="erp-page-icon">
+          <mat-icon>inventory_2</mat-icon>
+        </div>
+
+        <div>
+          <p class="erp-page-eyebrow">Supply Chain Management</p>
+          <h1 class="erp-page-title">Gestión de maestro de productos</h1>
+          <p class="erp-page-description">
+            CRUD multiempresa con formulario superior, listado inferior y reglas de negocio listas para backend real.
+          </p>
+        </div>
+      </div>
+
+      <div class="products-page__meta-grid">
+        <div class="erp-meta-card min-w-[200px]">
+          <p class="erp-meta-card__label">Empresa activa</p>
+          <p class="erp-meta-card__value">{{ activeCompanyName || 'Sin contexto' }}</p>
+          <p class="erp-meta-card__hint">Los registros quedan acotados al contexto multiempresa actual.</p>
+        </div>
+
+        <div class="erp-meta-card min-w-[160px]">
+          <p class="erp-meta-card__label">Total</p>
+          <p class="erp-kpi-card__value">{{ totalProducts }}</p>
+          <p class="erp-meta-card__hint">Resultados del filtro actual.</p>
+        </div>
+
+        <div class="erp-meta-card min-w-[160px]">
+          <p class="erp-meta-card__label">Activos</p>
+          <p class="erp-kpi-card__value">{{ activeProducts }}</p>
+          <p class="erp-meta-card__hint">Sobre la página visible.</p>
+        </div>
+
+        <div class="erp-meta-card min-w-[160px]">
+          <p class="erp-meta-card__label">Inactivos</p>
+          <p class="erp-kpi-card__value">{{ inactiveProducts }}</p>
+          <p class="erp-meta-card__hint">Sobre la página visible.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-5 flex justify-end">
+      <button mat-flat-button color="primary" type="button" class="min-h-12" (click)="startCreateMode()">
+        Crear producto
+      </button>
+    </div>
+  </header>
+
+  @if (errorMessage) {
+    <div class="erp-alert erp-alert--error">
+      {{ errorMessage }}
+    </div>
+  }
+
+  @if (successMessage) {
+    <div class="erp-alert erp-alert--success">
+      {{ successMessage }}
+    </div>
+  }
+
+  <app-product-form
+    [catalogs]="catalogs"
+    [existingProducts]="validationProducts"
+    [initialValue]="selectedProduct"
+    [mode]="formMode"
+    [activeCompanyId]="activeCompanyId"
+    [activeCompanyName]="activeCompanyName"
+    [loading]="loadingCatalogs || loadingSelection"
+    [saving]="saving"
+    (saveProduct)="saveProduct($event)"
+    (cancelEdit)="cancelEdit()"
+    (requestEdit)="enableEditMode()"
+  ></app-product-form>
+
+  <app-products-list
+    [activeCompanyName]="activeCompanyName"
+    [filters]="filters"
+    [catalogs]="catalogs"
+    [response]="listResponse"
+    [loading]="loadingProducts"
+    [errorMessage]="errorMessage"
+    [selectedProductId]="selectedProduct?.id ?? null"
+    [deletingId]="deletingId"
+    [statusUpdatingId]="statusUpdatingId"
+    (filtersChange)="handleFiltersChange($event)"
+    (pageChange)="handlePageChange($event)"
+    (selectProduct)="handleSelectProduct($event)"
+    (editProduct)="handleEditProduct($event)"
+    (deleteProduct)="deleteProduct($event)"
+    (toggleStatus)="toggleProductStatus($event)"
+    (retry)="retryProducts()"
+  ></app-products-list>
+</section>

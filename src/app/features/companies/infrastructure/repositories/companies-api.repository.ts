@@ -1,11 +1,13 @@
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { catchError, map, Observable, of, switchMap, throwError } from 'rxjs';
+import { Company } from '../../../../core/company/models/company.model';
 import { environment } from '../../../../../environments/environment';
 import {
   BackendCompanyCatalogsDto,
   BackendCompanyDto,
   mapBackendCompanyToDetail,
+  mapCompanyDetailToContextCompany,
   mapCompanyDetailToRow,
   mapCompanyPayloadToBackend,
 } from '../../application/mappers/company-administration.mapper';
@@ -26,19 +28,33 @@ import { CompaniesMockRepository } from './companies-mock.repository';
 export class CompaniesApiRepository implements CompaniesRepository {
   private readonly http = inject(HttpClient);
   private readonly mockRepository = inject(CompaniesMockRepository);
-  private readonly baseUrl = `${environment.apiUrl}/companies`;
+  private readonly baseUrl = `${environment.apiUrl}/configuracion`;
+
+  listContextCompanies(): Observable<Company[]> {
+    return this.withFallback(
+      () =>
+        this.fetchCompanies().pipe(
+          map((response) =>
+            response
+              .map((company) => mapBackendCompanyToDetail(company))
+              .filter((company) => company.status === 'active')
+              .map((company) => mapCompanyDetailToContextCompany(company)),
+          ),
+        ),
+      () => this.mockRepository.listContextCompanies(),
+      'contexto de empresas',
+    );
+  }
 
   listCompanies(filters: CompanyListFilters): Observable<CompanyRowVm[]> {
     return this.withFallback(
       () =>
-        this.http
-          .get<BackendCompanyDto[]>(this.withTrailingSlash(this.baseUrl), {
-            params: this.buildListParams(filters),
-          })
+        this.fetchCompanies()
           .pipe(
             map((response) =>
               response
                 .map((company) => mapCompanyDetailToRow(mapBackendCompanyToDetail(company)))
+                .filter((company) => this.matchesFilters(company, filters))
                 .sort((left, right) => right.createdAt.localeCompare(left.createdAt)),
             ),
           ),
@@ -56,14 +72,7 @@ export class CompaniesApiRepository implements CompaniesRepository {
   }
 
   getFormCatalogs(): Observable<CompanyFormCatalogs> {
-    return this.withFallback(
-      () =>
-        this.http
-          .get<BackendCompanyCatalogsDto>(`${this.withTrailingSlash(this.baseUrl)}catalogs`)
-          .pipe(map((response) => this.mapCatalogs(response))),
-      () => this.mockRepository.getFormCatalogs(),
-      'catálogos de empresas',
-    );
+    return this.mockRepository.getFormCatalogs();
   }
 
   saveCompany(payload: SaveCompanyPayload, companyId?: string): Observable<CompanyDetailVm> {
@@ -72,23 +81,26 @@ export class CompaniesApiRepository implements CompaniesRepository {
         const requestBody = mapCompanyPayloadToBackend(payload);
 
         if (companyId) {
-          return this.http
-            .put<void>(`${this.withTrailingSlash(this.baseUrl)}${companyId}`, requestBody)
-            .pipe(switchMap(() => this.loadCompany(companyId)));
+          return this.resolveCompanyRequestId(companyId).pipe(
+            switchMap((requestCompanyId) =>
+              this.http
+                .put<BackendCompanyDto | void>(
+                  `${this.withTrailingSlash(this.baseUrl)}${requestCompanyId}`,
+                  requestBody,
+                )
+                .pipe(
+                  switchMap((response) =>
+                    this.resolveSavedCompany(response, [companyId, requestCompanyId]),
+                  ),
+                ),
+            ),
+          );
         }
 
         return this.http
           .post<BackendCompanyDto>(this.withTrailingSlash(this.baseUrl), requestBody)
           .pipe(
-            switchMap((company) => {
-              const createdId = this.resolveId(company);
-
-              if (!createdId) {
-                return throwError(() => new Error('La API no devolvió el id de la empresa creada.'));
-              }
-
-              return this.loadCompany(createdId);
-            }),
+            switchMap((company) => this.resolveSavedCompany(company)),
           );
       },
       () => this.mockRepository.saveCompany(payload, companyId),
@@ -102,46 +114,66 @@ export class CompaniesApiRepository implements CompaniesRepository {
   ): Observable<CompanyDetailVm> {
     return this.withFallback(
       () =>
-        this.http
-          .patch<void>(`${this.withTrailingSlash(this.baseUrl)}${companyId}/status`, {
-            estado: status === 'active',
-          })
-          .pipe(switchMap(() => this.loadCompany(companyId))),
+        this.loadCompany(companyId).pipe(
+          switchMap((company) =>
+            this.resolveCompanyRequestId(companyId).pipe(
+              switchMap((requestCompanyId) =>
+                this.http
+                  .put<BackendCompanyDto | void>(
+                    `${this.withTrailingSlash(this.baseUrl)}${requestCompanyId}`,
+                    mapCompanyPayloadToBackend({
+                      companyName: company.companyName,
+                      nit: company.nit,
+                      sector: company.sector,
+                      address: company.address,
+                      city: company.city,
+                      country: company.country,
+                      phone: company.phone,
+                      email: company.email,
+                      status,
+                      operationStartDate: company.operationStartDate,
+                      baseCurrency: company.baseCurrency,
+                      timezone: company.timezone,
+                      language: company.language,
+                      taxConfiguration: company.taxConfiguration,
+                      initialConfiguration: company.initialConfiguration,
+                      logoUrl: company.logoUrl,
+                    }),
+                  )
+                  .pipe(
+                    switchMap((response) =>
+                      this.resolveSavedCompany(response, [companyId, requestCompanyId]),
+                    ),
+                  ),
+              ),
+            ),
+          ),
+        ),
       () => this.mockRepository.updateCompanyStatus(companyId, status),
       'estado de empresa',
     );
   }
 
   private loadCompany(companyId: string): Observable<CompanyDetailVm> {
-    return this.http
-      .get<BackendCompanyDto>(`${this.withTrailingSlash(this.baseUrl)}${companyId}`)
-      .pipe(map((response) => mapBackendCompanyToDetail(response)));
+    return this.fetchCompanies().pipe(
+      map((companies) => {
+        const company = companies.find((candidate) => this.matchesCompanyReference(candidate, companyId));
+
+        if (!company) {
+          throw new Error('No se encontró la empresa solicitada.');
+        }
+
+        return mapBackendCompanyToDetail(company);
+      }),
+    );
   }
 
-  private buildListParams(filters: CompanyListFilters): HttpParams {
-    let params = new HttpParams();
-
-    if (filters.search.trim()) {
-      params = params.set('search', filters.search.trim());
-    }
-
-    if (filters.status !== 'all') {
-      params = params.set('status', filters.status);
-    }
-
-    if (filters.sector !== 'all') {
-      params = params.set('sector', filters.sector);
-    }
-
-    if (filters.dateFrom) {
-      params = params.set('date_from', filters.dateFrom);
-    }
-
-    if (filters.dateTo) {
-      params = params.set('date_to', filters.dateTo);
-    }
-
-    return params;
+  private fetchCompanies(): Observable<BackendCompanyDto[]> {
+    return this.http
+      .get<unknown>(this.withTrailingSlash(this.baseUrl), {
+        params: new HttpParams().set('limit', '500'),
+      })
+      .pipe(map((response) => this.extractArrayPayload<BackendCompanyDto>(response)));
   }
 
   private mapCatalogs(response: BackendCompanyCatalogsDto): CompanyFormCatalogs {
@@ -171,8 +203,77 @@ export class CompaniesApiRepository implements CompaniesRepository {
       .filter((option): option is { value: string; label: string } => option !== null);
   }
 
+  private matchesFilters(company: CompanyRowVm, filters: CompanyListFilters): boolean {
+    const normalizedSearch = this.normalizeValue(filters.search);
+    const matchesSearch =
+      !normalizedSearch ||
+      [
+        company.companyName,
+        company.nit,
+        company.sector,
+        company.city,
+        company.country,
+        company.email,
+        company.backendId ?? '',
+      ].some((value) => this.normalizeValue(value).includes(normalizedSearch));
+    const matchesStatus = filters.status === 'all' || company.status === filters.status;
+    const matchesSector = filters.sector === 'all' || company.sector === filters.sector;
+    const createdDate = company.createdAt.slice(0, 10);
+    const matchesFrom = !filters.dateFrom || createdDate >= filters.dateFrom;
+    const matchesTo = !filters.dateTo || createdDate <= filters.dateTo;
+
+    return matchesSearch && matchesStatus && matchesSector && matchesFrom && matchesTo;
+  }
+
+  private matchesCompanyReference(company: BackendCompanyDto, companyId: string): boolean {
+    const normalizedCompanyId = companyId.trim();
+    const candidates = [
+      this.resolveNullableText(company.id),
+      this.resolveNullableText(company.empresa_id),
+      this.resolveNullableText(company.backend_id),
+    ];
+
+    return candidates.includes(normalizedCompanyId);
+  }
+
+  private resolveCompanyRequestId(companyId: string): Observable<string> {
+    return this.fetchCompanies().pipe(
+      map((companies) => {
+        const company = companies.find((candidate) => this.matchesCompanyReference(candidate, companyId));
+        const requestCompanyId = company ? this.resolveNullableText(company.id) : null;
+
+        if (!requestCompanyId) {
+          throw new Error('No fue posible resolver el identificador interno de la empresa.');
+        }
+
+        return requestCompanyId;
+      }),
+    );
+  }
+
+  private resolveSavedCompany(
+    company: BackendCompanyDto | void,
+    fallbackReferences: string[] = [],
+  ): Observable<CompanyDetailVm> {
+    const responseCompanyId = company ? this.resolveId(company) : null;
+    const responseBackendCompanyId = company ? this.resolveNullableText(company.empresa_id) : null;
+    const references = [responseCompanyId, responseBackendCompanyId, ...fallbackReferences].filter(
+      (value): value is string => !!value,
+    );
+
+    if (company && responseCompanyId) {
+      return of(mapBackendCompanyToDetail(company));
+    }
+
+    if (!references.length) {
+      return throwError(() => new Error('No fue posible recuperar la empresa guardada.'));
+    }
+
+    return this.loadCompany(references[0]);
+  }
+
   private resolveId(company: BackendCompanyDto): string | null {
-    const candidate = company.id ?? company.empresa_id;
+    const candidate = company.id ?? company.backend_id ?? company.empresa_id;
 
     if (typeof candidate === 'number') {
       return String(candidate);
@@ -183,6 +284,54 @@ export class CompaniesApiRepository implements CompaniesRepository {
     }
 
     return null;
+  }
+
+  private resolveNullableText(value: number | string | null | undefined): string | null {
+    if (typeof value === 'number') {
+      return String(value);
+    }
+
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+
+    return null;
+  }
+
+  private extractArrayPayload<T>(payload: unknown): T[] {
+    if (Array.isArray(payload)) {
+      return payload as T[];
+    }
+
+    if (payload && typeof payload === 'object') {
+      const candidate = payload as {
+        items?: unknown[];
+        results?: unknown[];
+        data?: unknown[];
+      };
+
+      if (Array.isArray(candidate.items)) {
+        return candidate.items as T[];
+      }
+
+      if (Array.isArray(candidate.results)) {
+        return candidate.results as T[];
+      }
+
+      if (Array.isArray(candidate.data)) {
+        return candidate.data as T[];
+      }
+    }
+
+    return [];
+  }
+
+  private normalizeValue(value: string | null | undefined): string {
+    return (value ?? '')
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
   }
 
   private withTrailingSlash(url: string): string {

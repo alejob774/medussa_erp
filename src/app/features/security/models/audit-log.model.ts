@@ -3,7 +3,8 @@ export type AuditLogModuleKey =
   | 'roles'
   | 'perfiles'
   | 'configuracion'
-  | 'auditoria';
+  | 'auditoria'
+  | 'productos';
 
 export type AuditLogActionKey =
   | 'view'

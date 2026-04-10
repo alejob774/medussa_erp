@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { of } from 'rxjs';
-import { finalize, map, switchMap } from 'rxjs/operators';
+import { catchError, finalize, map, switchMap } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { CompanyContextService } from '../../../../core/company/services/company-context.service';
+import { CompaniesFacadeService } from '../../../companies/application/facade/companies.facade';
 import { AuthLayoutComponent } from '../../components/auth-layout/auth-layout.component';
 import {
   LoginFormComponent,
@@ -23,6 +24,7 @@ export class LoginPageComponent {
   private readonly authService = inject(AuthService);
   private readonly authSessionService = inject(AuthSessionService);
   private readonly companyContextService = inject(CompanyContextService);
+  private readonly companiesFacade = inject(CompaniesFacadeService);
   private readonly router = inject(Router);
 
   loading = false;
@@ -40,6 +42,14 @@ export class LoginPageComponent {
       .pipe(
         map((response) =>
           this.companyContextService.enrichSession(response, value.username),
+        ),
+        switchMap((session) =>
+          this.companiesFacade.listContextCompanies().pipe(
+            map((companies) =>
+              this.companyContextService.hydrateSessionCompanies(session, companies),
+            ),
+            catchError(() => of(session)),
+          ),
         ),
         switchMap((session) => {
           const nextRoute = this.companyContextService.resolvePostLoginRoute(session);
