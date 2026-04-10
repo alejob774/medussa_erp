@@ -1,20 +1,4 @@
-# Python
-Backend/venv/
-Backend/.venv/
-Backend/**/__pycache__/
-Backend/**/*.py[cod]
+# Ignorar archivos compilados de Python
+*.pyc
 __pycache__/
-*.py[cod]
-.pytest_cache/
-.mypy_cache/
-
-# Node / Angular
-node_modules/
-dist/
-.angular/
-coverage/
-
-# IDE / logs
-.vscode/
-.idea/
-*.log
+*.pyo
