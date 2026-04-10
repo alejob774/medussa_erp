@@ -57,6 +57,8 @@ export interface BackendClientCatalogsDto {
     departamento?: string | null;
     department?: string | null;
   }>;
+  zonas?: Array<{ value?: string | null; label?: string | null } | string>;
+  zones?: Array<{ value?: string | null; label?: string | null } | string>;
 }
 
 export interface BackendSaveClientPayload {
@@ -68,6 +70,7 @@ export interface BackendSaveClientPayload {
   nombre_comercial: string | null;
   ciudad_id: string;
   ciudad_nombre: string | null;
+  zona: string | null;
   direccion: string;
   telefono: string | null;
   email: string | null;
@@ -115,6 +118,7 @@ export function mapClientPayloadToBackend(
     nombre_comercial: payload.nombreComercial?.trim() || null,
     ciudad_id: payload.ciudadId,
     ciudad_nombre: payload.ciudadNombre?.trim() || null,
+    zona: payload.zona.trim() || null,
     direccion: payload.direccion.trim(),
     telefono: payload.telefono?.trim() || null,
     email: payload.email?.trim().toLowerCase() || null,

@@ -7,6 +7,8 @@ export const environment = {
   enableClientsAdministrationFallback: false,
   useProductsAdministrationMock: true,
   enableProductsAdministrationFallback: false,
+  useVendorsAdministrationMock: true,
+  enableVendorsAdministrationFallback: false,
   useSecurityAdministrationMock: false,
   enableSecurityAdministrationFallback: true,
   useAuditLogsMock: false,

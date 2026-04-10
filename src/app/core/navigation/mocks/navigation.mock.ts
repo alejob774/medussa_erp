@@ -55,6 +55,14 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
         companyIds: ALL_COMPANIES,
       },
       {
+        id: 'vendedores',
+        label: 'Vendedores',
+        route: '/ventas/vendedores',
+        icon: 'badge',
+        requiredPermissions: ['vendors.view'],
+        companyIds: ALL_COMPANIES,
+      },
+      {
         id: 'supply-chain-management',
         label: 'Supply Chain Management',
         route: '/supply-chain-management',

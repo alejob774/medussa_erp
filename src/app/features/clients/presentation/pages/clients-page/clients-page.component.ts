@@ -308,6 +308,7 @@ export class ClientsPageComponent {
         empresaId: this.activeCompanyId,
         estado: 'TODOS',
         ciudadId: null,
+        zona: null,
         search: '',
         page: 0,
         pageSize: 1000,

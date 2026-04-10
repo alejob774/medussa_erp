@@ -173,6 +173,10 @@ export class ClientApiRepository implements ClientsRepository {
       params = params.set('ciudad_id', normalizedFilters.ciudadId);
     }
 
+    if (normalizedFilters.zona) {
+      params = params.set('zona', normalizedFilters.zona);
+    }
+
     return params;
   }
 
@@ -284,6 +288,7 @@ export class ClientApiRepository implements ClientsRepository {
       nombreComercial: client.nombreComercial ?? null,
       ciudadId: client.ciudadId,
       ciudadNombre: client.ciudadNombre ?? '',
+      zona: client.zona ?? '',
       direccion: client.direccion,
       telefono: client.telefono ?? null,
       email: client.email ?? null,
@@ -333,13 +338,13 @@ export class ClientApiRepository implements ClientsRepository {
       nombreComercial: null,
       ciudadId: '',
       ciudadNombre: '',
+      zona: null,
       direccion: '',
       telefono: null,
       email: null,
       estado: 'INACTIVO',
       createdAt: undefined,
       updatedAt: null,
-      zona: null,
       tieneDependenciasActivas: false,
     };
 
@@ -395,6 +400,7 @@ export class ClientApiRepository implements ClientsRepository {
       empresaId: filters.empresaId ?? companyId,
       estado: filters.estado ?? 'TODOS',
       ciudadId: filters.ciudadId ?? null,
+      zona: filters.zona ?? null,
       search: filters.search?.trim() ?? '',
       page: filters.page ?? DEFAULT_CLIENT_FILTERS.page,
       pageSize: filters.pageSize ?? DEFAULT_CLIENT_FILTERS.pageSize,
@@ -416,8 +422,9 @@ export class ClientApiRepository implements ClientsRepository {
       ].some((value) => normalizeText(value).includes(normalizedSearch));
     const matchesStatus = filters.estado === 'TODOS' || client.estado === filters.estado;
     const matchesCity = !filters.ciudadId || client.ciudadId === filters.ciudadId;
+    const matchesZone = !filters.zona || client.zona === filters.zona;
 
-    return matchesSearch && matchesStatus && matchesCity;
+    return matchesSearch && matchesStatus && matchesCity && matchesZone;
   }
 
   private resolveTotal(payload: unknown, fallback: number): number {
@@ -517,6 +524,7 @@ export class ClientApiRepository implements ClientsRepository {
       nombreComercial: client.nombreComercial ?? null,
       ciudadId: client.ciudadId,
       ciudadNombre: client.ciudadNombre ?? null,
+      zona: client.zona ?? null,
       direccion: client.direccion,
       telefono: client.telefono ?? null,
       email: client.email ?? null,

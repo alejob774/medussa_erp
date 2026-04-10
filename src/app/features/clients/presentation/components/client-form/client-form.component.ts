@@ -61,7 +61,7 @@ import { EMPTY_CLIENT_CATALOGS, Client, ClientCatalogs, ClientStatus } from '../
 
           <h2 class="mt-3 text-2xl font-bold text-slate-900">{{ titleLabel }}</h2>
           <p class="mt-2 max-w-3xl text-sm text-slate-500">
-            La ficha superior trabaja sobre la empresa activa y mantiene el ID cliente único por empresa.
+            La ficha superior trabaja sobre la empresa activa, mantiene el ID cliente único por empresa y expone la zona comercial para la asignación de vendedores.
           </p>
         </div>
 
@@ -135,7 +135,7 @@ import { EMPTY_CLIENT_CATALOGS, Client, ClientCatalogs, ClientStatus } from '../
               <section class="rounded-[1.4rem] border border-slate-200 bg-white p-5">
                 <div class="mb-4">
                   <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Ubicación y contacto</p>
-                  <h3 class="mt-2 text-lg font-semibold text-slate-900">Ciudad, dirección y canales</h3>
+                  <h3 class="mt-2 text-lg font-semibold text-slate-900">Ciudad, zona y contacto</h3>
                 </div>
 
                 <div class="grid gap-4 md:grid-cols-2">
@@ -150,6 +150,18 @@ import { EMPTY_CLIENT_CATALOGS, Client, ClientCatalogs, ClientStatus } from '../
                     </mat-select>
                     @if (isInvalid('ciudadId')) {
                       <mat-error>{{ getErrorMessage('ciudadId') }}</mat-error>
+                    }
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Zona</mat-label>
+                    <mat-select formControlName="zona">
+                      @for (zone of catalogs.zones; track zone.value) {
+                        <mat-option [value]="zone.value">{{ zone.label }}</mat-option>
+                      }
+                    </mat-select>
+                    @if (isInvalid('zona')) {
+                      <mat-error>{{ getErrorMessage('zona') }}</mat-error>
                     }
                   </mat-form-field>
 
@@ -204,7 +216,7 @@ import { EMPTY_CLIENT_CATALOGS, Client, ClientCatalogs, ClientStatus } from '../
                   </mat-form-field>
 
                   <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">
-                    Zona y vendedor asociado no se gestionan en esta HU. El modelo queda preparado para futuras extensiones.
+                    La zona del cliente se usa como base para la asignación comercial del maestro de vendedores.
                   </div>
                 </div>
               </section>
@@ -290,6 +302,7 @@ export class ClientFormComponent implements OnChanges, OnDestroy {
     nombre: ['', [Validators.required, Validators.minLength(3)]],
     nombreComercial: this.fb.control<string | null>(null),
     ciudadId: ['', [Validators.required]],
+    zona: ['', [Validators.required]],
     direccion: ['', [Validators.required, Validators.minLength(3)]],
     telefono: this.fb.control<string | null>(null),
     email: this.fb.control<string | null>(null, [Validators.email]),
@@ -373,6 +386,7 @@ export class ClientFormComponent implements OnChanges, OnDestroy {
       nombreComercial: value.nombreComercial?.trim() || null,
       ciudadId: value.ciudadId,
       ciudadNombre: selectedCity?.name ?? '',
+      zona: value.zona,
       direccion: value.direccion.trim(),
       telefono: value.telefono?.trim() || null,
       email: value.email?.trim().toLowerCase() || null,
@@ -446,6 +460,7 @@ export class ClientFormComponent implements OnChanges, OnDestroy {
       nombre: this.initialValue?.nombre ?? '',
       nombreComercial: this.initialValue?.nombreComercial ?? null,
       ciudadId: this.initialValue?.ciudadId ?? this.catalogs.cities[0]?.id ?? '',
+      zona: this.initialValue?.zona ?? this.catalogs.zones[0]?.value ?? '',
       direccion: this.initialValue?.direccion ?? '',
       telefono: this.initialValue?.telefono ?? null,
       email: this.initialValue?.email ?? null,

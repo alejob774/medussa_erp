@@ -1,5 +1,10 @@
 import { Injectable } from '@angular/core';
 import { delay, Observable, of, throwError } from 'rxjs';
+import {
+  normalizeZoneCatalog,
+  resolveDefaultZoneByCityId,
+  SHARED_ZONE_CATALOG,
+} from '../../../../core/catalogs/data/zones.catalog';
 import { normalizeCities, normalizeIdentificationTypes, normalizeText } from '../../application/mappers/client.mapper';
 import { DEFAULT_CLIENT_FILTERS, ClientFilters } from '../../domain/models/client-filters.model';
 import { SaveClientPayload } from '../../domain/models/client-form.model';
@@ -31,6 +36,7 @@ export class ClientMockRepository implements ClientsRepository {
     return of({
       identificationTypes: normalizeIdentificationTypes(store.catalogs.identificationTypes),
       cities: cities.length ? cities : normalizeCities(store.catalogs.cities),
+      zones: normalizeZoneCatalog(store.catalogs.zones),
     }).pipe(delay(120));
   }
 
@@ -96,7 +102,7 @@ export class ClientMockRepository implements ClientsRepository {
       estado: normalizedPayload.estado,
       createdAt: currentClient?.createdAt ?? new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      zona: currentClient?.zona ?? null,
+      zona: normalizedPayload.zona,
       tieneDependenciasActivas: currentClient?.tieneDependenciasActivas ?? false,
     };
     const nextClients = currentClient
@@ -259,7 +265,13 @@ export class ClientMockRepository implements ClientsRepository {
     }
 
     try {
-      return JSON.parse(raw) as ClientStore;
+      const normalizedStore = normalizeStore(JSON.parse(raw) as ClientStore);
+
+      if (JSON.stringify(normalizedStore) !== raw) {
+        this.writeStore(normalizedStore);
+      }
+
+      return normalizedStore;
     } catch {
       this.writeStore(structuredClone(INITIAL_CLIENTS_STORE));
       return structuredClone(INITIAL_CLIENTS_STORE);
@@ -302,6 +314,10 @@ export class ClientMockRepository implements ClientsRepository {
       return 'La ciudad es obligatoria.';
     }
 
+    if (!normalizedPayload.zona) {
+      return 'La zona es obligatoria.';
+    }
+
     if (!normalizedPayload.direccion) {
       return 'La dirección es obligatoria.';
     }
@@ -339,8 +355,9 @@ export class ClientMockRepository implements ClientsRepository {
       ].some((value) => normalizeText(value).includes(normalizedSearch));
     const matchesStatus = filters.estado === 'TODOS' || client.estado === filters.estado;
     const matchesCity = !filters.ciudadId || client.ciudadId === filters.ciudadId;
+    const matchesZone = !filters.zona || client.zona === filters.zona;
 
-    return matchesSearch && matchesStatus && matchesCity;
+    return matchesSearch && matchesStatus && matchesCity && matchesZone;
   }
 
   private cloneClient(client: Client): Client {
@@ -372,6 +389,7 @@ function normalizeFilters(filters: ClientFilters, companyId: string): Required<C
     empresaId: filters.empresaId ?? companyId,
     estado: filters.estado ?? 'TODOS',
     ciudadId: filters.ciudadId ?? null,
+    zona: filters.zona ?? null,
     search: filters.search?.trim() ?? '',
     page: filters.page ?? DEFAULT_CLIENT_FILTERS.page,
     pageSize: filters.pageSize ?? DEFAULT_CLIENT_FILTERS.pageSize,
@@ -388,6 +406,7 @@ function normalizePayload(payload: SaveClientPayload, companyId: string): SaveCl
     nombreComercial: payload.nombreComercial?.trim() || null,
     ciudadId: payload.ciudadId,
     ciudadNombre: payload.ciudadNombre?.trim() || '',
+    zona: payload.zona.trim(),
     direccion: payload.direccion.trim(),
     telefono: payload.telefono?.trim() || null,
     email: payload.email?.trim().toLowerCase() || null,
@@ -426,10 +445,29 @@ function sanitizeAuditPayload(client: Client): Record<string, unknown> {
     nombreComercial: client.nombreComercial ?? null,
     ciudadId: client.ciudadId,
     ciudadNombre: client.ciudadNombre ?? null,
+    zona: client.zona ?? null,
     direccion: client.direccion,
     telefono: client.telefono ?? null,
     email: client.email ?? null,
     estado: client.estado,
     dependenciasActivas: client.tieneDependenciasActivas,
+  };
+}
+
+function normalizeStore(store: ClientStore): ClientStore {
+  const normalizedZones = normalizeZoneCatalog(store.catalogs?.zones ?? SHARED_ZONE_CATALOG);
+
+  return {
+    ...store,
+    catalogs: {
+      identificationTypes: store.catalogs?.identificationTypes ?? structuredClone(INITIAL_CLIENTS_STORE.catalogs.identificationTypes),
+      cities: store.catalogs?.cities ?? structuredClone(INITIAL_CLIENTS_STORE.catalogs.cities),
+      zones: normalizedZones,
+    },
+    clients: (store.clients ?? []).map((client) => ({
+      ...client,
+      zona: client.zona?.trim() || resolveDefaultZoneByCityId(client.ciudadId),
+    })),
+    auditTrail: store.auditTrail ?? [],
   };
 }

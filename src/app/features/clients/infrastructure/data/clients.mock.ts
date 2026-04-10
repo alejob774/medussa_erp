@@ -1,4 +1,5 @@
 import { ClientStore } from '../../domain/models/client-response.model';
+import { SHARED_ZONE_CATALOG } from '../../../../core/catalogs/data/zones.catalog';
 
 export const INITIAL_CLIENTS_STORE: ClientStore = {
   catalogs: {
@@ -20,6 +21,7 @@ export const INITIAL_CLIENTS_STORE: ClientStore = {
       { id: '17001', name: 'Manizales', department: 'Caldas' },
       { id: '73001', name: 'Ibagué', department: 'Tolima' },
     ],
+    zones: SHARED_ZONE_CATALOG,
   },
   clients: [
     {
@@ -38,7 +40,7 @@ export const INITIAL_CLIENTS_STORE: ClientStore = {
       estado: 'ACTIVO',
       createdAt: '2026-01-10T10:15:00-05:00',
       updatedAt: '2026-03-12T08:40:00-05:00',
-      zona: null,
+      zona: 'Zona norte 1',
       tieneDependenciasActivas: true,
     },
     {
@@ -57,7 +59,7 @@ export const INITIAL_CLIENTS_STORE: ClientStore = {
       estado: 'ACTIVO',
       createdAt: '2026-01-19T09:25:00-05:00',
       updatedAt: '2026-02-28T14:10:00-05:00',
-      zona: null,
+      zona: 'Zona norte 2',
       tieneDependenciasActivas: false,
     },
     {
@@ -76,7 +78,7 @@ export const INITIAL_CLIENTS_STORE: ClientStore = {
       estado: 'ACTIVO',
       createdAt: '2026-02-02T16:05:00-05:00',
       updatedAt: '2026-03-05T11:55:00-05:00',
-      zona: null,
+      zona: 'Zona sur 1',
       tieneDependenciasActivas: true,
     },
     {
@@ -95,7 +97,7 @@ export const INITIAL_CLIENTS_STORE: ClientStore = {
       estado: 'ACTIVO',
       createdAt: '2026-01-28T08:20:00-05:00',
       updatedAt: '2026-03-16T13:45:00-05:00',
-      zona: null,
+      zona: 'Zona norte 1',
       tieneDependenciasActivas: false,
     },
     {
@@ -114,7 +116,7 @@ export const INITIAL_CLIENTS_STORE: ClientStore = {
       estado: 'INACTIVO',
       createdAt: '2025-12-11T07:30:00-05:00',
       updatedAt: '2026-02-01T10:12:00-05:00',
-      zona: null,
+      zona: 'Zona norte 1',
       tieneDependenciasActivas: true,
     },
     {
@@ -133,7 +135,7 @@ export const INITIAL_CLIENTS_STORE: ClientStore = {
       estado: 'ACTIVO',
       createdAt: '2026-02-13T12:35:00-05:00',
       updatedAt: '2026-03-27T15:00:00-05:00',
-      zona: null,
+      zona: 'Zona norte 2',
       tieneDependenciasActivas: true,
     },
     {
@@ -152,7 +154,7 @@ export const INITIAL_CLIENTS_STORE: ClientStore = {
       estado: 'ACTIVO',
       createdAt: '2026-01-05T13:55:00-05:00',
       updatedAt: '2026-02-26T17:18:00-05:00',
-      zona: null,
+      zona: 'Zona norte 1',
       tieneDependenciasActivas: false,
     },
     {
@@ -171,7 +173,7 @@ export const INITIAL_CLIENTS_STORE: ClientStore = {
       estado: 'INACTIVO',
       createdAt: '2025-11-03T15:45:00-05:00',
       updatedAt: '2026-01-22T09:08:00-05:00',
-      zona: null,
+      zona: 'Zona norte 2',
       tieneDependenciasActivas: true,
     },
     {
@@ -190,7 +192,7 @@ export const INITIAL_CLIENTS_STORE: ClientStore = {
       estado: 'ACTIVO',
       createdAt: '2026-01-17T11:10:00-05:00',
       updatedAt: '2026-03-22T12:16:00-05:00',
-      zona: null,
+      zona: 'Zona sur 2',
       tieneDependenciasActivas: false,
     },
     {
@@ -209,7 +211,7 @@ export const INITIAL_CLIENTS_STORE: ClientStore = {
       estado: 'ACTIVO',
       createdAt: '2026-02-07T10:48:00-05:00',
       updatedAt: '2026-03-12T16:40:00-05:00',
-      zona: null,
+      zona: 'Zona sur 3',
       tieneDependenciasActivas: true,
     },
     {
@@ -228,7 +230,7 @@ export const INITIAL_CLIENTS_STORE: ClientStore = {
       estado: 'ACTIVO',
       createdAt: '2026-02-26T07:45:00-05:00',
       updatedAt: '2026-03-03T14:22:00-05:00',
-      zona: null,
+      zona: 'Zona norte 1',
       tieneDependenciasActivas: false,
     },
     {
@@ -247,7 +249,7 @@ export const INITIAL_CLIENTS_STORE: ClientStore = {
       estado: 'ACTIVO',
       createdAt: '2026-01-31T14:00:00-05:00',
       updatedAt: '2026-03-08T10:35:00-05:00',
-      zona: null,
+      zona: 'Zona sur 2',
       tieneDependenciasActivas: false,
     },
     {
@@ -266,7 +268,7 @@ export const INITIAL_CLIENTS_STORE: ClientStore = {
       estado: 'INACTIVO',
       createdAt: '2025-10-22T09:15:00-05:00',
       updatedAt: '2026-01-19T12:20:00-05:00',
-      zona: null,
+      zona: 'Zona norte 1',
       tieneDependenciasActivas: true,
     },
   ],

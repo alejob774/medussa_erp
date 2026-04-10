@@ -1,5 +1,6 @@
 import { DEFAULT_CLIENT_FILTERS, ClientFilters } from './client-filters.model';
 import { Client } from './client.model';
+import { ZoneCatalogItem } from '../../../../core/catalogs/models/zone-catalog.model';
 
 export type ClientAuditAction = 'create' | 'edit' | 'delete' | 'activate' | 'deactivate';
 
@@ -43,6 +44,7 @@ export interface ClientStore {
   catalogs: {
     identificationTypes: Array<{ value: string; label: string }>;
     cities: Array<{ id: string; name: string; department?: string | null }>;
+    zones: ZoneCatalogItem[];
   };
   auditTrail: ClientAuditDraft[];
 }

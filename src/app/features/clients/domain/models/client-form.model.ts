@@ -11,6 +11,7 @@ export interface SaveClientPayload {
   nombreComercial?: string | null;
   ciudadId: string;
   ciudadNombre?: string;
+  zona: string;
   direccion: string;
   telefono?: string | null;
   email?: string | null;

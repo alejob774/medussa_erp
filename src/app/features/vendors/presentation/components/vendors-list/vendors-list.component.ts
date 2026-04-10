@@ -10,23 +10,25 @@ import {
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatExpansionModule } from '@angular/material/expansion';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
-import { DEFAULT_CLIENT_FILTERS, ClientFilters } from '../../../domain/models/client-filters.model';
-import { EMPTY_CLIENT_CATALOGS, Client, ClientCatalogs } from '../../../domain/models/client.model';
-import { EMPTY_CLIENT_LIST_RESPONSE, ClientListResponse } from '../../../domain/models/client-response.model';
+import { DEFAULT_VENDOR_FILTERS, VendorFilters } from '../../../domain/models/vendor-filters.model';
+import { EMPTY_VENDOR_CATALOGS, Vendor, VendorCatalogs } from '../../../domain/models/vendor.model';
+import { EMPTY_VENDOR_LIST_RESPONSE, VendorListResponse } from '../../../domain/models/vendor-response.model';
 
 @Component({
-  selector: 'app-clients-list',
+  selector: 'app-vendors-list',
   standalone: true,
   imports: [
     CommonModule,
     ReactiveFormsModule,
     MatButtonModule,
+    MatExpansionModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
@@ -40,11 +42,7 @@ import { EMPTY_CLIENT_LIST_RESPONSE, ClientListResponse } from '../../../domain/
         <div class="flex flex-wrap items-start gap-3 xl:flex-nowrap xl:items-center">
           <mat-form-field appearance="outline" class="min-w-[280px] flex-1">
             <mat-label>Búsqueda</mat-label>
-            <input
-              matInput
-              formControlName="search"
-              placeholder="Buscar por ID, nombre, nombre comercial, dirección, teléfono, email o zona"
-            />
+            <input matInput formControlName="search" placeholder="Buscar por ID, nombre, tipo, zona o canal" />
             <mat-icon matSuffix>search</mat-icon>
           </mat-form-field>
 
@@ -57,7 +55,7 @@ import { EMPTY_CLIENT_LIST_RESPONSE, ClientListResponse } from '../../../domain/
           </button>
         </div>
 
-        <div class="grid gap-3 lg:grid-cols-2 xl:grid-cols-[1.05fr_0.8fr_0.9fr_0.8fr_0.9fr] xl:items-start">
+        <div class="grid gap-3 lg:grid-cols-2 xl:grid-cols-[1fr_0.75fr_0.9fr_0.9fr_0.95fr_0.9fr] xl:items-start">
           <mat-form-field appearance="outline">
             <mat-label>Empresa</mat-label>
             <input matInput [value]="activeCompanyName" disabled />
@@ -73,18 +71,6 @@ import { EMPTY_CLIENT_LIST_RESPONSE, ClientListResponse } from '../../../domain/
           </mat-form-field>
 
           <mat-form-field appearance="outline">
-            <mat-label>Ciudad</mat-label>
-            <mat-select formControlName="ciudadId">
-              <mat-option [value]="null">Todas</mat-option>
-              @for (city of catalogs.cities; track city.id) {
-                <mat-option [value]="city.id">
-                  {{ city.name }}{{ city.department ? ' · ' + city.department : '' }}
-                </mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
             <mat-label>Zona</mat-label>
             <mat-select formControlName="zona">
               <mat-option [value]="null">Todas</mat-option>
@@ -94,8 +80,18 @@ import { EMPTY_CLIENT_LIST_RESPONSE, ClientListResponse } from '../../../domain/
             </mat-select>
           </mat-form-field>
 
-          <div class="erp-meta-card xl:mt-1">
-            {{ response.total }} registros en la empresa activa.
+          <mat-form-field appearance="outline">
+            <mat-label>Canal</mat-label>
+            <mat-select formControlName="canal">
+              <mat-option [value]="null">Todos</mat-option>
+              @for (channel of catalogs.channels; track channel.value) {
+                <mat-option [value]="channel.value">{{ channel.label }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <div class="erp-meta-card xl:col-span-2 xl:mt-1">
+            {{ response.total }} vendedores en la empresa activa.
           </div>
         </div>
       </form>
@@ -105,14 +101,14 @@ import { EMPTY_CLIENT_LIST_RESPONSE, ClientListResponse } from '../../../domain/
           <div class="erp-empty-state">
             <div class="flex flex-col items-center gap-3 text-slate-500">
               <mat-spinner diameter="34"></mat-spinner>
-              <p class="text-sm">Cargando clientes...</p>
+              <p class="text-sm">Cargando vendedores...</p>
             </div>
           </div>
         } @else if (errorMessage && !response.items.length) {
           <div class="erp-empty-state">
             <mat-icon class="erp-empty-state__icon !h-10 !w-10 !text-4xl text-red-300">error_outline</mat-icon>
             <div>
-              <p class="text-base font-semibold text-slate-700">No fue posible cargar el maestro de clientes.</p>
+              <p class="text-base font-semibold text-slate-700">No fue posible cargar el maestro de vendedores.</p>
               <p class="mt-1 text-sm">{{ errorMessage }}</p>
             </div>
 
@@ -123,64 +119,57 @@ import { EMPTY_CLIENT_LIST_RESPONSE, ClientListResponse } from '../../../domain/
             <mat-icon class="erp-empty-state__icon !h-10 !w-10 !text-4xl">travel_explore</mat-icon>
             <div>
               <p class="text-base font-semibold text-slate-700">No hay resultados para los filtros aplicados.</p>
-              <p class="mt-1 text-sm">Prueba con otra ciudad, zona, estado o término de búsqueda.</p>
+              <p class="mt-1 text-sm">Prueba con otra zona, canal, estado o término de búsqueda.</p>
             </div>
 
             <button mat-stroked-button type="button" (click)="clearFilters()">Limpiar filtros</button>
           </div>
         } @else if (!response.total) {
           <div class="erp-empty-state">
-            <mat-icon class="erp-empty-state__icon !h-10 !w-10 !text-4xl">groups</mat-icon>
+            <mat-icon class="erp-empty-state__icon !h-10 !w-10 !text-4xl">badge</mat-icon>
             <div>
-              <p class="text-base font-semibold text-slate-700">No hay clientes registrados todavía.</p>
-              <p class="mt-1 text-sm">Crea el primer cliente de la empresa activa para iniciar el maestro.</p>
+              <p class="text-base font-semibold text-slate-700">No hay vendedores registrados.</p>
+              <p class="mt-1 text-sm">Crea el primer vendedor de la empresa activa para iniciar el maestro.</p>
             </div>
 
             <button mat-flat-button color="primary" type="button" (click)="createRequested.emit()">
-              Crear cliente
+              Crear vendedor
             </button>
           </div>
         } @else {
           <div class="overflow-x-auto">
-            <table class="erp-data-table min-w-[1480px] text-sm">
+            <table class="erp-data-table min-w-[1560px] text-sm">
               <thead>
                 <tr>
-                  <th>ID cliente</th>
-                  <th>Tipo identificación</th>
+                  <th>ID vendedor</th>
                   <th>Nombre</th>
-                  <th>Nombre comercial</th>
-                  <th>Ciudad</th>
+                  <th>Tipo</th>
                   <th>Zona</th>
-                  <th>Dirección</th>
-                  <th>Teléfono</th>
-                  <th>Email</th>
+                  <th>Canal</th>
+                  <th>Ciudad</th>
+                  <th># Clientes</th>
                   <th>Estado</th>
                   <th class="w-[230px] text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                @for (client of response.items; track client.id) {
-                  <tr [class.bg-slate-50]="selectedClientId === client.id">
-                    <td class="font-semibold text-slate-900">{{ client.idCliente }}</td>
+                @for (vendor of response.items; track vendor.id) {
+                  <tr [class.bg-slate-50]="selectedVendorId === vendor.id">
+                    <td class="font-semibold text-slate-900">{{ vendor.idVendedor }}</td>
                     <td>
-                      <span class="erp-chip erp-chip--neutral">{{ client.tipoIdentificacion }}</span>
+                      <div class="font-semibold text-slate-900">{{ vendor.nombreVendedor }}</div>
+                      @if (vendor.email) {
+                        <div class="mt-1 text-xs text-slate-500">{{ vendor.email }}</div>
+                      }
                     </td>
+                    <td><span class="erp-chip erp-chip--neutral">{{ vendor.tipoVendedor }}</span></td>
+                    <td><span class="erp-chip erp-chip--neutral">{{ vendor.zona }}</span></td>
+                    <td>{{ vendor.canal }}</td>
+                    <td>{{ vendor.ciudadNombre || 'Sin ciudad' }}</td>
+                    <td>{{ vendor.cantidadClientesAsignados }}</td>
                     <td>
-                      <div class="font-semibold text-slate-900">{{ client.nombre }}</div>
-                    </td>
-                    <td>{{ client.nombreComercial || 'Sin dato' }}</td>
-                    <td>{{ client.ciudadNombre || 'Sin ciudad' }}</td>
-                    <td>
-                      <span class="erp-chip erp-chip--neutral">{{ client.zona || 'Sin zona' }}</span>
-                    </td>
-                    <td class="max-w-[240px]">
-                      <span class="line-clamp-2">{{ client.direccion }}</span>
-                    </td>
-                    <td>{{ client.telefono || 'Sin dato' }}</td>
-                    <td>{{ client.email || 'Sin dato' }}</td>
-                    <td>
-                      <span class="erp-chip" [class.erp-chip--success]="client.estado === 'ACTIVO'" [class.erp-chip--warning]="client.estado === 'INACTIVO'">
-                        {{ client.estado }}
+                      <span class="erp-chip" [class.erp-chip--success]="vendor.estado === 'ACTIVO'" [class.erp-chip--warning]="vendor.estado === 'INACTIVO'">
+                        {{ vendor.estado }}
                       </span>
                     </td>
                     <td>
@@ -189,8 +178,8 @@ import { EMPTY_CLIENT_LIST_RESPONSE, ClientListResponse } from '../../../domain/
                           type="button"
                           class="erp-icon-button"
                           title="Cargar"
-                          [disabled]="isBusy(client.id)"
-                          (click)="selectClient.emit(client)"
+                          [disabled]="isBusy(vendor.id)"
+                          (click)="selectVendor.emit(vendor)"
                         >
                           <mat-icon>visibility</mat-icon>
                         </button>
@@ -199,8 +188,8 @@ import { EMPTY_CLIENT_LIST_RESPONSE, ClientListResponse } from '../../../domain/
                           type="button"
                           class="erp-icon-button"
                           title="Editar"
-                          [disabled]="isBusy(client.id)"
-                          (click)="editClient.emit(client)"
+                          [disabled]="isBusy(vendor.id)"
+                          (click)="editVendor.emit(vendor)"
                         >
                           <mat-icon>edit</mat-icon>
                         </button>
@@ -209,38 +198,74 @@ import { EMPTY_CLIENT_LIST_RESPONSE, ClientListResponse } from '../../../domain/
                           type="button"
                           class="erp-icon-button"
                           title="Eliminar"
-                          [disabled]="isBusy(client.id)"
-                          (click)="deleteClient.emit(client)"
+                          [disabled]="isBusy(vendor.id)"
+                          (click)="deleteVendor.emit(vendor)"
                         >
-                          <mat-icon>{{ deletingId === client.id ? 'hourglass_top' : 'delete' }}</mat-icon>
+                          <mat-icon>{{ deletingId === vendor.id ? 'hourglass_top' : 'delete' }}</mat-icon>
                         </button>
 
                         <button
                           type="button"
                           class="inline-flex min-h-9 w-[120px] items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition hover:bg-slate-100"
-                          [class.border-amber-200]="client.estado === 'ACTIVO'"
-                          [class.text-amber-700]="client.estado === 'ACTIVO'"
-                          [class.bg-amber-50]="client.estado === 'ACTIVO'"
-                          [class.border-emerald-200]="client.estado === 'INACTIVO'"
-                          [class.text-emerald-700]="client.estado === 'INACTIVO'"
-                          [class.bg-emerald-50]="client.estado === 'INACTIVO'"
-                          [disabled]="isBusy(client.id)"
-                          (click)="toggleStatus.emit(client)"
+                          [class.border-amber-200]="vendor.estado === 'ACTIVO'"
+                          [class.text-amber-700]="vendor.estado === 'ACTIVO'"
+                          [class.bg-amber-50]="vendor.estado === 'ACTIVO'"
+                          [class.border-emerald-200]="vendor.estado === 'INACTIVO'"
+                          [class.text-emerald-700]="vendor.estado === 'INACTIVO'"
+                          [class.bg-emerald-50]="vendor.estado === 'INACTIVO'"
+                          [disabled]="isBusy(vendor.id)"
+                          (click)="toggleStatus.emit(vendor)"
                         >
                           <mat-icon class="text-base">
-                            {{ client.estado === 'ACTIVO' ? 'toggle_off' : 'published_with_changes' }}
+                            {{ vendor.estado === 'ACTIVO' ? 'toggle_off' : 'published_with_changes' }}
                           </mat-icon>
                           <span>
                             {{
-                              statusUpdatingId === client.id
+                              statusUpdatingId === vendor.id
                                 ? 'Procesando...'
-                                : client.estado === 'ACTIVO'
+                                : vendor.estado === 'ACTIVO'
                                   ? 'Inactivar'
                                   : 'Activar'
                             }}
                           </span>
                         </button>
                       </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="9" class="!p-0">
+                      <mat-accordion class="block border-t border-slate-100">
+                        <mat-expansion-panel class="!shadow-none">
+                          <mat-expansion-panel-header>
+                            <mat-panel-title>Clientes asociados</mat-panel-title>
+                            <mat-panel-description>
+                              {{ vendor.cantidadClientesAsignados }} asignados en {{ vendor.zona }}
+                            </mat-panel-description>
+                          </mat-expansion-panel-header>
+
+                          @if (vendor.clientesAsignados.length) {
+                            <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                              @for (client of vendor.clientesAsignados; track client.clientId) {
+                                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                                  <p class="text-sm font-semibold text-slate-900">{{ client.nombre }}</p>
+                                  <p class="mt-1 text-xs text-slate-500">{{ client.idCliente }}</p>
+                                  <p class="mt-2 text-xs text-slate-500">
+                                    {{ client.zona }}{{ client.ciudadNombre ? ' · ' + client.ciudadNombre : '' }}
+                                  </p>
+                                </div>
+                              }
+                            </div>
+                          } @else {
+                            <div class="erp-empty-state !min-h-[9rem] !rounded-[1rem] !border-dashed !bg-white">
+                              <mat-icon class="erp-empty-state__icon !h-8 !w-8 !text-3xl">groups</mat-icon>
+                              <div>
+                                <p class="text-sm font-semibold text-slate-700">No hay clientes asociados.</p>
+                                <p class="mt-1 text-xs text-slate-500">Este vendedor aún no tiene asignación comercial.</p>
+                              </div>
+                            </div>
+                          }
+                        </mat-expansion-panel>
+                      </mat-accordion>
                     </td>
                   </tr>
                 }
@@ -260,25 +285,25 @@ import { EMPTY_CLIENT_LIST_RESPONSE, ClientListResponse } from '../../../domain/
     </section>
   `,
 })
-export class ClientsListComponent implements OnChanges {
+export class VendorsListComponent implements OnChanges {
   private readonly fb = inject(FormBuilder);
 
   @Input() activeCompanyName = '';
-  @Input() filters: ClientFilters = { ...DEFAULT_CLIENT_FILTERS };
-  @Input() catalogs: ClientCatalogs = EMPTY_CLIENT_CATALOGS;
-  @Input() response: ClientListResponse = EMPTY_CLIENT_LIST_RESPONSE;
+  @Input() filters: VendorFilters = { ...DEFAULT_VENDOR_FILTERS };
+  @Input() catalogs: VendorCatalogs = EMPTY_VENDOR_CATALOGS;
+  @Input() response: VendorListResponse = EMPTY_VENDOR_LIST_RESPONSE;
   @Input() loading = false;
   @Input() errorMessage = '';
-  @Input() selectedClientId: string | null = null;
+  @Input() selectedVendorId: string | null = null;
   @Input() deletingId: string | null = null;
   @Input() statusUpdatingId: string | null = null;
 
-  @Output() filtersChange = new EventEmitter<ClientFilters>();
+  @Output() filtersChange = new EventEmitter<VendorFilters>();
   @Output() pageChange = new EventEmitter<{ page: number; pageSize: number }>();
-  @Output() selectClient = new EventEmitter<Client>();
-  @Output() editClient = new EventEmitter<Client>();
-  @Output() deleteClient = new EventEmitter<Client>();
-  @Output() toggleStatus = new EventEmitter<Client>();
+  @Output() selectVendor = new EventEmitter<Vendor>();
+  @Output() editVendor = new EventEmitter<Vendor>();
+  @Output() deleteVendor = new EventEmitter<Vendor>();
+  @Output() toggleStatus = new EventEmitter<Vendor>();
   @Output() createRequested = new EventEmitter<void>();
   @Output() retry = new EventEmitter<void>();
 
@@ -286,8 +311,8 @@ export class ClientsListComponent implements OnChanges {
   readonly filterForm = this.fb.group({
     search: [''],
     estado: this.fb.nonNullable.control<'TODOS' | 'ACTIVO' | 'INACTIVO'>('TODOS'),
-    ciudadId: this.fb.control<string | null>(null),
     zona: this.fb.control<string | null>(null),
+    canal: this.fb.control<string | null>(null),
   });
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -296,8 +321,8 @@ export class ClientsListComponent implements OnChanges {
         {
           search: this.filters.search ?? '',
           estado: (this.filters.estado ?? 'TODOS') as 'TODOS' | 'ACTIVO' | 'INACTIVO',
-          ciudadId: this.filters.ciudadId ?? null,
           zona: this.filters.zona ?? null,
+          canal: this.filters.canal ?? null,
         },
         { emitEvent: false },
       );
@@ -311,8 +336,8 @@ export class ClientsListComponent implements OnChanges {
       ...this.filters,
       search: value.search?.trim() ?? '',
       estado: value.estado,
-      ciudadId: value.ciudadId,
       zona: value.zona,
+      canal: value.canal,
       page: 0,
     });
   }
@@ -322,8 +347,8 @@ export class ClientsListComponent implements OnChanges {
       {
         search: '',
         estado: 'TODOS',
-        ciudadId: null,
         zona: null,
+        canal: null,
       },
       { emitEvent: false },
     );
@@ -332,8 +357,8 @@ export class ClientsListComponent implements OnChanges {
       ...this.filters,
       search: '',
       estado: 'TODOS',
-      ciudadId: null,
       zona: null,
+      canal: null,
       page: 0,
     });
   }
@@ -347,10 +372,10 @@ export class ClientsListComponent implements OnChanges {
 
   hasActiveFilters(): boolean {
     const value = this.filterForm.getRawValue();
-    return !!(value.search?.trim() || value.estado !== 'TODOS' || value.ciudadId || value.zona);
+    return !!(value.search?.trim() || value.estado !== 'TODOS' || value.zona || value.canal);
   }
 
-  isBusy(clientId: string): boolean {
-    return this.deletingId === clientId || this.statusUpdatingId === clientId;
+  isBusy(vendorId: string): boolean {
+    return this.deletingId === vendorId || this.statusUpdatingId === vendorId;
   }
 }

@@ -61,6 +61,18 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'ventas/vendedores',
+        loadComponent: () =>
+          import('./features/vendors/presentation/pages/vendors-page/vendors-page.component').then(
+            (module) => module.VendorsPageComponent,
+          ),
+        canActivate: [permissionGuard],
+        canDeactivate: [pendingChangesGuard],
+        data: {
+          permission: 'vendors.view',
+        },
+      },
+      {
         path: 'compras',
         component: ModulePlaceholderPageComponent,
         canActivate: [permissionGuard],
