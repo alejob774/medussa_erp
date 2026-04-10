@@ -35,6 +35,7 @@ export class ClientsPageComponent {
   validationClients: Client[] = [];
   selectedClient: Client | null = null;
   formMode: ClientFormMode = 'create';
+  isFormVisible = false;
   filters: ClientFilters = { ...DEFAULT_CLIENT_FILTERS };
   loadingCatalogs = true;
   loadingClients = true;
@@ -73,15 +74,15 @@ export class ClientsPageComponent {
   }
 
   get totalClients(): number {
-    return this.listResponse.total;
+    return this.validationClients.length;
   }
 
   get activeClients(): number {
-    return this.listResponse.items.filter((client) => client.estado === 'ACTIVO').length;
+    return this.validationClients.filter((client) => client.estado === 'ACTIVO').length;
   }
 
   get inactiveClients(): number {
-    return this.listResponse.items.filter((client) => client.estado === 'INACTIVO').length;
+    return this.validationClients.filter((client) => client.estado === 'INACTIVO').length;
   }
 
   startCreateMode(): void {
@@ -89,7 +90,7 @@ export class ClientsPageComponent {
       return;
     }
 
-    this.resetSelection();
+    this.resetSelection(true, true);
   }
 
   handleFiltersChange(filters: ClientFilters): void {
@@ -136,6 +137,15 @@ export class ClientsPageComponent {
   cancelEdit(): void {
     if (this.selectedClient) {
       this.formMode = 'view';
+      this.isFormVisible = true;
+      return;
+    }
+
+    this.resetSelection();
+  }
+
+  closeForm(): void {
+    if (!this.confirmDiscard()) {
       return;
     }
 
@@ -155,8 +165,9 @@ export class ClientsPageComponent {
           this.successMessage = result.message;
           this.selectedClient = result.client;
           this.formMode = result.client ? 'view' : 'create';
+          this.isFormVisible = false;
           this.loadValidationClients();
-          this.loadClients(this.filters, false);
+          this.loadClients(this.buildPostSaveFilters(result.client, result.action), false);
         },
         error: (error: unknown) => {
           this.errorMessage = this.resolveErrorMessage(error, 'No fue posible guardar el cliente.');
@@ -192,6 +203,7 @@ export class ClientsPageComponent {
             if (result.client) {
               this.selectedClient = result.client;
               this.formMode = 'view';
+              this.isFormVisible = false;
             } else {
               this.resetSelection(false);
             }
@@ -322,6 +334,7 @@ export class ClientsPageComponent {
         next: (client) => {
           this.selectedClient = client;
           this.formMode = mode;
+          this.isFormVisible = true;
         },
         error: (error: unknown) => {
           this.errorMessage = this.resolveErrorMessage(error, 'No fue posible cargar el cliente seleccionado.');
@@ -329,15 +342,35 @@ export class ClientsPageComponent {
       });
   }
 
-  private resetSelection(clearMessages = true): void {
+  private resetSelection(clearMessages = true, keepFormVisible = false): void {
     this.selectedClient = null;
     this.formMode = 'create';
     this.loadingSelection = false;
+    this.isFormVisible = keepFormVisible;
 
     if (clearMessages) {
       this.errorMessage = '';
       this.successMessage = '';
     }
+  }
+
+  private buildPostSaveFilters(
+    client: Client | null,
+    action: 'created' | 'updated' | 'deleted' | 'activated' | 'inactivated',
+  ): ClientFilters {
+    if (!client || action !== 'created') {
+      return {
+        ...this.filters,
+        page: 0,
+      };
+    }
+
+    return {
+      ...DEFAULT_CLIENT_FILTERS,
+      empresaId: this.activeCompanyId,
+      search: client.idCliente,
+      page: 0,
+    };
   }
 
   private confirmDiscard(): boolean {

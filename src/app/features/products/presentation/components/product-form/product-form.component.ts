@@ -283,11 +283,12 @@ import {
 
           <div class="erp-action-bar !px-0 !pb-0">
             @if (mode === 'view') {
+              <button mat-stroked-button type="button" (click)="closePanel.emit()">Cerrar ficha</button>
               <button mat-stroked-button type="button" (click)="resetToCreate()">Crear nuevo</button>
               <button mat-flat-button color="primary" type="button" (click)="requestEdit.emit()">Editar producto</button>
             } @else {
               <button mat-stroked-button type="button" (click)="cancel()" [disabled]="saving">
-                {{ mode === 'edit' ? 'Cancelar' : 'Limpiar' }}
+                {{ mode === 'edit' ? 'Cancelar' : 'Cerrar' }}
               </button>
               <button mat-flat-button color="primary" type="submit" [disabled]="saving || loading || !activeCompanyId">
                 {{ saving ? 'Guardando...' : mode === 'edit' ? 'Guardar cambios' : 'Guardar producto' }}
@@ -315,6 +316,7 @@ export class ProductFormComponent implements OnChanges, OnDestroy {
   @Output() saveProduct = new EventEmitter<SaveProductPayload>();
   @Output() cancelEdit = new EventEmitter<void>();
   @Output() requestEdit = new EventEmitter<void>();
+  @Output() closePanel = new EventEmitter<void>();
 
   readonly form = this.fb.nonNullable.group({
     nombre: ['', [Validators.required, Validators.minLength(3)]],
@@ -436,7 +438,7 @@ export class ProductFormComponent implements OnChanges, OnDestroy {
       return;
     }
 
-    this.resetForm();
+    this.closePanel.emit();
   }
 
   resetToCreate(): void {

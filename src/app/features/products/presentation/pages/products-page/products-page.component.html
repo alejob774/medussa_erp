@@ -10,7 +10,7 @@
           <p class="erp-page-eyebrow">Supply Chain Management</p>
           <h1 class="erp-page-title">Gestión de maestro de productos</h1>
           <p class="erp-page-description">
-            CRUD multiempresa con formulario superior, listado inferior y reglas de negocio listas para backend real.
+            Maestro local multiempresa con persistencia en mock y localStorage, priorizando el listado y la edición bajo demanda.
           </p>
         </div>
       </div>
@@ -25,19 +25,19 @@
         <div class="erp-meta-card min-w-[160px]">
           <p class="erp-meta-card__label">Total</p>
           <p class="erp-kpi-card__value">{{ totalProducts }}</p>
-          <p class="erp-meta-card__hint">Resultados del filtro actual.</p>
+          <p class="erp-meta-card__hint">Registros del maestro local en la empresa activa.</p>
         </div>
 
         <div class="erp-meta-card min-w-[160px]">
           <p class="erp-meta-card__label">Activos</p>
           <p class="erp-kpi-card__value">{{ activeProducts }}</p>
-          <p class="erp-meta-card__hint">Sobre la página visible.</p>
+          <p class="erp-meta-card__hint">Conteo consolidado en localStorage.</p>
         </div>
 
         <div class="erp-meta-card min-w-[160px]">
           <p class="erp-meta-card__label">Inactivos</p>
           <p class="erp-kpi-card__value">{{ inactiveProducts }}</p>
-          <p class="erp-meta-card__hint">Sobre la página visible.</p>
+          <p class="erp-meta-card__hint">Conteo consolidado en localStorage.</p>
         </div>
       </div>
     </div>
@@ -61,20 +61,6 @@
     </div>
   }
 
-  <app-product-form
-    [catalogs]="catalogs"
-    [existingProducts]="validationProducts"
-    [initialValue]="selectedProduct"
-    [mode]="formMode"
-    [activeCompanyId]="activeCompanyId"
-    [activeCompanyName]="activeCompanyName"
-    [loading]="loadingCatalogs || loadingSelection"
-    [saving]="saving"
-    (saveProduct)="saveProduct($event)"
-    (cancelEdit)="cancelEdit()"
-    (requestEdit)="enableEditMode()"
-  ></app-product-form>
-
   <app-products-list
     [activeCompanyName]="activeCompanyName"
     [filters]="filters"
@@ -91,6 +77,24 @@
     (editProduct)="handleEditProduct($event)"
     (deleteProduct)="deleteProduct($event)"
     (toggleStatus)="toggleProductStatus($event)"
+    (createRequested)="startCreateMode()"
     (retry)="retryProducts()"
   ></app-products-list>
+
+  @if (isFormVisible) {
+    <app-product-form
+      [catalogs]="catalogs"
+      [existingProducts]="validationProducts"
+      [initialValue]="selectedProduct"
+      [mode]="formMode"
+      [activeCompanyId]="activeCompanyId"
+      [activeCompanyName]="activeCompanyName"
+      [loading]="loadingCatalogs || loadingSelection"
+      [saving]="saving"
+      (saveProduct)="saveProduct($event)"
+      (cancelEdit)="cancelEdit()"
+      (requestEdit)="enableEditMode()"
+      (closePanel)="closeForm()"
+    ></app-product-form>
+  }
 </section>

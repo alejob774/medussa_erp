@@ -112,6 +112,8 @@ import {
               <p class="text-base font-semibold text-slate-700">No hay resultados para los filtros aplicados.</p>
               <p class="mt-1 text-sm">Prueba con otra familia, estado o término de búsqueda.</p>
             </div>
+
+            <button mat-stroked-button type="button" (click)="clearFilters()">Limpiar filtros</button>
           </div>
         } @else if (!response.total) {
           <div class="erp-empty-state">
@@ -120,6 +122,10 @@ import {
               <p class="text-base font-semibold text-slate-700">No hay productos registrados todavía.</p>
               <p class="mt-1 text-sm">Crea el primer producto de la empresa activa para iniciar el maestro.</p>
             </div>
+
+            <button mat-flat-button color="primary" type="button" (click)="createRequested.emit()">
+              Crear producto
+            </button>
           </div>
         } @else {
           <div class="overflow-x-auto">
@@ -268,6 +274,7 @@ export class ProductsListComponent implements OnChanges {
   @Output() editProduct = new EventEmitter<Product>();
   @Output() deleteProduct = new EventEmitter<Product>();
   @Output() toggleStatus = new EventEmitter<Product>();
+  @Output() createRequested = new EventEmitter<void>();
   @Output() retry = new EventEmitter<void>();
 
   readonly pageSizeOptions = [5, 10, 25];

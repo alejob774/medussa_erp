@@ -115,6 +115,8 @@ import { EMPTY_CLIENT_LIST_RESPONSE, ClientListResponse } from '../../../domain/
               <p class="text-base font-semibold text-slate-700">No hay resultados para los filtros aplicados.</p>
               <p class="mt-1 text-sm">Prueba con otra ciudad, estado o término de búsqueda.</p>
             </div>
+
+            <button mat-stroked-button type="button" (click)="clearFilters()">Limpiar filtros</button>
           </div>
         } @else if (!response.total) {
           <div class="erp-empty-state">
@@ -123,6 +125,10 @@ import { EMPTY_CLIENT_LIST_RESPONSE, ClientListResponse } from '../../../domain/
               <p class="text-base font-semibold text-slate-700">No hay clientes registrados todavía.</p>
               <p class="mt-1 text-sm">Crea el primer cliente de la empresa activa para iniciar el maestro.</p>
             </div>
+
+            <button mat-flat-button color="primary" type="button" (click)="createRequested.emit()">
+              Crear cliente
+            </button>
           </div>
         } @else {
           <div class="overflow-x-auto">
@@ -259,6 +265,7 @@ export class ClientsListComponent implements OnChanges {
   @Output() editClient = new EventEmitter<Client>();
   @Output() deleteClient = new EventEmitter<Client>();
   @Output() toggleStatus = new EventEmitter<Client>();
+  @Output() createRequested = new EventEmitter<void>();
   @Output() retry = new EventEmitter<void>();
 
   readonly pageSizeOptions = [5, 10, 25];

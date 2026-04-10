@@ -43,6 +43,7 @@ export class ProductsPageComponent {
   validationProducts: Product[] = [];
   selectedProduct: Product | null = null;
   formMode: ProductFormMode = 'create';
+  isFormVisible = false;
   filters: ProductFilters = { ...DEFAULT_PRODUCT_FILTERS };
   loadingCatalogs = true;
   loadingProducts = true;
@@ -81,15 +82,15 @@ export class ProductsPageComponent {
   }
 
   get totalProducts(): number {
-    return this.listResponse.total;
+    return this.validationProducts.length;
   }
 
   get activeProducts(): number {
-    return this.listResponse.items.filter((product) => product.estado === 'ACTIVO').length;
+    return this.validationProducts.filter((product) => product.estado === 'ACTIVO').length;
   }
 
   get inactiveProducts(): number {
-    return this.listResponse.items.filter((product) => product.estado === 'INACTIVO').length;
+    return this.validationProducts.filter((product) => product.estado === 'INACTIVO').length;
   }
 
   startCreateMode(): void {
@@ -97,7 +98,7 @@ export class ProductsPageComponent {
       return;
     }
 
-    this.resetSelection();
+    this.resetSelection(true, true);
   }
 
   handleFiltersChange(filters: ProductFilters): void {
@@ -144,6 +145,15 @@ export class ProductsPageComponent {
   cancelEdit(): void {
     if (this.selectedProduct) {
       this.formMode = 'view';
+      this.isFormVisible = true;
+      return;
+    }
+
+    this.resetSelection();
+  }
+
+  closeForm(): void {
+    if (!this.confirmDiscard()) {
       return;
     }
 
@@ -163,8 +173,9 @@ export class ProductsPageComponent {
           this.successMessage = result.message;
           this.selectedProduct = result.product;
           this.formMode = result.product ? 'view' : 'create';
+          this.isFormVisible = false;
           this.loadValidationProducts();
-          this.loadProducts(this.filters, false);
+          this.loadProducts(this.buildPostSaveFilters(result.product, result.action), false);
         },
         error: (error: unknown) => {
           this.errorMessage = this.resolveErrorMessage(error, 'No fue posible guardar el producto.');
@@ -200,6 +211,7 @@ export class ProductsPageComponent {
             if (result.product) {
               this.selectedProduct = result.product;
               this.formMode = 'view';
+              this.isFormVisible = false;
             } else {
               this.resetSelection(false);
             }
@@ -330,6 +342,7 @@ export class ProductsPageComponent {
         next: (product) => {
           this.selectedProduct = product;
           this.formMode = mode;
+          this.isFormVisible = true;
         },
         error: (error: unknown) => {
           this.errorMessage = this.resolveErrorMessage(error, 'No fue posible cargar el producto seleccionado.');
@@ -337,15 +350,35 @@ export class ProductsPageComponent {
       });
   }
 
-  private resetSelection(clearMessages = true): void {
+  private resetSelection(clearMessages = true, keepFormVisible = false): void {
     this.selectedProduct = null;
     this.formMode = 'create';
     this.loadingSelection = false;
+    this.isFormVisible = keepFormVisible;
 
     if (clearMessages) {
       this.errorMessage = '';
       this.successMessage = '';
     }
+  }
+
+  private buildPostSaveFilters(
+    product: Product | null,
+    action: 'created' | 'updated' | 'deleted' | 'activated' | 'inactivated',
+  ): ProductFilters {
+    if (!product || action !== 'created') {
+      return {
+        ...this.filters,
+        page: 0,
+      };
+    }
+
+    return {
+      ...DEFAULT_PRODUCT_FILTERS,
+      empresaId: this.activeCompanyId,
+      search: product.sku,
+      page: 0,
+    };
   }
 
   private confirmDiscard(): boolean {

@@ -10,7 +10,7 @@
           <p class="erp-page-eyebrow">Ventas</p>
           <h1 class="erp-page-title">Gestión de maestro de clientes</h1>
           <p class="erp-page-description">
-            CRUD multiempresa con ficha superior, listado inferior y reglas preparadas para integración backend real.
+            Maestro local multiempresa con persistencia en mock y localStorage, priorizando el listado y la ficha bajo demanda.
           </p>
         </div>
       </div>
@@ -25,19 +25,19 @@
         <div class="erp-meta-card min-w-[160px]">
           <p class="erp-meta-card__label">Total</p>
           <p class="erp-kpi-card__value">{{ totalClients }}</p>
-          <p class="erp-meta-card__hint">Resultados del filtro actual.</p>
+          <p class="erp-meta-card__hint">Registros del maestro local en la empresa activa.</p>
         </div>
 
         <div class="erp-meta-card min-w-[160px]">
           <p class="erp-meta-card__label">Activos</p>
           <p class="erp-kpi-card__value">{{ activeClients }}</p>
-          <p class="erp-meta-card__hint">Sobre la página visible.</p>
+          <p class="erp-meta-card__hint">Conteo consolidado en localStorage.</p>
         </div>
 
         <div class="erp-meta-card min-w-[160px]">
           <p class="erp-meta-card__label">Inactivos</p>
           <p class="erp-kpi-card__value">{{ inactiveClients }}</p>
-          <p class="erp-meta-card__hint">Sobre la página visible.</p>
+          <p class="erp-meta-card__hint">Conteo consolidado en localStorage.</p>
         </div>
       </div>
     </div>
@@ -61,20 +61,6 @@
     </div>
   }
 
-  <app-client-form
-    [catalogs]="catalogs"
-    [existingClients]="validationClients"
-    [initialValue]="selectedClient"
-    [mode]="formMode"
-    [activeCompanyId]="activeCompanyId"
-    [activeCompanyName]="activeCompanyName"
-    [loading]="loadingCatalogs || loadingSelection"
-    [saving]="saving"
-    (saveClient)="saveClient($event)"
-    (cancelEdit)="cancelEdit()"
-    (requestEdit)="enableEditMode()"
-  ></app-client-form>
-
   <app-clients-list
     [activeCompanyName]="activeCompanyName"
     [filters]="filters"
@@ -91,6 +77,24 @@
     (editClient)="handleEditClient($event)"
     (deleteClient)="deleteClient($event)"
     (toggleStatus)="toggleClientStatus($event)"
+    (createRequested)="startCreateMode()"
     (retry)="retryClients()"
   ></app-clients-list>
+
+  @if (isFormVisible) {
+    <app-client-form
+      [catalogs]="catalogs"
+      [existingClients]="validationClients"
+      [initialValue]="selectedClient"
+      [mode]="formMode"
+      [activeCompanyId]="activeCompanyId"
+      [activeCompanyName]="activeCompanyName"
+      [loading]="loadingCatalogs || loadingSelection"
+      [saving]="saving"
+      (saveClient)="saveClient($event)"
+      (cancelEdit)="cancelEdit()"
+      (requestEdit)="enableEditMode()"
+      (closePanel)="closeForm()"
+    ></app-client-form>
+  }
 </section>

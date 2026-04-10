@@ -249,11 +249,12 @@ import { EMPTY_CLIENT_CATALOGS, Client, ClientCatalogs, ClientStatus } from '../
 
           <div class="erp-action-bar !px-0 !pb-0">
             @if (mode === 'view') {
+              <button mat-stroked-button type="button" (click)="closePanel.emit()">Cerrar ficha</button>
               <button mat-stroked-button type="button" (click)="resetToCreate()">Crear nuevo</button>
               <button mat-flat-button color="primary" type="button" (click)="requestEdit.emit()">Editar cliente</button>
             } @else {
               <button mat-stroked-button type="button" (click)="cancel()" [disabled]="saving">
-                {{ mode === 'edit' ? 'Cancelar' : 'Limpiar' }}
+                {{ mode === 'edit' ? 'Cancelar' : 'Cerrar' }}
               </button>
               <button mat-flat-button color="primary" type="submit" [disabled]="saving || loading || !activeCompanyId">
                 {{ saving ? 'Guardando...' : mode === 'edit' ? 'Guardar cambios' : 'Guardar cliente' }}
@@ -281,6 +282,7 @@ export class ClientFormComponent implements OnChanges, OnDestroy {
   @Output() saveClient = new EventEmitter<SaveClientPayload>();
   @Output() cancelEdit = new EventEmitter<void>();
   @Output() requestEdit = new EventEmitter<void>();
+  @Output() closePanel = new EventEmitter<void>();
 
   readonly form = this.fb.nonNullable.group({
     idCliente: ['', [Validators.required, Validators.minLength(2)]],
@@ -392,7 +394,7 @@ export class ClientFormComponent implements OnChanges, OnDestroy {
       return;
     }
 
-    this.resetForm();
+    this.closePanel.emit();
   }
 
   resetToCreate(): void {
