@@ -49,6 +49,18 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'ventas/clientes',
+        loadComponent: () =>
+          import('./features/clients/presentation/pages/clients-page/clients-page.component').then(
+            (module) => module.ClientsPageComponent,
+          ),
+        canActivate: [permissionGuard],
+        canDeactivate: [pendingChangesGuard],
+        data: {
+          permission: 'clients.view',
+        },
+      },
+      {
         path: 'compras',
         component: ModulePlaceholderPageComponent,
         canActivate: [permissionGuard],

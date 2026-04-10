@@ -6,6 +6,7 @@ import {
 } from '../models/audit-log.model';
 
 export const AUDIT_MODULE_LABELS: Record<AuditLogModuleKey, string> = {
+  clientes: 'Clientes',
   usuarios: 'Usuarios',
   roles: 'Roles',
   perfiles: 'Perfiles',

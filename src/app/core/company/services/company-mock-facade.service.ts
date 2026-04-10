@@ -48,6 +48,10 @@ const COMPANY_CATALOG: Record<string, Company> = {
 const ALL_PERMISSIONS: PermissionKey[] = [
   'dashboard.view',
   'sales.view',
+  'clients.view',
+  'clients.create',
+  'clients.edit',
+  'clients.delete',
   'purchases.view',
   'finance.view',
   'production.view',
@@ -83,6 +87,10 @@ export class CompanyMockFacadeService {
           permissions: [
             'dashboard.view',
             'sales.view',
+            'clients.view',
+            'clients.create',
+            'clients.edit',
+            'clients.delete',
             'marketing.view',
             'support.view',
           ],

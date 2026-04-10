@@ -1,4 +1,5 @@
 export type AuditLogModuleKey =
+  | 'clientes'
   | 'usuarios'
   | 'roles'
   | 'perfiles'

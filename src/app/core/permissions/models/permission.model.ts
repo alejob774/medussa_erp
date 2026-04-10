@@ -1,6 +1,10 @@
 export type LegacyPermissionKey =
   | 'dashboard.view'
   | 'sales.view'
+  | 'clients.view'
+  | 'clients.create'
+  | 'clients.edit'
+  | 'clients.delete'
   | 'purchases.view'
   | 'finance.view'
   | 'production.view'

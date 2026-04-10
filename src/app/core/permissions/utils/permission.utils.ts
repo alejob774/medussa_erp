@@ -3,6 +3,10 @@ import { LegacyPermissionKey, PermissionKey } from '../models/permission.model';
 const LEGACY_TO_BACKEND_PERMISSION_ALIASES: Partial<
   Record<LegacyPermissionKey, string[]>
 > = {
+  'clients.view': ['clientes_view', 'sales.view'],
+  'clients.create': ['clientes_create', 'sales.view'],
+  'clients.edit': ['clientes_edit', 'sales.view'],
+  'clients.delete': ['clientes_delete', 'sales.view'],
   'products.view': ['productos_view', 'inventory.view'],
   'products.create': ['productos_create', 'inventory.view'],
   'products.edit': ['productos_edit', 'inventory.view'],

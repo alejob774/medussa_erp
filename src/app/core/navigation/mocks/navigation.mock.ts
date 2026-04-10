@@ -47,6 +47,14 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
         companyIds: ['medussa-holding', 'medussa-industrial'],
       },
       {
+        id: 'clientes',
+        label: 'Clientes',
+        route: '/ventas/clientes',
+        icon: 'groups',
+        requiredPermissions: ['clients.view'],
+        companyIds: ALL_COMPANIES,
+      },
+      {
         id: 'supply-chain-management',
         label: 'Supply Chain Management',
         route: '/supply-chain-management',

@@ -3,6 +3,8 @@ export const environment = {
   useCompanySettingsMock: true,
   useCompaniesAdministrationMock: false,
   enableCompaniesAdministrationFallback: true,
+  useClientsAdministrationMock: false,
+  enableClientsAdministrationFallback: true,
   useProductsAdministrationMock: false,
   enableProductsAdministrationFallback: true,
   useSecurityAdministrationMock: false,
