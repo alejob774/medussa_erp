@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+
+# Base de Datos y Variables
+.env
+*.db
+
+# IDEs
+.vscode/
+.idea/
