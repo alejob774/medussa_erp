@@ -28,16 +28,19 @@ async def login(request: Request, db: Session = Depends(get_db), form_data: OAut
     await registrar_log(db, request, user_id=usuario.id, user_name=usuario.username, modulo="AUTH", accion="LOGIN_SUCCESS")
     return {"access_token": access_token, "token_type": "bearer"}
 
+# app/api/v1/auth.py
+
 @router.get("/me", response_model=UserMeResponse)
 async def get_me(db: Session = Depends(get_db), current_user: Usuario = Depends(get_current_user)):
     resultados = db.query(
         UsuarioEmpresaRol, Empresa.nombre_empresa, Rol.nombre.label("nombre_rol"),
         Perfil.nombre.label("nombre_perfil"), Perfil.permisos.label("permisos_efectivos")
     ).join(Empresa, UsuarioEmpresaRol.empresa_id == Empresa.empresa_id)\
-     .join(Rol, UsuarioEmpresaRol.rol_id == Rol.id)\
-     .outerjoin(Perfil, UsuarioEmpresaRol.perfil_id == Perfil.id)\
-     .filter(UsuarioEmpresaRol.usuario_id == current_user.id).all()
-
+    .join(Rol, UsuarioEmpresaRol.rol_id == Rol.id)\
+    .outerjoin(Perfil, UsuarioEmpresaRol.perfil_id == Perfil.id)\
+    .filter(UsuarioEmpresaRol.usuario_id == current_user.id).all()
+    
+    # ... resto del código
     membresias = [{
         "empresa_id": r.UsuarioEmpresaRol.empresa_id,
         "nombre_empresa": r.nombre_empresa,
