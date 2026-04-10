@@ -50,27 +50,13 @@ export const routes: Routes = [
       },
       {
         path: 'ventas/clientes',
-        loadComponent: () =>
-          import('./features/clients/presentation/pages/clients-page/clients-page.component').then(
-            (module) => module.ClientsPageComponent,
-          ),
-        canActivate: [permissionGuard],
-        canDeactivate: [pendingChangesGuard],
-        data: {
-          permission: 'clients.view',
-        },
+        pathMatch: 'full',
+        redirectTo: 'supply-chain-management/clientes',
       },
       {
         path: 'ventas/vendedores',
-        loadComponent: () =>
-          import('./features/vendors/presentation/pages/vendors-page/vendors-page.component').then(
-            (module) => module.VendorsPageComponent,
-          ),
-        canActivate: [permissionGuard],
-        canDeactivate: [pendingChangesGuard],
-        data: {
-          permission: 'vendors.view',
-        },
+        pathMatch: 'full',
+        redirectTo: 'supply-chain-management/vendedores',
       },
       {
         path: 'compras',
@@ -85,14 +71,55 @@ export const routes: Routes = [
       },
       {
         path: 'supply-chain-management',
-        component: ModulePlaceholderPageComponent,
-        canActivate: [permissionGuard],
-        data: {
-          title: 'Supply Chain Management',
-          description: 'Vista marco para coordinación de abastecimiento, inventarios, almacén y compras.',
-          hint: 'Siguiente iteración: orquestar abastecimiento y ejecución operativa desde un tablero unificado.',
-          permission: 'warehouse.view',
-        },
+        children: [
+          {
+            path: '',
+            component: ModulePlaceholderPageComponent,
+            canActivate: [permissionGuard],
+            data: {
+              title: 'Supply Chain Management',
+              description: 'Vista marco para coordinación de abastecimiento, inventarios, almacén y compras.',
+              hint: 'Desde aquí cuelgan los maestros de productos, clientes y vendedores, además de la operación logística.',
+              permission: 'warehouse.view',
+            },
+          },
+          {
+            path: 'productos',
+            loadComponent: () =>
+              import('./features/products/presentation/pages/products-page/products-page.component').then(
+                (module) => module.ProductsPageComponent,
+              ),
+            canActivate: [permissionGuard],
+            canDeactivate: [pendingChangesGuard],
+            data: {
+              permission: 'products.view',
+            },
+          },
+          {
+            path: 'clientes',
+            loadComponent: () =>
+              import('./features/clients/presentation/pages/clients-page/clients-page.component').then(
+                (module) => module.ClientsPageComponent,
+              ),
+            canActivate: [permissionGuard],
+            canDeactivate: [pendingChangesGuard],
+            data: {
+              permission: 'clients.view',
+            },
+          },
+          {
+            path: 'vendedores',
+            loadComponent: () =>
+              import('./features/vendors/presentation/pages/vendors-page/vendors-page.component').then(
+                (module) => module.VendorsPageComponent,
+              ),
+            canActivate: [permissionGuard],
+            canDeactivate: [pendingChangesGuard],
+            data: {
+              permission: 'vendors.view',
+            },
+          },
+        ],
       },
       {
         path: 'finanzas',
@@ -162,15 +189,8 @@ export const routes: Routes = [
       },
       {
         path: 'inventarios',
-        loadComponent: () =>
-          import('./features/products/presentation/pages/products-page/products-page.component').then(
-            (module) => module.ProductsPageComponent,
-          ),
-        canActivate: [permissionGuard],
-        canDeactivate: [pendingChangesGuard],
-        data: {
-          permission: 'products.view',
-        },
+        pathMatch: 'full',
+        redirectTo: 'supply-chain-management/productos',
       },
       {
         path: 'configuracion/empresas',
