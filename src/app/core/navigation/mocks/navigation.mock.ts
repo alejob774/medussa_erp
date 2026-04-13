@@ -76,6 +76,14 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
             requiredPermissions: ['vendors.view'],
             companyIds: ALL_COMPANIES,
           },
+          {
+            id: 'scm-conductores',
+            label: 'Conductores',
+            route: '/supply-chain-management/conductores',
+            icon: 'delivery_dining',
+            requiredPermissions: ['drivers.view'],
+            companyIds: ALL_COMPANIES,
+          },
         ],
       },
       {

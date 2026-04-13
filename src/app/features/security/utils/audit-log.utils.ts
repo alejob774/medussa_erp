@@ -8,6 +8,7 @@ import {
 export const AUDIT_MODULE_LABELS: Record<AuditLogModuleKey, string> = {
   clientes: 'Clientes',
   vendedores: 'Vendedores',
+  conductores: 'Conductores',
   usuarios: 'Usuarios',
   roles: 'Roles',
   perfiles: 'Perfiles',

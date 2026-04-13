@@ -59,6 +59,11 @@ export const routes: Routes = [
         redirectTo: 'supply-chain-management/vendedores',
       },
       {
+        path: 'ventas/conductores',
+        pathMatch: 'full',
+        redirectTo: 'supply-chain-management/conductores',
+      },
+      {
         path: 'compras',
         component: ModulePlaceholderPageComponent,
         canActivate: [permissionGuard],
@@ -79,7 +84,7 @@ export const routes: Routes = [
             data: {
               title: 'Supply Chain Management',
               description: 'Vista marco para coordinación de abastecimiento, inventarios, almacén y compras.',
-              hint: 'Desde aquí cuelgan los maestros de productos, clientes y vendedores, además de la operación logística.',
+              hint: 'Desde aquí cuelgan los maestros de productos, clientes, vendedores y conductores, además de la operación logística.',
               permission: 'warehouse.view',
             },
           },
@@ -117,6 +122,18 @@ export const routes: Routes = [
             canDeactivate: [pendingChangesGuard],
             data: {
               permission: 'vendors.view',
+            },
+          },
+          {
+            path: 'conductores',
+            loadComponent: () =>
+              import('./features/drivers/presentation/pages/drivers-page/drivers-page.component').then(
+                (module) => module.DriversPageComponent,
+              ),
+            canActivate: [permissionGuard],
+            canDeactivate: [pendingChangesGuard],
+            data: {
+              permission: 'drivers.view',
             },
           },
         ],

@@ -9,6 +9,8 @@ export const environment = {
   enableProductsAdministrationFallback: false,
   useVendorsAdministrationMock: true,
   enableVendorsAdministrationFallback: false,
+  useDriversAdministrationMock: true,
+  enableDriversAdministrationFallback: false,
   useSecurityAdministrationMock: false,
   enableSecurityAdministrationFallback: true,
   useAuditLogsMock: false,
