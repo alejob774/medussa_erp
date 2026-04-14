@@ -1,7 +1,8 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
-from app.models.conductores import Conductor, Ruta
+from app.models.conductores import Conductor
 from app.schemas.conductor import ConductorCreate, ConductorUpdate
+from app.models.logistica import Ruta
 
 async def crear_conductor(db: Session, obj_in: ConductorCreate):
     # Validar ID único [cite: 234]

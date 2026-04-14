@@ -4,6 +4,7 @@ from app.db.session import get_db
 from app.schemas.conductor import ConductorCreate, ConductorResponse, ConductorUpdate
 from app.services import conductor_service as crud
 from app.models.conductores import Conductor
+from app.models.logistica import Ruta
 from app.api.v1.auth import get_current_user # Asumiendo nombre de función
 from app.utils.auditoria import registrar_log # Función que creamos antes
 from fastapi.encoders import jsonable_encoder

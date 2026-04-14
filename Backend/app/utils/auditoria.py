@@ -10,6 +10,7 @@ async def registrar_log(
     request: Request,
     user_id: Optional[int] = None,
     user_name: str = "SISTEMA",
+    objeto_id: int = None,
     empresa_id: str = "GENERAL",
     modulo: str = "GENERAL",
     accion: str = "ACCION",
