@@ -27,6 +27,7 @@ class UsuarioEmpresaRol(Base):
     empresa_id = Column(String, ForeignKey("configuracion.configuraciones.empresa_id"))
     rol_id = Column(Integer, ForeignKey("seguridad.roles.id"))
     estado = Column(String, default="activo")
+    perfil_id = Column(Integer, ForeignKey("seguridad.perfiles.id"))
     
 class Perfil(Base):
     __tablename__ = "perfiles_empresa"

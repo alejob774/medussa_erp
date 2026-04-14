@@ -1,15 +1,5 @@
-# Python
+# Ignorar archivos compilados de Python
+*.pyc
 __pycache__/
-*.py[cod]
-*$py.class
-.venv/
-venv/
-ENV/
+*.pyo
 
-# Base de Datos y Variables
-.env
-*.db
-
-# IDEs
-.vscode/
-.idea/
