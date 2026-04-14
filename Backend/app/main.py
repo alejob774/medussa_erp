@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.v1 import auth, usuarios, configuracion, auditoria, seguridad, inventario, clientes, vendedores, conductores, rutas
+from app.api.v1 import auth, usuarios, configuracion, auditoria, seguridad, inventario, clientes, vendedores, conductores, rutas, equipos, proveedores
 
 app = FastAPI(
     title="Medussa API",
@@ -38,6 +38,8 @@ app.include_router(vendedores.router, prefix="/api/v1/vendedores", tags=["Vended
 app.include_router(auditoria.router, prefix="/api/v1/auditoria", tags=["Auditoría"])
 app.include_router(conductores.router, prefix="/api/v1/conductores", tags=["Conductores"])
 app.include_router(rutas.router, prefix="/api/v1/rutas", tags=["Logística - Rutas"])
+app.include_router(equipos.router, prefix="/api/v1/equipos", tags=["Equipos"])
+app.include_router(proveedores.router, prefix="/api/v1/proveedores", tags=["Proveedores"])
 
 @app.get("/")
 def read_root():

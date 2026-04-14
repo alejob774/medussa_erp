@@ -26,4 +26,4 @@ class UsuarioEmpresaConfig(Base):
     usuario_id = Column(Integer, ForeignKey("seguridad.usuarios.id", ondelete="CASCADE"))
     empresa_id = Column(String(50), nullable=False) # Identificador de empresa 
     rol_id = Column(Integer, ForeignKey("seguridad.roles.id")) # Rol por empresa 
-    perfil_id = Column(Integer, nullable=True) # Perfil por empresa
+    perfil_id = Column(Integer, ForeignKey("seguridad.perfiles_empresa.id"), nullable=True)
