@@ -181,6 +181,14 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
             companyIds: ALL_COMPANIES,
           },
           {
+            id: 'configuracion-equipos',
+            label: 'Equipos',
+            route: '/configuracion/equipos',
+            icon: 'precision_manufacturing',
+            requiredPermissions: ['equipments.view'],
+            companyIds: ALL_COMPANIES,
+          },
+          {
             id: 'usuarios',
             label: 'Usuarios',
             route: '/seguridad/usuarios-roles',

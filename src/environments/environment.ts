@@ -15,6 +15,8 @@ export const environment = {
   enableRoutesAdministrationFallback: false,
   useSuppliersAdministrationMock: true,
   enableSuppliersAdministrationFallback: false,
+  useEquipmentsAdministrationMock: true,
+  enableEquipmentsAdministrationFallback: false,
   useSecurityAdministrationMock: false,
   enableSecurityAdministrationFallback: true,
   useAuditLogsMock: false,

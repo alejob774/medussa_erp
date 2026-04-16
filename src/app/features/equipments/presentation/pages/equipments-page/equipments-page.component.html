@@ -1,0 +1,98 @@
+<section class="space-y-6">
+  <header class="erp-page-header">
+    <div class="erp-page-header__content flex flex-wrap items-start justify-between gap-6">
+      <div class="flex items-start gap-4">
+        <div class="erp-page-icon">
+          <mat-icon>precision_manufacturing</mat-icon>
+        </div>
+
+        <div>
+          <p class="erp-page-eyebrow">Configuración</p>
+          <h1 class="erp-page-title">Gestión de maestro de equipos</h1>
+          <p class="erp-page-description">
+            Maestro local multiempresa para activos operativos de El Arbolito, listo para evolución hacia mantenimiento, IoT y analítica.
+          </p>
+        </div>
+      </div>
+
+      <div class="equipments-page__meta-grid">
+        <div class="erp-meta-card min-w-[200px]">
+          <p class="erp-meta-card__label">Empresa activa</p>
+          <p class="erp-meta-card__value">{{ activeCompanyName || 'Sin contexto' }}</p>
+          <p class="erp-meta-card__hint">Los equipos operan dentro del contexto multiempresa actual.</p>
+        </div>
+        <div class="erp-meta-card min-w-[160px]">
+          <p class="erp-meta-card__label">Total equipos</p>
+          <p class="erp-kpi-card__value">{{ totalEquipments }}</p>
+          <p class="erp-meta-card__hint">Registros consolidados del maestro local.</p>
+        </div>
+        <div class="erp-meta-card min-w-[160px]">
+          <p class="erp-meta-card__label">Activos</p>
+          <p class="erp-kpi-card__value">{{ activeEquipments }}</p>
+          <p class="erp-meta-card__hint">Conteo vigente en localStorage.</p>
+        </div>
+        <div class="erp-meta-card min-w-[160px]">
+          <p class="erp-meta-card__label">Inactivos</p>
+          <p class="erp-kpi-card__value">{{ inactiveEquipments }}</p>
+          <p class="erp-meta-card__hint">Registros desactivados del dataset local.</p>
+        </div>
+        <div class="erp-meta-card min-w-[240px]">
+          <p class="erp-meta-card__label">Distribución por tipo</p>
+          <p class="erp-meta-card__value text-base">{{ distributionByType || 'Sin distribución disponible' }}</p>
+          <p class="erp-meta-card__hint">Resumen rápido de los tipos más representativos.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-5 flex justify-end">
+      <button mat-flat-button color="primary" type="button" class="min-h-12" (click)="startCreateMode()">
+        Crear equipo
+      </button>
+    </div>
+  </header>
+
+  @if (errorMessage) {
+    <div class="erp-alert erp-alert--error">{{ errorMessage }}</div>
+  }
+
+  @if (successMessage) {
+    <div class="erp-alert erp-alert--success">{{ successMessage }}</div>
+  }
+
+  <app-equipments-list
+    [activeCompanyName]="activeCompanyName"
+    [filters]="filters"
+    [catalogs]="catalogs"
+    [response]="listResponse"
+    [loading]="loadingEquipments"
+    [errorMessage]="errorMessage"
+    [selectedEquipmentId]="selectedEquipment?.id ?? null"
+    [deletingId]="deletingId"
+    [statusUpdatingId]="statusUpdatingId"
+    (filtersChange)="handleFiltersChange($event)"
+    (pageChange)="handlePageChange($event)"
+    (selectEquipment)="handleSelectEquipment($event)"
+    (editEquipment)="handleEditEquipment($event)"
+    (deleteEquipment)="deleteEquipment($event)"
+    (toggleStatus)="toggleEquipmentStatus($event)"
+    (createRequested)="startCreateMode()"
+    (retry)="retryEquipments()"
+  ></app-equipments-list>
+
+  @if (isFormVisible) {
+    <app-equipment-form
+      [catalogs]="catalogs"
+      [existingEquipments]="validationEquipments"
+      [initialValue]="selectedEquipment"
+      [mode]="formMode"
+      [activeCompanyId]="activeCompanyId"
+      [activeCompanyName]="activeCompanyName"
+      [loading]="loadingCatalogs || loadingSelection"
+      [saving]="saving"
+      (saveEquipment)="saveEquipment($event)"
+      (cancelEdit)="cancelEdit()"
+      (requestEdit)="enableEditMode()"
+      (closePanel)="closeForm()"
+    ></app-equipment-form>
+  }
+</section>
