@@ -51,6 +51,12 @@
       </div>
     }
 
+    @if (infoMessage) {
+      <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        {{ infoMessage }}
+      </div>
+    }
+
     <div class="flex items-center">
       <mat-checkbox formControlName="remember">Recordar sesión</mat-checkbox>
     </div>

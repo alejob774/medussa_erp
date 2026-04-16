@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { of } from 'rxjs';
 import { catchError, finalize, map, switchMap } from 'rxjs/operators';
-import { Router } from '@angular/router';
 import { CompanyContextService } from '../../../../core/company/services/company-context.service';
 import { CompaniesFacadeService } from '../../../companies/application/facade/companies.facade';
 import { AuthLayoutComponent } from '../../components/auth-layout/auth-layout.component';
@@ -29,10 +29,12 @@ export class LoginPageComponent {
 
   loading = false;
   errorMessage = '';
+  infoMessage = this.readNavigationInfoMessage();
 
   onLoginSubmit(value: LoginFormValue): void {
     this.loading = true;
     this.errorMessage = '';
+    this.infoMessage = '';
 
     this.authService
       .login({
@@ -89,13 +91,23 @@ export class LoginPageComponent {
     }
 
     if (httpError?.status === 403) {
-      return 'La empresa activa no está autorizada para esta sesión.';
+      return 'La empresa activa no esta autorizada para esta sesion.';
     }
 
     if (httpError?.status === 422) {
-      return 'El backend rechazó la validación de la sesión o de la empresa activa.';
+      return 'El backend rechazo la validacion de la sesion o de la empresa activa.';
     }
 
-    return httpError?.error?.detail || 'No fue posible iniciar sesión.';
+    return httpError?.error?.detail || 'No fue posible iniciar sesion.';
+  }
+
+  private readNavigationInfoMessage(): string {
+    const navigationState = this.router.getCurrentNavigation()?.extras.state;
+    const historyState =
+      typeof window !== 'undefined' ? (window.history.state as { logoutMessage?: unknown }) : null;
+    const logoutMessage =
+      navigationState?.['logoutMessage'] ?? historyState?.logoutMessage ?? '';
+
+    return typeof logoutMessage === 'string' ? logoutMessage : '';
   }
 }

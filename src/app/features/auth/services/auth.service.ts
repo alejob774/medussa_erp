@@ -21,6 +21,7 @@ export class AuthService {
   private readonly authSessionService = inject(AuthSessionService);
   private readonly loginUrl = `${environment.apiUrl}/auth/login`;
   private readonly authMeUrl = `${environment.apiUrl}/auth/me`;
+  private readonly logoutUrl = `${environment.apiUrl}/auth/logout`;
 
   login(payload: LoginRequest): Observable<LoginResponse> {
     const requestPayload: LoginRequestBackend = {
@@ -46,6 +47,10 @@ export class AuthService {
 
   getAuthenticatedContext(): Observable<BackendAuthMeResponse> {
     return this.http.get<BackendAuthMeResponse>(this.authMeUrl);
+  }
+
+  logout(): Observable<void> {
+    return this.http.post<void>(this.logoutUrl, {});
   }
 
   syncAuthenticatedContext(): Observable<'synced' | 'fallback' | 'skipped'> {
