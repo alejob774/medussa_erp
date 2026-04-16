@@ -42,6 +42,18 @@ export class LoginPageComponent {
         password: value.password,
       })
       .pipe(
+        catchError((error) => {
+          if (!this.authService.canUseMockLoginFallback(error)) {
+            throw error;
+          }
+
+          this.infoMessage =
+            'Backend no disponible. Ingresaste en modo local de demostracion.';
+
+          return of(this.authService.createMockLoginSession(value.username));
+        }),
+      )
+      .pipe(
         map((response) =>
           this.companyContextService.enrichSession(response, value.username),
         ),
@@ -70,7 +82,9 @@ export class LoginPageComponent {
       )
       .subscribe({
         next: (nextRoute) => {
-          void this.router.navigate([nextRoute]);
+          void this.router.navigate([nextRoute], {
+            state: this.infoMessage ? { loginInfoMessage: this.infoMessage } : undefined,
+          });
         },
         error: (error) => {
           this.authSessionService.clearSession();
@@ -88,6 +102,10 @@ export class LoginPageComponent {
 
     if (httpError?.status === 0) {
       return 'No fue posible conectarse con el backend. Revisa URL, puerto y CORS.';
+    }
+
+    if (httpError?.status === 401) {
+      return 'Credenciales invalidas. Verifica usuario y contrasena.';
     }
 
     if (httpError?.status === 403) {

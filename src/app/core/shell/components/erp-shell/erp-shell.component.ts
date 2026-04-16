@@ -182,6 +182,21 @@ import { NavigationFacadeService } from '../../../navigation/services/navigation
           </div>
         </header>
 
+        @if (feedbackMessage) {
+          <div class="px-6 pt-4">
+            <div class="erp-alert erp-alert--warning flex items-center justify-between gap-3">
+              <span>{{ feedbackMessage }}</span>
+              <button
+                type="button"
+                class="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700"
+                (click)="dismissFeedbackMessage()"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        }
+
         <main class="erp-shell-main">
           <router-outlet />
         </main>
@@ -206,6 +221,7 @@ export class ErpShellComponent {
   readonly session$ = this.authSessionService.session$;
   readonly expandedGroupIds = new Set<string>();
   logoutLoading = false;
+  feedbackMessage = this.readNavigationFeedbackMessage();
 
   switchCompany(companyId: string): void {
     this.companyContextService.setActiveCompany(companyId);
@@ -245,6 +261,10 @@ export class ErpShellComponent {
       .subscribe();
   }
 
+  dismissFeedbackMessage(): void {
+    this.feedbackMessage = '';
+  }
+
   private isRouteActive(route?: string): boolean {
     return !!route && this.router.url === route;
   }
@@ -256,5 +276,15 @@ export class ErpShellComponent {
       .slice(0, 2)
       .map((value) => value[0]?.toUpperCase() ?? '')
       .join('');
+  }
+
+  private readNavigationFeedbackMessage(): string {
+    const navigationState = this.router.getCurrentNavigation()?.extras.state;
+    const historyState =
+      typeof window !== 'undefined' ? (window.history.state as { loginInfoMessage?: unknown }) : null;
+    const loginInfoMessage =
+      navigationState?.['loginInfoMessage'] ?? historyState?.loginInfoMessage ?? '';
+
+    return typeof loginInfoMessage === 'string' ? loginInfoMessage : '';
   }
 }
