@@ -13,6 +13,8 @@ export const environment = {
   enableDriversAdministrationFallback: false,
   useRoutesAdministrationMock: true,
   enableRoutesAdministrationFallback: false,
+  useSuppliersAdministrationMock: true,
+  enableSuppliersAdministrationFallback: false,
   useSecurityAdministrationMock: false,
   enableSecurityAdministrationFallback: true,
   useAuditLogsMock: false,

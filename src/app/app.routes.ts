@@ -240,6 +240,18 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'configuracion/proveedores',
+        loadComponent: () =>
+          import('./features/suppliers/presentation/pages/suppliers-page/suppliers-page.component').then(
+            (module) => module.SuppliersPageComponent,
+          ),
+        canActivate: [permissionGuard],
+        canDeactivate: [pendingChangesGuard],
+        data: {
+          permission: 'suppliers.view',
+        },
+      },
+      {
         path: 'seguridad/usuarios-roles',
         component: UsersRolesPageComponent,
         canActivate: [permissionGuard],

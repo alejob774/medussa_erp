@@ -173,6 +173,14 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
             companyIds: ALL_COMPANIES,
           },
           {
+            id: 'configuracion-proveedores',
+            label: 'Proveedores',
+            route: '/configuracion/proveedores',
+            icon: 'factory',
+            requiredPermissions: ['suppliers.view'],
+            companyIds: ALL_COMPANIES,
+          },
+          {
             id: 'usuarios',
             label: 'Usuarios',
             route: '/seguridad/usuarios-roles',
