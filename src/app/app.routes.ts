@@ -228,6 +228,18 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'configuracion/rutas',
+        loadComponent: () =>
+          import('./features/routes/presentation/pages/routes-page/routes-page.component').then(
+            (module) => module.RoutesPageComponent,
+          ),
+        canActivate: [permissionGuard],
+        canDeactivate: [pendingChangesGuard],
+        data: {
+          permission: 'routes.view',
+        },
+      },
+      {
         path: 'seguridad/usuarios-roles',
         component: UsersRolesPageComponent,
         canActivate: [permissionGuard],

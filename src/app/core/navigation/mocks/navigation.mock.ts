@@ -165,6 +165,14 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
             companyIds: ALL_COMPANIES,
           },
           {
+            id: 'configuracion-rutas',
+            label: 'Rutas',
+            route: '/configuracion/rutas',
+            icon: 'route',
+            requiredPermissions: ['routes.view'],
+            companyIds: ALL_COMPANIES,
+          },
+          {
             id: 'usuarios',
             label: 'Usuarios',
             route: '/seguridad/usuarios-roles',
