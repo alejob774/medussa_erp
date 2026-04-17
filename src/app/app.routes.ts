@@ -49,6 +49,21 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'ventas/clientes',
+        pathMatch: 'full',
+        redirectTo: 'supply-chain-management/clientes',
+      },
+      {
+        path: 'ventas/vendedores',
+        pathMatch: 'full',
+        redirectTo: 'supply-chain-management/vendedores',
+      },
+      {
+        path: 'ventas/conductores',
+        pathMatch: 'full',
+        redirectTo: 'supply-chain-management/conductores',
+      },
+      {
         path: 'compras',
         component: ModulePlaceholderPageComponent,
         canActivate: [permissionGuard],
@@ -61,14 +76,67 @@ export const routes: Routes = [
       },
       {
         path: 'supply-chain-management',
-        component: ModulePlaceholderPageComponent,
-        canActivate: [permissionGuard],
-        data: {
-          title: 'Supply Chain Management',
-          description: 'Vista marco para coordinación de abastecimiento, inventarios, almacén y compras.',
-          hint: 'Siguiente iteración: orquestar abastecimiento y ejecución operativa desde un tablero unificado.',
-          permission: 'warehouse.view',
-        },
+        children: [
+          {
+            path: '',
+            component: ModulePlaceholderPageComponent,
+            canActivate: [permissionGuard],
+            data: {
+              title: 'Supply Chain Management',
+              description: 'Vista marco para coordinación de abastecimiento, inventarios, almacén y compras.',
+              hint: 'Desde aquí cuelgan los maestros de productos, clientes, vendedores y conductores, además de la operación logística.',
+              permission: 'warehouse.view',
+            },
+          },
+          {
+            path: 'productos',
+            loadComponent: () =>
+              import('./features/products/presentation/pages/products-page/products-page.component').then(
+                (module) => module.ProductsPageComponent,
+              ),
+            canActivate: [permissionGuard],
+            canDeactivate: [pendingChangesGuard],
+            data: {
+              permission: 'products.view',
+            },
+          },
+          {
+            path: 'clientes',
+            loadComponent: () =>
+              import('./features/clients/presentation/pages/clients-page/clients-page.component').then(
+                (module) => module.ClientsPageComponent,
+              ),
+            canActivate: [permissionGuard],
+            canDeactivate: [pendingChangesGuard],
+            data: {
+              permission: 'clients.view',
+            },
+          },
+          {
+            path: 'vendedores',
+            loadComponent: () =>
+              import('./features/vendors/presentation/pages/vendors-page/vendors-page.component').then(
+                (module) => module.VendorsPageComponent,
+              ),
+            canActivate: [permissionGuard],
+            canDeactivate: [pendingChangesGuard],
+            data: {
+              permission: 'vendors.view',
+            },
+          },
+          {
+            path: 'conductores',
+            loadComponent: () =>
+              import('./features/drivers/presentation/pages/drivers-page/drivers-page.component').then(
+                (module) => module.DriversPageComponent,
+              ),
+            canActivate: [permissionGuard],
+            canDeactivate: [pendingChangesGuard],
+            data: {
+              permission: 'drivers.view',
+            },
+          },
+        ],
       },
       {
         path: 'finanzas',
@@ -138,14 +206,8 @@ export const routes: Routes = [
       },
       {
         path: 'inventarios',
-        component: ModulePlaceholderPageComponent,
-        canActivate: [permissionGuard],
-        data: {
-          title: 'Manejo de inventarios',
-          description: 'Placeholder para stock, conteos y trazabilidad.',
-          hint: 'HU siguiente: stock en tiempo real y alertas.',
-          permission: 'inventory.view',
-        },
+        pathMatch: 'full',
+        redirectTo: 'supply-chain-management/productos',
       },
       {
         path: 'configuracion/empresas',
@@ -163,6 +225,42 @@ export const routes: Routes = [
         canDeactivate: [pendingChangesGuard],
         data: {
           permission: 'settings.general.view',
+        },
+      },
+      {
+        path: 'configuracion/rutas',
+        loadComponent: () =>
+          import('./features/routes/presentation/pages/routes-page/routes-page.component').then(
+            (module) => module.RoutesPageComponent,
+          ),
+        canActivate: [permissionGuard],
+        canDeactivate: [pendingChangesGuard],
+        data: {
+          permission: 'routes.view',
+        },
+      },
+      {
+        path: 'configuracion/proveedores',
+        loadComponent: () =>
+          import('./features/suppliers/presentation/pages/suppliers-page/suppliers-page.component').then(
+            (module) => module.SuppliersPageComponent,
+          ),
+        canActivate: [permissionGuard],
+        canDeactivate: [pendingChangesGuard],
+        data: {
+          permission: 'suppliers.view',
+        },
+      },
+      {
+        path: 'configuracion/equipos',
+        loadComponent: () =>
+          import('./features/equipments/presentation/pages/equipments-page/equipments-page.component').then(
+            (module) => module.EquipmentsPageComponent,
+          ),
+        canActivate: [permissionGuard],
+        canDeactivate: [pendingChangesGuard],
+        data: {
+          permission: 'equipments.view',
         },
       },
       {

@@ -34,6 +34,7 @@ export class LoginFormComponent {
 
   @Input() loading = false;
   @Input() errorMessage = '';
+  @Input() infoMessage = '';
 
   @Output() formSubmit = new EventEmitter<LoginFormValue>();
 

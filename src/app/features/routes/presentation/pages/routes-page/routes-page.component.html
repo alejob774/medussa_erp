@@ -1,0 +1,98 @@
+<section class="space-y-6">
+  <header class="erp-page-header">
+    <div class="erp-page-header__content flex flex-wrap items-start justify-between gap-6">
+      <div class="flex items-start gap-4">
+        <div class="erp-page-icon">
+          <mat-icon>route</mat-icon>
+        </div>
+
+        <div>
+          <p class="erp-page-eyebrow">Configuración</p>
+          <h1 class="erp-page-title">Gestión de maestro de rutas</h1>
+          <p class="erp-page-description">
+            Maestro local multiempresa con persistencia en mock y localStorage, priorizando el listado como vista principal y la ficha bajo demanda para CRUD completo.
+          </p>
+        </div>
+      </div>
+
+      <div class="routes-page__meta-grid">
+        <div class="erp-meta-card min-w-[200px]">
+          <p class="erp-meta-card__label">Empresa activa</p>
+          <p class="erp-meta-card__value">{{ activeCompanyName || 'Sin contexto' }}</p>
+          <p class="erp-meta-card__hint">Las rutas siempre operan dentro del contexto multiempresa actual.</p>
+        </div>
+        <div class="erp-meta-card min-w-[160px]">
+          <p class="erp-meta-card__label">Total rutas</p>
+          <p class="erp-kpi-card__value">{{ totalRoutes }}</p>
+          <p class="erp-meta-card__hint">Registros consolidados del maestro local.</p>
+        </div>
+        <div class="erp-meta-card min-w-[160px]">
+          <p class="erp-meta-card__label">Rutas activas</p>
+          <p class="erp-kpi-card__value">{{ activeRoutes }}</p>
+          <p class="erp-meta-card__hint">Conteo vivo en localStorage.</p>
+        </div>
+        <div class="erp-meta-card min-w-[160px]">
+          <p class="erp-meta-card__label">Rutas inactivas</p>
+          <p class="erp-kpi-card__value">{{ inactiveRoutes }}</p>
+          <p class="erp-meta-card__hint">Registros desactivados del dataset local.</p>
+        </div>
+        <div class="erp-meta-card min-w-[180px]">
+          <p class="erp-meta-card__label">Clientes asignados</p>
+          <p class="erp-kpi-card__value">{{ totalAssignedClients }}</p>
+          <p class="erp-meta-card__hint">Suma de clientes vinculados a todas las rutas.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-5 flex justify-end">
+      <button mat-flat-button color="primary" type="button" class="min-h-12" (click)="startCreateMode()">
+        Crear ruta
+      </button>
+    </div>
+  </header>
+
+  @if (errorMessage) {
+    <div class="erp-alert erp-alert--error">{{ errorMessage }}</div>
+  }
+
+  @if (successMessage) {
+    <div class="erp-alert erp-alert--success">{{ successMessage }}</div>
+  }
+
+  <app-routes-list
+    [activeCompanyName]="activeCompanyName"
+    [filters]="filters"
+    [catalogs]="catalogs"
+    [response]="listResponse"
+    [loading]="loadingRoutes"
+    [errorMessage]="errorMessage"
+    [selectedRouteId]="selectedRoute?.id ?? null"
+    [deletingId]="deletingId"
+    [statusUpdatingId]="statusUpdatingId"
+    (filtersChange)="handleFiltersChange($event)"
+    (pageChange)="handlePageChange($event)"
+    (selectRoute)="handleSelectRoute($event)"
+    (editRoute)="handleEditRoute($event)"
+    (deleteRoute)="deleteRoute($event)"
+    (toggleStatus)="toggleRouteStatus($event)"
+    (createRequested)="startCreateMode()"
+    (retry)="retryRoutes()"
+  ></app-routes-list>
+
+  @if (isFormVisible) {
+    <app-route-form
+      [catalogs]="catalogs"
+      [existingRoutes]="validationRoutes"
+      [initialValue]="selectedRoute"
+      [mode]="formMode"
+      [activeCompanyId]="activeCompanyId"
+      [activeCompanyName]="activeCompanyName"
+      [loading]="loadingCatalogs || loadingSelection"
+      [saving]="saving"
+      (saveRoute)="saveRoute($event)"
+      (cancelEdit)="cancelEdit()"
+      (requestEdit)="enableEditMode()"
+      (closePanel)="closeForm()"
+    ></app-route-form>
+  }
+</section>

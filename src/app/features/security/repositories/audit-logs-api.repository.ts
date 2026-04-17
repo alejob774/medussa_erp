@@ -1,13 +1,9 @@
-import {
-  HttpClient,
-  HttpErrorResponse,
-  HttpParams,
-  HttpResponse,
-} from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { catchError, map, Observable, throwError } from 'rxjs';
+import { catchError, map, Observable, of, throwError } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { AuthSessionService } from '../../auth/services/auth-session.service';
+import { AuditoriaBackendItem } from '../models/security-backend.model';
 import {
   AuditExportFormat,
   AuditExportResult,
@@ -22,46 +18,6 @@ import { buildAuditExportFileName } from '../utils/audit-log.utils';
 import { AuditLogsMockRepository } from './audit-logs-mock.repository';
 import { AuditLogsRepository } from './audit-logs.repository';
 
-interface BackendAuditLogListResponseDto {
-  items?: BackendAuditLogItemDto[];
-  results?: BackendAuditLogItemDto[];
-  data?: BackendAuditLogItemDto[];
-  total?: number;
-  count?: number;
-  page?: number;
-  page_size?: number;
-}
-
-interface BackendAuditLogItemDto {
-  id?: number | string;
-  evento_id?: number | string;
-  usuario?: string;
-  user?: string;
-  username?: string;
-  empresa_id?: string;
-  company_id?: string;
-  empresa_nombre?: string;
-  company_name?: string;
-  modulo?: string;
-  accion?: string;
-  descripcion?: string;
-  detalle?: string;
-  ip_origen?: string;
-  ip_address?: string;
-  fecha_hora?: string;
-  created_at?: string;
-  timestamp?: string;
-}
-
-interface BackendAuditLogDetailDto extends BackendAuditLogItemDto {
-  navegador_agente?: string;
-  browser_agent?: string;
-  payload_antes?: Record<string, unknown> | null;
-  before_payload?: Record<string, unknown> | null;
-  payload_despues?: Record<string, unknown> | null;
-  after_payload?: Record<string, unknown> | null;
-}
-
 @Injectable({
   providedIn: 'root',
 })
@@ -69,29 +25,52 @@ export class AuditLogsApiRepository implements AuditLogsRepository {
   private readonly http = inject(HttpClient);
   private readonly authSessionService = inject(AuthSessionService);
   private readonly mockRepository = inject(AuditLogsMockRepository);
-  private readonly auditUrl = `${environment.apiUrl}/auditoria`;
+  private readonly auditUrl = `${environment.apiUrl}/auditoria/`;
+  private readonly detailCache = new Map<string, AuditLogDetail>();
 
   listLogs(companyId: string, filters: AuditLogFilters): Observable<AuditLogListResponse> {
     return this.withFallback(
       () =>
-        this.http
-          .get<BackendAuditLogListResponseDto | BackendAuditLogItemDto[]>(this.auditUrl, {
-            params: this.buildListParams(filters),
-          })
-          .pipe(map((response) => this.mapListResponse(response, companyId, filters))),
+        this.fetchAuditLogDetails(companyId, filters).pipe(
+          map((logs) => this.buildListResponse(logs, companyId, filters)),
+        ),
       () => this.mockRepository.listLogs(companyId, filters),
-      'eventos de auditoria',
+      'eventos de auditoría',
     );
   }
 
   getLogDetail(companyId: string, logId: string): Observable<AuditLogDetail> {
+    const cachedLog = this.detailCache.get(logId);
+
+    if (cachedLog) {
+      return of(cachedLog);
+    }
+
     return this.withFallback(
       () =>
-        this.http
-          .get<BackendAuditLogDetailDto>(`${this.auditUrl}/${logId}`)
-          .pipe(map((response) => this.mapDetail(response, companyId))),
+        this.fetchAuditLogDetails(companyId, {
+          search: '',
+          companyId,
+          user: '',
+          module: 'all',
+          action: 'all',
+          dateFrom: null,
+          dateTo: null,
+          pageIndex: 0,
+          pageSize: 500,
+        }).pipe(
+          map((logs) => {
+            const log = logs.find((item) => item.id === logId);
+
+            if (!log) {
+              throw new Error('No se encontró el evento de auditoría solicitado.');
+            }
+
+            return log;
+          }),
+        ),
       () => this.mockRepository.getLogDetail(companyId, logId),
-      'detalle de auditoria',
+      'detalle de auditoría',
     );
   }
 
@@ -102,31 +81,59 @@ export class AuditLogsApiRepository implements AuditLogsRepository {
   ): Observable<AuditExportResult> {
     return this.withFallback(
       () =>
-        this.http
-          .get(`${this.auditUrl}/export`, {
-            params: this.buildExportParams(filters, format),
-            observe: 'response',
-            responseType: 'blob',
-          })
-          .pipe(
-            map((response) => this.mapExportResponse(response, companyId, format)),
-          ),
+        this.fetchAuditLogDetails(companyId, {
+          ...filters,
+          pageIndex: 0,
+          pageSize: 1000,
+        }).pipe(
+          map((logs) => ({
+            kind: 'rows' as const,
+            format,
+            fileName: buildAuditExportFileName(this.resolveCompanyName(companyId), format),
+            rows: this.applyClientFilters(logs, companyId, {
+              ...filters,
+              pageIndex: 0,
+              pageSize: Number.MAX_SAFE_INTEGER,
+            }),
+          })),
+        ),
       () => this.mockRepository.exportLogs(companyId, filters, format),
-      'exportacion de auditoria',
+      'exportación de auditoría',
     );
   }
 
-  private buildListParams(filters: AuditLogFilters): HttpParams {
+  private fetchAuditLogDetails(
+    companyId: string,
+    filters: AuditLogFilters,
+  ): Observable<AuditLogDetail[]> {
+    return this.http
+      .get<unknown>(this.auditUrl, {
+        params: this.buildBackendParams(companyId, filters),
+      })
+      .pipe(
+        map((response) =>
+          this.extractArrayPayload<AuditoriaBackendItem>(response)
+            .map((item) => this.mapDetail(item, companyId))
+            .sort(
+              (left, right) =>
+                new Date(right.eventDateTime).getTime() - new Date(left.eventDateTime).getTime(),
+            ),
+        ),
+        map((logs) => {
+          logs.forEach((log) => this.detailCache.set(log.id, log));
+          return logs;
+        }),
+      );
+  }
+
+  private buildBackendParams(companyId: string, filters: AuditLogFilters): HttpParams {
     let params = new HttpParams()
-      .set('page', String(filters.pageIndex + 1))
-      .set('page_size', String(filters.pageSize));
+      .set('empresa_id', this.resolveRequestCompanyId(filters.companyId ?? companyId))
+      .set('skip', '0')
+      .set('limit', '500');
 
-    if (filters.search.trim()) {
-      params = params.set('search', filters.search.trim());
-    }
-
-    if (filters.user.trim()) {
-      params = params.set('usuario', filters.user.trim());
+    if (/^\d+$/.test(filters.user.trim())) {
+      params = params.set('user_id', filters.user.trim());
     }
 
     if (filters.module !== 'all') {
@@ -137,70 +144,78 @@ export class AuditLogsApiRepository implements AuditLogsRepository {
       params = params.set('accion', filters.action);
     }
 
-    if (filters.dateFrom) {
-      params = params.set('fecha_desde', filters.dateFrom);
-    }
-
-    if (filters.dateTo) {
-      params = params.set('fecha_hasta', filters.dateTo);
-    }
-
     return params;
   }
 
-  private buildExportParams(
-    filters: AuditLogFilters,
-    format: AuditExportFormat,
-  ): HttpParams {
-    return this.buildListParams({
-      ...filters,
-      pageIndex: 0,
-      pageSize: 10000,
-    }).set('format', format === 'excel' ? 'xlsx' : 'csv');
-  }
-
-  private mapListResponse(
-    response: BackendAuditLogListResponseDto | BackendAuditLogItemDto[],
+  private buildListResponse(
+    logs: AuditLogDetail[],
     companyId: string,
     filters: AuditLogFilters,
   ): AuditLogListResponse {
-    const items = Array.isArray(response)
-      ? response
-      : response.items ?? response.results ?? response.data ?? [];
-    const total = Array.isArray(response)
-      ? response.length
-      : response.total ?? response.count ?? items.length;
+    const filteredLogs = this.applyClientFilters(logs, companyId, filters);
+    const startIndex = filters.pageIndex * filters.pageSize;
+    const items = filteredLogs
+      .slice(startIndex, startIndex + filters.pageSize)
+      .map((log) => this.toListItem(log));
 
     return {
-      items: items.map((item) => this.mapListItem(item, companyId)),
-      total,
+      items,
+      total: filteredLogs.length,
       pageIndex: filters.pageIndex,
       pageSize: filters.pageSize,
     };
   }
 
-  private mapListItem(response: BackendAuditLogItemDto, companyId: string): AuditLogItem {
+  private applyClientFilters(
+    logs: AuditLogDetail[],
+    companyId: string,
+    filters: AuditLogFilters,
+  ): AuditLogDetail[] {
+    const normalizedSearch = filters.search.trim().toLowerCase();
+    const normalizedUser = filters.user.trim().toLowerCase();
+    const effectiveCompanyId = filters.companyId ?? companyId;
+    const fromDate = filters.dateFrom ? new Date(`${filters.dateFrom}T00:00:00`) : null;
+    const toDate = filters.dateTo ? new Date(`${filters.dateTo}T23:59:59.999`) : null;
+
+    return logs.filter((log) => {
+      const eventDate = new Date(log.eventDateTime);
+      const matchesCompany = log.companyId === effectiveCompanyId;
+      const matchesSearch =
+        !normalizedSearch ||
+        [log.user, log.description, log.ipAddress, log.companyName]
+          .some((value) => value.toLowerCase().includes(normalizedSearch));
+      const matchesUser = !normalizedUser || log.user.toLowerCase().includes(normalizedUser);
+      const matchesModule = filters.module === 'all' || log.module === filters.module;
+      const matchesAction = filters.action === 'all' || log.action === filters.action;
+      const matchesFrom = !fromDate || eventDate >= fromDate;
+      const matchesTo = !toDate || eventDate <= toDate;
+
+      return (
+        matchesCompany &&
+        matchesSearch &&
+        matchesUser &&
+        matchesModule &&
+        matchesAction &&
+        matchesFrom &&
+        matchesTo
+      );
+    });
+  }
+
+  private mapDetail(response: AuditoriaBackendItem, companyId: string): AuditLogDetail {
     return {
       id: String(response.id ?? response.evento_id ?? 'sin-id'),
       user:
         response.usuario ?? response.user ?? response.username ?? 'Usuario no disponible',
-      companyId: response.empresa_id ?? response.company_id ?? companyId,
+      companyId: this.resolveFrontendCompanyId(response.empresa_id ?? response.company_id ?? companyId),
       companyName:
         response.empresa_nombre ?? response.company_name ?? this.resolveCompanyName(companyId),
       module: this.normalizeModule(response.modulo),
       action: this.normalizeAction(response.accion),
-      description: response.descripcion ?? response.detalle ?? 'Sin descripcion',
+      description: response.descripcion ?? response.detalle ?? 'Sin descripción',
       ipAddress: response.ip_origen ?? response.ip_address ?? '0.0.0.0',
       eventDateTime:
         response.fecha_hora ?? response.created_at ?? response.timestamp ?? new Date().toISOString(),
-    };
-  }
-
-  private mapDetail(response: BackendAuditLogDetailDto, companyId: string): AuditLogDetail {
-    const base = this.mapListItem(response, companyId);
-
-    return {
-      ...base,
       browserAgent:
         response.navegador_agente ??
         response.browser_agent ??
@@ -210,18 +225,17 @@ export class AuditLogsApiRepository implements AuditLogsRepository {
     };
   }
 
-  private mapExportResponse(
-    response: HttpResponse<Blob>,
-    companyId: string,
-    format: AuditExportFormat,
-  ): AuditExportResult {
+  private toListItem(log: AuditLogDetail): AuditLogItem {
     return {
-      kind: 'file',
-      format,
-      blob: response.body ?? new Blob(),
-      fileName:
-        this.resolveFileName(response.headers.get('content-disposition')) ??
-        buildAuditExportFileName(this.resolveCompanyName(companyId), format),
+      id: log.id,
+      user: log.user,
+      companyId: log.companyId,
+      companyName: log.companyName,
+      module: log.module,
+      action: log.action,
+      description: log.description,
+      ipAddress: log.ipAddress,
+      eventDateTime: log.eventDateTime,
     };
   }
 
@@ -252,21 +266,67 @@ export class AuditLogsApiRepository implements AuditLogsRepository {
     }
   }
 
+  private extractArrayPayload<T>(payload: unknown): T[] {
+    if (Array.isArray(payload)) {
+      return payload as T[];
+    }
+
+    if (payload && typeof payload === 'object') {
+      const candidate = payload as {
+        items?: unknown[];
+        results?: unknown[];
+        data?: unknown[];
+      };
+
+      if (Array.isArray(candidate.items)) {
+        return candidate.items as T[];
+      }
+
+      if (Array.isArray(candidate.results)) {
+        return candidate.results as T[];
+      }
+
+      if (Array.isArray(candidate.data)) {
+        return candidate.data as T[];
+      }
+    }
+
+    return [];
+  }
+
+  private resolveFrontendCompanyId(backendCompanyId: string): string {
+    const session = this.authSessionService.getSession();
+    const normalizedBackendCompanyId = backendCompanyId.trim();
+
+    return (
+      session?.companies?.find(
+        (company) =>
+          company.backendId === normalizedBackendCompanyId || company.id === normalizedBackendCompanyId,
+      )?.id ?? normalizedBackendCompanyId
+    );
+  }
+
+  private resolveRequestCompanyId(companyId: string): string {
+    const session = this.authSessionService.getSession();
+    const company = session?.companies?.find((candidate) => candidate.id === companyId);
+
+    if (company?.backendId) {
+      return company.backendId;
+    }
+
+    if (session?.activeCompanyId === companyId && session.activeBackendCompanyId) {
+      return session.activeBackendCompanyId;
+    }
+
+    return companyId;
+  }
+
   private resolveCompanyName(companyId: string): string {
     const session = this.authSessionService.getSession();
     return (
       session?.companies?.find((company) => company.id === companyId)?.name ??
       'Empresa activa'
     );
-  }
-
-  private resolveFileName(contentDisposition: string | null): string | null {
-    if (!contentDisposition) {
-      return null;
-    }
-
-    const match = contentDisposition.match(/filename\*?=(?:UTF-8''|\")?([^\";]+)/i);
-    return match?.[1] ? decodeURIComponent(match[1].replace(/\"/g, '').trim()) : null;
   }
 
   private withFallback<T>(
@@ -296,11 +356,11 @@ export class AuditLogsApiRepository implements AuditLogsRepository {
     }
 
     if (error.status === 403) {
-      return new Error('No tienes permisos para consultar la auditoria de la empresa activa.');
+      return new Error('No tienes permisos para consultar la auditoría de la empresa activa.');
     }
 
     if (error.status === 422) {
-      return new Error('El backend reporto errores de validacion para los filtros enviados.');
+      return new Error('El backend reportó errores de validación para los filtros enviados.');
     }
 
     return new Error(

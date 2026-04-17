@@ -1,9 +1,13 @@
 export type AuditLogModuleKey =
+  | 'clientes'
+  | 'vendedores'
+  | 'conductores'
   | 'usuarios'
   | 'roles'
   | 'perfiles'
   | 'configuracion'
-  | 'auditoria';
+  | 'auditoria'
+  | 'productos';
 
 export type AuditLogActionKey =
   | 'view'

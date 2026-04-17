@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
-import { of } from 'rxjs';
-import { finalize, map, switchMap } from 'rxjs/operators';
 import { Router } from '@angular/router';
+import { of } from 'rxjs';
+import { catchError, finalize, map, switchMap } from 'rxjs/operators';
 import { CompanyContextService } from '../../../../core/company/services/company-context.service';
+import { CompaniesFacadeService } from '../../../companies/application/facade/companies.facade';
 import { AuthLayoutComponent } from '../../components/auth-layout/auth-layout.component';
 import {
   LoginFormComponent,
@@ -23,14 +24,17 @@ export class LoginPageComponent {
   private readonly authService = inject(AuthService);
   private readonly authSessionService = inject(AuthSessionService);
   private readonly companyContextService = inject(CompanyContextService);
+  private readonly companiesFacade = inject(CompaniesFacadeService);
   private readonly router = inject(Router);
 
   loading = false;
   errorMessage = '';
+  infoMessage = this.readNavigationInfoMessage();
 
   onLoginSubmit(value: LoginFormValue): void {
     this.loading = true;
     this.errorMessage = '';
+    this.infoMessage = '';
 
     this.authService
       .login({
@@ -38,8 +42,28 @@ export class LoginPageComponent {
         password: value.password,
       })
       .pipe(
+        catchError((error) => {
+          if (!this.authService.canUseMockLoginFallback(error)) {
+            throw error;
+          }
+
+          this.infoMessage =
+            'Backend no disponible. Ingresaste en modo local de demostracion.';
+
+          return of(this.authService.createMockLoginSession(value.username));
+        }),
+      )
+      .pipe(
         map((response) =>
           this.companyContextService.enrichSession(response, value.username),
+        ),
+        switchMap((session) =>
+          this.companiesFacade.listContextCompanies().pipe(
+            map((companies) =>
+              this.companyContextService.hydrateSessionCompanies(session, companies),
+            ),
+            catchError(() => of(session)),
+          ),
         ),
         switchMap((session) => {
           const nextRoute = this.companyContextService.resolvePostLoginRoute(session);
@@ -58,7 +82,9 @@ export class LoginPageComponent {
       )
       .subscribe({
         next: (nextRoute) => {
-          void this.router.navigate([nextRoute]);
+          void this.router.navigate([nextRoute], {
+            state: this.infoMessage ? { loginInfoMessage: this.infoMessage } : undefined,
+          });
         },
         error: (error) => {
           this.authSessionService.clearSession();
@@ -78,14 +104,28 @@ export class LoginPageComponent {
       return 'No fue posible conectarse con el backend. Revisa URL, puerto y CORS.';
     }
 
+    if (httpError?.status === 401) {
+      return 'Credenciales invalidas. Verifica usuario y contrasena.';
+    }
+
     if (httpError?.status === 403) {
-      return 'La empresa activa no está autorizada para esta sesión.';
+      return 'La empresa activa no esta autorizada para esta sesion.';
     }
 
     if (httpError?.status === 422) {
-      return 'El backend rechazó la validación de la sesión o de la empresa activa.';
+      return 'El backend rechazo la validacion de la sesion o de la empresa activa.';
     }
 
-    return httpError?.error?.detail || 'No fue posible iniciar sesión.';
+    return httpError?.error?.detail || 'No fue posible iniciar sesion.';
+  }
+
+  private readNavigationInfoMessage(): string {
+    const navigationState = this.router.getCurrentNavigation()?.extras.state;
+    const historyState =
+      typeof window !== 'undefined' ? (window.history.state as { logoutMessage?: unknown }) : null;
+    const logoutMessage =
+      navigationState?.['logoutMessage'] ?? historyState?.logoutMessage ?? '';
+
+    return typeof logoutMessage === 'string' ? logoutMessage : '';
   }
 }

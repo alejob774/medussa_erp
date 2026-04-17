@@ -3,11 +3,12 @@ import { Component, inject } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { finalize, map } from 'rxjs';
+import { AuthLogoutService } from '../../../../features/auth/services/auth-logout.service';
 import { AuthSessionService } from '../../../../features/auth/services/auth-session.service';
 import { CompanyContextService } from '../../../company/services/company-context.service';
 import { NavigationItem } from '../../../navigation/models/navigation-item.model';
 import { NavigationFacadeService } from '../../../navigation/services/navigation-facade.service';
-import { map } from 'rxjs';
 
 @Component({
   selector: 'app-erp-shell',
@@ -90,16 +91,16 @@ import { map } from 'rxjs';
               }
             </div>
           </nav>
-          </div>
+        </div>
       </aside>
 
       <div class="erp-shell-content">
         <header class="erp-topbar">
           <div class="erp-topbar__intro">
             <p class="erp-topbar__eyebrow">Medussa ERP</p>
-            <h1 class="erp-topbar__title">Operación multiempresa centralizada</h1>
+            <h1 class="erp-topbar__title">Operacion multiempresa centralizada</h1>
             <p class="erp-topbar__subtitle">
-              Navegación compacta, contexto por empresa activa y una superficie de trabajo más clara para la operación diaria.
+              Navegacion compacta, contexto por empresa activa y una superficie de trabajo mas clara para la operacion diaria.
             </p>
           </div>
 
@@ -112,14 +113,16 @@ import { map } from 'rxjs';
 
               <div class="erp-company-switcher__details">
                 <p class="erp-company-switcher__label">Empresa activa</p>
-                <p class="erp-company-switcher__value">{{ activeCompany?.name ?? 'Selecciona una empresa' }}</p>
+                <p class="erp-company-switcher__value">
+                  {{ activeCompany?.name ?? 'Selecciona una empresa' }}
+                </p>
               </div>
 
               <button
                 type="button"
                 class="erp-company-switcher__action"
                 [matMenuTriggerFor]="companyMenu"
-                [disabled]="companies.length < 2"
+                [disabled]="companies.length < 2 || logoutLoading"
                 aria-label="Cambiar empresa activa"
               >
                 <span>Cambiar</span>
@@ -141,19 +144,58 @@ import { map } from 'rxjs';
 
             <div class="erp-user-badge">
               <div>
-                <p class="erp-user-badge__label">Sesión activa</p>
+                <p class="erp-user-badge__label">Sesion activa</p>
                 <p class="m-0 mt-1 text-sm font-semibold text-slate-900">
                   {{ session?.user?.username ?? 'usuario' }}
                 </p>
-                <p class="m-0 mt-1 text-xs text-slate-500">{{ session?.user?.roles?.[0] ?? 'operador' }}</p>
+                <p class="m-0 mt-1 text-xs text-slate-500">
+                  {{ session?.user?.roles?.[0] ?? 'operador' }}
+                </p>
               </div>
+
+              <button
+                type="button"
+                class="erp-company-switcher__action"
+                [matMenuTriggerFor]="sessionMenu"
+                [disabled]="logoutLoading"
+                aria-label="Abrir acciones de sesion"
+              >
+                <span>{{ logoutLoading ? 'Cerrando...' : 'Cuenta' }}</span>
+                <mat-icon>{{ logoutLoading ? 'hourglass_top' : 'expand_more' }}</mat-icon>
+              </button>
 
               <div class="erp-user-badge__avatar">
                 {{ userInitials(session?.user?.username) }}
               </div>
             </div>
+
+            <mat-menu #sessionMenu="matMenu" xPosition="before">
+              <button type="button" mat-menu-item disabled>
+                <mat-icon>person</mat-icon>
+                <span>{{ session?.user?.username ?? 'usuario' }}</span>
+              </button>
+              <button type="button" mat-menu-item (click)="logout()" [disabled]="logoutLoading">
+                <mat-icon>{{ logoutLoading ? 'hourglass_top' : 'logout' }}</mat-icon>
+                <span>{{ logoutLoading ? 'Cerrando sesion...' : 'Cerrar sesion' }}</span>
+              </button>
+            </mat-menu>
           </div>
         </header>
+
+        @if (feedbackMessage) {
+          <div class="px-6 pt-4">
+            <div class="erp-alert erp-alert--warning flex items-center justify-between gap-3">
+              <span>{{ feedbackMessage }}</span>
+              <button
+                type="button"
+                class="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700"
+                (click)="dismissFeedbackMessage()"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        }
 
         <main class="erp-shell-main">
           <router-outlet />
@@ -166,6 +208,7 @@ export class ErpShellComponent {
   private readonly navigationFacade = inject(NavigationFacadeService);
   private readonly companyContextService = inject(CompanyContextService);
   private readonly authSessionService = inject(AuthSessionService);
+  private readonly authLogoutService = inject(AuthLogoutService);
   private readonly router = inject(Router);
 
   readonly sections$ = this.navigationFacade.sections$;
@@ -177,6 +220,8 @@ export class ErpShellComponent {
   readonly activeCompany$ = this.companyContextService.activeCompany$;
   readonly session$ = this.authSessionService.session$;
   readonly expandedGroupIds = new Set<string>();
+  logoutLoading = false;
+  feedbackMessage = this.readNavigationFeedbackMessage();
 
   switchCompany(companyId: string): void {
     this.companyContextService.setActiveCompany(companyId);
@@ -199,6 +244,27 @@ export class ErpShellComponent {
     return item.children?.some((child) => this.isRouteActive(child.route)) ?? false;
   }
 
+  logout(): void {
+    if (this.logoutLoading) {
+      return;
+    }
+
+    this.logoutLoading = true;
+
+    this.authLogoutService
+      .logout()
+      .pipe(
+        finalize(() => {
+          this.logoutLoading = false;
+        }),
+      )
+      .subscribe();
+  }
+
+  dismissFeedbackMessage(): void {
+    this.feedbackMessage = '';
+  }
+
   private isRouteActive(route?: string): boolean {
     return !!route && this.router.url === route;
   }
@@ -210,5 +276,15 @@ export class ErpShellComponent {
       .slice(0, 2)
       .map((value) => value[0]?.toUpperCase() ?? '')
       .join('');
+  }
+
+  private readNavigationFeedbackMessage(): string {
+    const navigationState = this.router.getCurrentNavigation()?.extras.state;
+    const historyState =
+      typeof window !== 'undefined' ? (window.history.state as { loginInfoMessage?: unknown }) : null;
+    const loginInfoMessage =
+      navigationState?.['loginInfoMessage'] ?? historyState?.loginInfoMessage ?? '';
+
+    return typeof loginInfoMessage === 'string' ? loginInfoMessage : '';
   }
 }
