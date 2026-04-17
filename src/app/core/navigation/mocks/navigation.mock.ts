@@ -62,7 +62,7 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
           },
           {
             id: 'scm-planeacion-demanda',
-            label: 'Planeacion de demanda',
+            label: 'Gestion de Demanda',
             route: '/supply-chain-management/demanda',
             icon: 'query_stats',
             requiredPermissions: ['demand.view'],
@@ -70,7 +70,7 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
           },
           {
             id: 'scm-analisis-demanda',
-            label: 'Analisis de demanda',
+            label: 'Analisis de Demanda',
             route: '/supply-chain-management/analisis-demanda',
             icon: 'monitoring',
             requiredPermissions: ['demand.analysis.view'],
@@ -78,7 +78,7 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
           },
           {
             id: 'scm-diseno-productos',
-            label: 'Diseno y desarrollo',
+            label: 'Diseno y Desarrollo de Productos',
             route: '/supply-chain-management/diseno-productos',
             icon: 'experiment',
             requiredPermissions: ['product.development.view'],
@@ -86,7 +86,7 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
           },
           {
             id: 'scm-analisis-compras',
-            label: 'Analisis de compras',
+            label: 'Analisis Estrategico de Compras',
             route: '/supply-chain-management/analisis-compras',
             icon: 'insights',
             requiredPermissions: ['purchase.analysis.view'],
