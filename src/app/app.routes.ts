@@ -136,6 +136,17 @@ export const routes: Routes = [
               permission: 'drivers.view',
             },
           },
+          {
+            path: 'demanda',
+            loadComponent: () =>
+              import(
+                './features/demand-forecast/presentation/pages/demand-forecast-page/demand-forecast-page.component'
+              ).then((module) => module.DemandForecastPageComponent),
+            canActivate: [permissionGuard],
+            data: {
+              permission: 'demand.view',
+            },
+          },
         ],
       },
       {

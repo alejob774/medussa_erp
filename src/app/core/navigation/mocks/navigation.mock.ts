@@ -60,6 +60,14 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
             requiredPermissions: ['warehouse.view'],
             companyIds: ALL_COMPANIES,
           },
+          {
+            id: 'scm-planeacion-demanda',
+            label: 'Planeacion de demanda',
+            route: '/supply-chain-management/demanda',
+            icon: 'query_stats',
+            requiredPermissions: ['demand.view'],
+            companyIds: ALL_COMPANIES,
+          },
         ],
       },
       {
