@@ -76,6 +76,14 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
             requiredPermissions: ['demand.analysis.view'],
             companyIds: ALL_COMPANIES,
           },
+          {
+            id: 'scm-diseno-productos',
+            label: 'Diseno y desarrollo',
+            route: '/supply-chain-management/diseno-productos',
+            icon: 'experiment',
+            requiredPermissions: ['product.development.view'],
+            companyIds: ALL_COMPANIES,
+          },
         ],
       },
       {

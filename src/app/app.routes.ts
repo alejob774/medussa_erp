@@ -158,6 +158,17 @@ export const routes: Routes = [
               permission: 'demand.analysis.view',
             },
           },
+          {
+            path: 'diseno-productos',
+            loadComponent: () =>
+              import(
+                './features/product-development/presentation/pages/product-development-page/product-development-page.component'
+              ).then((module) => module.ProductDevelopmentPageComponent),
+            canActivate: [permissionGuard],
+            data: {
+              permission: 'product.development.view',
+            },
+          },
         ],
       },
       {
