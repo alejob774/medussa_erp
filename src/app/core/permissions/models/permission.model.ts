@@ -41,6 +41,8 @@ export type LegacyPermissionKey =
   | 'demand.generate'
   | 'demand.adjust'
   | 'demand.approve'
+  | 'demand.analysis.view'
+  | 'demand.analysis.refresh'
   | 'settings.companies.view'
   | 'settings.general.view'
   | 'security.users.view'

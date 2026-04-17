@@ -35,6 +35,8 @@ const LEGACY_TO_BACKEND_PERMISSION_ALIASES: Partial<
   'demand.generate': ['demanda_generate', 'warehouse.view', 'inventory.view'],
   'demand.adjust': ['demanda_adjust', 'sales.view'],
   'demand.approve': ['demanda_approve', 'production.view', 'warehouse.view'],
+  'demand.analysis.view': ['demanda_analisis_view', 'warehouse.view', 'inventory.view'],
+  'demand.analysis.refresh': ['demanda_analisis_refresh', 'warehouse.view', 'inventory.view'],
   'settings.companies.view': ['empresas_view'],
   'settings.general.view': ['configuracion_view'],
   'security.users.view': ['usuarios_view', 'roles_view'],

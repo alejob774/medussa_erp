@@ -19,6 +19,7 @@ export const environment = {
   useEquipmentsAdministrationMock: true,
   enableEquipmentsAdministrationFallback: false,
   useDemandForecastMock: true,
+  useDemandAnalysisMock: true,
   useSecurityAdministrationMock: false,
   enableSecurityAdministrationFallback: true,
   useAuditLogsMock: false,

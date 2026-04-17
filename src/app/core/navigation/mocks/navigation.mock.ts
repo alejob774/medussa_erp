@@ -68,6 +68,14 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
             requiredPermissions: ['demand.view'],
             companyIds: ALL_COMPANIES,
           },
+          {
+            id: 'scm-analisis-demanda',
+            label: 'Analisis de demanda',
+            route: '/supply-chain-management/analisis-demanda',
+            icon: 'monitoring',
+            requiredPermissions: ['demand.analysis.view'],
+            companyIds: ALL_COMPANIES,
+          },
         ],
       },
       {

@@ -147,6 +147,17 @@ export const routes: Routes = [
               permission: 'demand.view',
             },
           },
+          {
+            path: 'analisis-demanda',
+            loadComponent: () =>
+              import(
+                './features/demand-analysis/presentation/pages/demand-analysis-page/demand-analysis-page.component'
+              ).then((module) => module.DemandAnalysisPageComponent),
+            canActivate: [permissionGuard],
+            data: {
+              permission: 'demand.analysis.view',
+            },
+          },
         ],
       },
       {
