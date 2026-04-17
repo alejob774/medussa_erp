@@ -651,20 +651,40 @@ function normalizeClientsStore(store: ClientStore): ClientStore {
       cities: store.catalogs?.cities ?? structuredClone(INITIAL_CLIENTS_STORE.catalogs.cities),
       zones: normalizeZoneCatalog(store.catalogs?.zones ?? SHARED_ZONE_CATALOG),
     },
-    clients: store.clients ?? [],
+    clients: (store.clients ?? []).map((client) => ({
+      ...client,
+      empresaNombre: resolveCompanyDisplayName(client.empresaId, client.empresaNombre),
+    })),
     auditTrail: store.auditTrail ?? [],
   };
 }
 
 function normalizeDriverStore(store: DriverStore): DriverStore {
-  const normalizedRoutes = normalizeRoutes(store.catalogs?.routes ?? INITIAL_ROUTE_CATALOG);
-  const normalizedDrivers = (store.drivers ?? []).map((driver) => ({
-    ...driver,
-    rutasAsignadas: (driver.rutasAsignadas ?? []).map((route) => ({
-      ...route,
-      estado: 'ACTIVO' as const,
-    })),
-  }));
+  const normalizedRoutes = normalizeRoutes([
+    ...INITIAL_ROUTE_CATALOG,
+    ...(store.catalogs?.routes ?? []),
+  ]);
+  const initialDriversById = new Map(INITIAL_DRIVERS_STORE.drivers.map((driver) => [driver.id, driver]));
+  const mergedDrivers = new Map<string, DriverStore['drivers'][number]>();
+
+  INITIAL_DRIVERS_STORE.drivers.forEach((driver) => {
+    mergedDrivers.set(driver.id, structuredClone(driver));
+  });
+
+  (store.drivers ?? []).forEach((driver) => {
+    const baseline = initialDriversById.get(driver.id);
+
+    mergedDrivers.set(driver.id, {
+      ...(baseline ? structuredClone(baseline) : {}),
+      ...driver,
+      rutasAsignadas: (driver.rutasAsignadas ?? baseline?.rutasAsignadas ?? []).map((route) => ({
+        ...route,
+        estado: 'ACTIVO' as const,
+      })),
+    });
+  });
+
+  const normalizedDrivers = Array.from(mergedDrivers.values());
   const routeLookup = new Map(normalizedRoutes.map((route) => [route.routeId, route]));
   const seenRouteIds = new Set<string>();
 
@@ -700,6 +720,7 @@ function normalizeDriverStore(store: DriverStore): DriverStore {
 
       return {
         ...driver,
+        empresaNombre: resolveCompanyDisplayName(driver.empresaId, driver.empresaNombre),
         tipoDocumento: driver.tipoDocumento?.trim() || 'CC',
         rutasAsignadas: syncedRoutes,
         cantidadRutasAsignadas: syncedRoutes.length,
@@ -729,7 +750,7 @@ function normalizeRoutes(routes: RouteCatalogItem[]): RouteCatalogItem[] {
       zona: route.zona,
       estado: route.estado ?? 'ACTIVO',
       empresaId: route.empresaId,
-      empresaNombre: route.empresaNombre ?? null,
+      empresaNombre: resolveCompanyDisplayName(route.empresaId, route.empresaNombre),
     }))
     .filter((route) => {
       if (!route.routeId || !route.empresaId) {
@@ -745,4 +766,12 @@ function normalizeRoutes(routes: RouteCatalogItem[]): RouteCatalogItem[] {
       seen.add(key);
       return true;
     });
+}
+
+function resolveCompanyDisplayName(companyId: string, currentName?: string | null): string {
+  if (companyId === 'medussa-retail') {
+    return 'Industrias Alimenticias El Arbolito';
+  }
+
+  return currentName?.trim() || 'Empresa activa';
 }

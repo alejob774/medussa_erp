@@ -108,7 +108,7 @@ export class CompanySelectorPageComponent implements OnInit {
       return;
     }
 
-    if (companies.length === 1) {
+    if (companies.length >= 1) {
       this.companyContextService.setActiveCompany(companies[0].id);
       void this.router.navigate(['/dashboard']);
     }

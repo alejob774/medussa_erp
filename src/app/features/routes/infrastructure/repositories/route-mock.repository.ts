@@ -692,8 +692,24 @@ function sanitizeAuditPayload(route: Route): Record<string, unknown> {
 }
 
 function normalizeRouteStore(store: RouteStore): RouteStore {
+  const initialRoutesById = new Map(INITIAL_ROUTES_STORE.routes.map((route) => [route.id, route]));
+  const mergedRoutes = new Map<string, Route>();
+
+  INITIAL_ROUTES_STORE.routes.forEach((route) => {
+    mergedRoutes.set(route.id, structuredClone(route));
+  });
+
+  (store.routes ?? []).forEach((route) => {
+    const baseline = initialRoutesById.get(route.id);
+
+    mergedRoutes.set(route.id, {
+      ...(baseline ? structuredClone(baseline) : {}),
+      ...route,
+    });
+  });
+
   return {
-    routes: (store.routes ?? []).map((route) => ({
+    routes: Array.from(mergedRoutes.values()).map((route) => ({
       ...route,
       clientesAsignados: (route.clientesAsignados ?? []).map((client) => ({ ...client })),
       diasRuta: dedupeValues(route.diasRuta ?? []),
@@ -701,9 +717,17 @@ function normalizeRouteStore(store: RouteStore): RouteStore {
       cantidadClientesAsignados: route.cantidadClientesAsignados ?? route.clientesAsignados?.length ?? 0,
       estado: route.estado ?? 'ACTIVO',
       tieneDependenciasActivas: route.tieneDependenciasActivas ?? false,
-      empresaNombre: route.empresaNombre ?? null,
+      empresaNombre: resolveCompanyDisplayName(route.empresaId, route.empresaNombre),
       updatedAt: route.updatedAt ?? null,
     })),
     auditTrail: store.auditTrail ?? [],
   };
+}
+
+function resolveCompanyDisplayName(companyId: string, currentName?: string | null): string {
+  if (companyId === 'medussa-retail') {
+    return 'Industrias Alimenticias El Arbolito';
+  }
+
+  return currentName?.trim() || 'Empresa activa';
 }

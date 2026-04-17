@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { delay, Observable, of, throwError } from 'rxjs';
 import { DEFAULT_PRODUCT_FILTERS, ProductFilters } from '../../domain/models/product-filters.model';
 import { SaveProductPayload } from '../../domain/models/product-form.model';
-import { EMPTY_PRODUCT_CATALOGS, Product, ProductCatalogs, ProductStatus } from '../../domain/models/product.model';
+import { Product, ProductCatalogs, ProductStatus } from '../../domain/models/product.model';
 import {
   ProductAuditDraft,
   ProductListResponse,
@@ -248,21 +248,29 @@ export class ProductMockRepository implements ProductsRepository {
 
   private readStore(): ProductStore {
     if (typeof window === 'undefined') {
-      return structuredClone(INITIAL_PRODUCTS_STORE);
+      return normalizeProductStore(structuredClone(INITIAL_PRODUCTS_STORE));
     }
 
     const raw = localStorage.getItem(this.storageKey);
 
     if (!raw) {
-      this.writeStore(structuredClone(INITIAL_PRODUCTS_STORE));
-      return structuredClone(INITIAL_PRODUCTS_STORE);
+      const initialStore = normalizeProductStore(structuredClone(INITIAL_PRODUCTS_STORE));
+      this.writeStore(initialStore);
+      return initialStore;
     }
 
     try {
-      return JSON.parse(raw) as ProductStore;
+      const normalizedStore = normalizeProductStore(JSON.parse(raw) as ProductStore);
+
+      if (JSON.stringify(normalizedStore) !== raw) {
+        this.writeStore(normalizedStore);
+      }
+
+      return normalizedStore;
     } catch {
-      this.writeStore(structuredClone(INITIAL_PRODUCTS_STORE));
-      return structuredClone(INITIAL_PRODUCTS_STORE);
+      const initialStore = normalizeProductStore(structuredClone(INITIAL_PRODUCTS_STORE));
+      this.writeStore(initialStore);
+      return initialStore;
     }
   }
 
@@ -476,4 +484,45 @@ function normalizeValue(value: string | null | undefined): string {
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
+}
+
+function normalizeProductStore(store: ProductStore): ProductStore {
+  const initialProductsById = new Map(INITIAL_PRODUCTS_STORE.products.map((product) => [product.id, product]));
+  const mergedProducts = new Map<string, Product>();
+  const families = new Set([...(INITIAL_PRODUCTS_STORE.catalogs.families ?? []), ...(store.catalogs?.families ?? [])]);
+  const units = new Set([...(INITIAL_PRODUCTS_STORE.catalogs.units ?? []), ...(store.catalogs?.units ?? [])]);
+
+  INITIAL_PRODUCTS_STORE.products.forEach((product) => {
+    mergedProducts.set(product.id, structuredClone(product));
+  });
+
+  (store.products ?? []).forEach((product) => {
+    const baseline = initialProductsById.get(product.id);
+
+    mergedProducts.set(product.id, {
+      ...(baseline ? structuredClone(baseline) : {}),
+      ...product,
+    });
+  });
+
+  return {
+    catalogs: {
+      families: Array.from(families),
+      units: Array.from(units),
+    },
+    products: Array.from(mergedProducts.values()).map((product) => ({
+      ...product,
+      empresaNombre: resolveCompanyDisplayName(product.empresaId, product.empresaNombre),
+      updatedAt: product.updatedAt ?? product.createdAt ?? new Date().toISOString(),
+    })),
+    auditTrail: store.auditTrail ?? [],
+  };
+}
+
+function resolveCompanyDisplayName(companyId: string, currentName?: string | null): string {
+  if (companyId === 'medussa-retail') {
+    return 'Industrias Alimenticias El Arbolito';
+  }
+
+  return currentName?.trim() || 'Empresa activa';
 }

@@ -64,15 +64,21 @@ import { NavigationFacadeService } from '../../../navigation/services/navigation
                     @if (isGroupExpanded(item)) {
                       <div class="erp-nav-sublist">
                         @for (child of item.children; track child.id) {
-                          <a
-                            class="erp-nav-sublink"
-                            [routerLink]="child.route ?? '/dashboard'"
-                            routerLinkActive="active"
-                            [routerLinkActiveOptions]="{ exact: true }"
-                          >
-                            <mat-icon>{{ child.icon }}</mat-icon>
-                            <span>{{ child.label }}</span>
-                          </a>
+                          @if (child.route) {
+                            <a
+                              class="erp-nav-sublink"
+                              [routerLink]="child.route"
+                              routerLinkActive="active"
+                              [routerLinkActiveOptions]="{ exact: true }"
+                            >
+                              <mat-icon>{{ child.icon }}</mat-icon>
+                              <span>{{ child.label }}</span>
+                            </a>
+                          } @else {
+                            <p class="px-3 pt-3 text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-slate-400">
+                              {{ child.label }}
+                            </p>
+                          }
                         }
                       </div>
                     }
@@ -100,7 +106,7 @@ import { NavigationFacadeService } from '../../../navigation/services/navigation
             <p class="erp-topbar__eyebrow">Medussa ERP</p>
             <h1 class="erp-topbar__title">Operacion multiempresa centralizada</h1>
             <p class="erp-topbar__subtitle">
-              Navegacion compacta, contexto por empresa activa y una superficie de trabajo mas clara para la operacion diaria.
+              El Arbolito funciona como base operativa de SCM en demo, sin perder el soporte multiempresa del ERP.
             </p>
           </div>
 
