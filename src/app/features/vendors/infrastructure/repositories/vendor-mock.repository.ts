@@ -619,6 +619,7 @@ function normalizeClientsStore(store: ClientStore): ClientStore {
     },
     clients: (store.clients ?? []).map((client) => ({
       ...client,
+      empresaNombre: resolveCompanyDisplayName(client.empresaId, client.empresaNombre),
       zona: client.zona?.trim() || resolveDefaultZoneByCityId(client.ciudadId),
     })),
     auditTrail: store.auditTrail ?? [],
@@ -652,6 +653,7 @@ function normalizeVendorStore(store: VendorStore, clientsStore: ClientStore): Ve
 
       return {
         ...vendor,
+        empresaNombre: resolveCompanyDisplayName(vendor.empresaId, vendor.empresaNombre),
         zona: normalizedZone,
         clientesAsignados: syncedAssignments,
         cantidadClientesAsignados: syncedAssignments.length,
@@ -660,4 +662,12 @@ function normalizeVendorStore(store: VendorStore, clientsStore: ClientStore): Ve
     }).map(({ auditTrail, ...vendor }) => vendor),
     auditTrail: store.auditTrail ?? [],
   };
+}
+
+function resolveCompanyDisplayName(companyId: string, currentName?: string | null): string {
+  if (companyId === 'medussa-retail') {
+    return 'Industrias Alimenticias El Arbolito';
+  }
+
+  return currentName?.trim() || 'Empresa activa';
 }

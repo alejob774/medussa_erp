@@ -21,17 +21,18 @@ const COMPANY_CATALOG: Record<string, Company> = {
   },
   'medussa-retail': {
     id: 'medussa-retail',
-    name: 'Medussa Retail',
-    code: 'RTL',
-    description: 'Comercial, marketing y atención omnicanal.',
+    name: 'Industrias Alimenticias El Arbolito',
+    code: 'ARB',
+    description:
+      'Empresa operativa principal para SCM: pedidos, stock, produccion, compras, despacho y entrega.',
     icon: 'storefront',
-    accentColor: '#7c3aed',
+    accentColor: '#2f855a',
   },
   'medussa-industrial': {
     id: 'medussa-industrial',
     name: 'Medussa Industrial',
     code: 'IND',
-    description: 'Producción, almacén e inventario.',
+    description: 'Produccion, almacen e inventario.',
     icon: 'precision_manufacturing',
     accentColor: '#ea580c',
   },
@@ -184,14 +185,14 @@ export class CompanyMockFacadeService {
       default:
         return {
           companies: [
-            COMPANY_CATALOG['medussa-holding'],
             COMPANY_CATALOG['medussa-retail'],
+            COMPANY_CATALOG['medussa-holding'],
             COMPANY_CATALOG['medussa-industrial'],
             COMPANY_CATALOG['medussa-services'],
           ],
           roles: ['super-admin'],
           permissions: ALL_PERMISSIONS,
-          defaultCompanyId: null,
+          defaultCompanyId: 'medussa-retail',
         };
     }
   }

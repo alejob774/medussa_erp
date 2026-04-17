@@ -477,11 +477,19 @@ function normalizeSupplierStore(store: SupplierStore): SupplierStore {
       leadTimeDias: supplier.leadTimeDias ?? null,
       moq: supplier.moq ?? null,
       condicionPago: supplier.condicionPago?.trim() || null,
-      empresaNombre: supplier.empresaNombre ?? null,
+      empresaNombre: resolveCompanyDisplayName(supplier.empresaId, supplier.empresaNombre),
       estado: supplier.estado ?? 'ACTIVO',
       tieneDependenciasActivas: supplier.tieneDependenciasActivas ?? false,
       updatedAt: supplier.updatedAt ?? null,
     })),
     auditTrail: store.auditTrail ?? [],
   };
+}
+
+function resolveCompanyDisplayName(companyId: string, currentName?: string | null): string {
+  if (companyId === 'medussa-retail') {
+    return 'Industrias Alimenticias El Arbolito';
+  }
+
+  return currentName?.trim() || 'Empresa activa';
 }

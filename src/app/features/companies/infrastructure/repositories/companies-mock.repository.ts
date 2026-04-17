@@ -155,21 +155,29 @@ export class CompaniesMockRepository implements CompaniesRepository {
 
   private readStore(): CompaniesStore {
     if (typeof window === 'undefined') {
-      return structuredClone(INITIAL_COMPANIES_STORE);
+      return normalizeCompaniesStore(structuredClone(INITIAL_COMPANIES_STORE));
     }
 
     const raw = localStorage.getItem(this.storageKey);
 
     if (!raw) {
-      this.writeStore(structuredClone(INITIAL_COMPANIES_STORE));
-      return structuredClone(INITIAL_COMPANIES_STORE);
+      const initialStore = normalizeCompaniesStore(structuredClone(INITIAL_COMPANIES_STORE));
+      this.writeStore(initialStore);
+      return initialStore;
     }
 
     try {
-      return JSON.parse(raw) as CompaniesStore;
+      const normalizedStore = normalizeCompaniesStore(JSON.parse(raw) as CompaniesStore);
+
+      if (JSON.stringify(normalizedStore) !== raw) {
+        this.writeStore(normalizedStore);
+      }
+
+      return normalizedStore;
     } catch {
-      this.writeStore(structuredClone(INITIAL_COMPANIES_STORE));
-      return structuredClone(INITIAL_COMPANIES_STORE);
+      const initialStore = normalizeCompaniesStore(structuredClone(INITIAL_COMPANIES_STORE));
+      this.writeStore(initialStore);
+      return initialStore;
     }
   }
 
@@ -281,4 +289,35 @@ function normalizeValue(value: string | null | undefined): string {
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
+}
+
+function normalizeCompaniesStore(store: CompaniesStore): CompaniesStore {
+  const initialCompaniesById = new Map(
+    INITIAL_COMPANIES_STORE.companies.map((company) => [company.id, company]),
+  );
+  const mergedCompanies = new Map<string, CompanyDetailVm>();
+
+  INITIAL_COMPANIES_STORE.companies.forEach((company) => {
+    mergedCompanies.set(company.id, structuredClone(company));
+  });
+
+  (store.companies ?? []).forEach((company) => {
+    const baseline = initialCompaniesById.get(company.id);
+
+    mergedCompanies.set(company.id, {
+      ...(baseline ? structuredClone(baseline) : {}),
+      ...company,
+      associatedUsers: company.associatedUsers?.map((user) => ({ ...user })) ?? baseline?.associatedUsers ?? [],
+      associatedUsersCount:
+        company.associatedUsersCount ??
+        company.associatedUsers?.length ??
+        baseline?.associatedUsersCount ??
+        0,
+    });
+  });
+
+  return {
+    companies: Array.from(mergedCompanies.values()),
+    catalogs: structuredClone(INITIAL_COMPANIES_STORE.catalogs),
+  };
 }

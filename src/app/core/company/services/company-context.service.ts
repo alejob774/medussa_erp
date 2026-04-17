@@ -107,11 +107,7 @@ export class CompanyContextService {
   }
 
   resolvePostLoginRoute(session: LoginResponse): string {
-    if (this.shouldSelectCompany(session)) {
-      return '/select-company';
-    }
-
-    if (!session.activeCompanyId && session.companies?.length === 1) {
+    if (!session.activeCompanyId && session.companies?.length) {
       this.setActiveCompany(session.companies[0].id, { force: true });
     }
 
@@ -131,12 +127,12 @@ export class CompanyContextService {
 
     const companies = session.companies ?? [];
 
-    if (companies.length === 1) {
+    if (companies.length >= 1) {
       this.setActiveCompany(companies[0].id, { force: true });
       return true;
     }
 
-    return companies.length <= 1;
+    return false;
   }
 
   shouldSelectCompany(session: LoginResponse | null = this.authSessionService.getSession()): boolean {

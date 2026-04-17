@@ -577,7 +577,7 @@ export class SecurityAdministrationMockRepository
 
     const companyNames: Record<string, string> = {
       'medussa-holding': 'Medussa Holding',
-      'medussa-retail': 'Medussa Retail',
+      'medussa-retail': 'Industrias Alimenticias El Arbolito',
       'medussa-industrial': 'Medussa Industrial',
       'medussa-services': 'Medussa Services',
     };

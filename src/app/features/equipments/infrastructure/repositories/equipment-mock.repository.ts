@@ -442,7 +442,7 @@ function normalizeEquipmentStore(store: EquipmentStore): EquipmentStore {
       correoFabricante: equipment.correoFabricante?.trim().toLowerCase() || null,
       tipoEquipo: equipment.tipoEquipo?.trim() || null,
       ubicacionOperativa: equipment.ubicacionOperativa?.trim() || null,
-      empresaNombre: equipment.empresaNombre ?? null,
+      empresaNombre: resolveCompanyDisplayName(equipment.empresaId, equipment.empresaNombre),
       estado: equipment.estado ?? 'ACTIVO',
       tieneDependenciasActivas: equipment.tieneDependenciasActivas ?? false,
       updatedAt: equipment.updatedAt ?? null,
@@ -457,4 +457,12 @@ function normalizeText(value: string | null | undefined): string {
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
+}
+
+function resolveCompanyDisplayName(companyId: string, currentName?: string | null): string {
+  if (companyId === 'medussa-retail') {
+    return 'Industrias Alimenticias El Arbolito';
+  }
+
+  return currentName?.trim() || 'Empresa activa';
 }

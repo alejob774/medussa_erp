@@ -189,7 +189,7 @@ const MOCK_USERS: UserDetailVm[] = [
       ),
       buildAssignment(
         'medussa-retail',
-        'Medussa Retail',
+        'Industrias Alimenticias El Arbolito',
         'role-retail-supervisor',
         'Supervisor Comercial',
         'profile-retail-001',
@@ -231,7 +231,7 @@ const MOCK_USERS: UserDetailVm[] = [
     assignedCompanies: [
       buildAssignment(
         'medussa-retail',
-        'Medussa Retail',
+        'Industrias Alimenticias El Arbolito',
         'role-retail-aux',
         'Auxiliar Operativo',
         'profile-retail-001',
