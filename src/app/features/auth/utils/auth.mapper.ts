@@ -1,7 +1,10 @@
 import { Company } from '../../../core/company/models/company.model';
 import { normalizeEffectivePermissions } from '../../../core/permissions/utils/permission.utils';
 import { AuthUser } from '../models/auth-user.model';
-import { BackendAuthMeResponse } from '../models/backend-auth-me-response.model';
+import {
+  BackendAuthMeCompany,
+  BackendAuthMeResponse,
+} from '../models/backend-auth-me-response.model';
 import { BackendAuthUser } from '../models/backend-auth-user.model';
 import { BackendLoginResponse } from '../models/backend-login-response.model';
 import { LoginResponse } from '../models/login-response.model';
@@ -41,6 +44,159 @@ function normalizeCompanies(companies: readonly Company[] = []): Company[] {
     ...company,
     backendId: normalizeNullableString(company.backendId),
   }));
+}
+
+function buildDisplayName(
+  firstName?: string | null,
+  lastName?: string | null,
+  fallback?: string,
+): string | undefined {
+  const fullName = [firstName?.trim(), lastName?.trim()].filter(Boolean).join(' ').trim();
+  return fullName || fallback;
+}
+
+function extractPermissionCodes(permissionSource: unknown): string[] {
+  if (!permissionSource) {
+    return [];
+  }
+
+  if (typeof permissionSource === 'string') {
+    const normalizedPermission = permissionSource.trim();
+    return normalizedPermission ? [normalizedPermission] : [];
+  }
+
+  if (Array.isArray(permissionSource)) {
+    return permissionSource.flatMap((entry) => extractPermissionCodes(entry));
+  }
+
+  if (typeof permissionSource !== 'object') {
+    return [];
+  }
+
+  const permissionObject = permissionSource as Record<string, unknown>;
+  const directModule =
+    typeof permissionObject['modulo'] === 'string'
+      ? permissionObject['modulo']
+      : typeof permissionObject['module'] === 'string'
+        ? permissionObject['module']
+        : null;
+  const directAction =
+    typeof permissionObject['accion'] === 'string'
+      ? permissionObject['accion']
+      : typeof permissionObject['action'] === 'string'
+        ? permissionObject['action']
+        : null;
+
+  if (directModule && directAction) {
+    return [`${directModule.trim().toLowerCase()}_${directAction.trim().toLowerCase()}`];
+  }
+
+  return Object.entries(permissionObject).flatMap(([moduleKey, value]) => {
+    const normalizedModuleKey = moduleKey.trim().toLowerCase();
+
+    if (!normalizedModuleKey) {
+      return [];
+    }
+
+    if (typeof value === 'string') {
+      return [`${normalizedModuleKey}_${value.trim().toLowerCase()}`];
+    }
+
+    if (Array.isArray(value)) {
+      return value
+        .filter((entry): entry is string => typeof entry === 'string')
+        .map((entry) => `${normalizedModuleKey}_${entry.trim().toLowerCase()}`);
+    }
+
+    if (value && typeof value === 'object') {
+      return Object.entries(value as Record<string, unknown>)
+        .filter(([, enabled]) => !!enabled)
+        .map(([actionKey]) => `${normalizedModuleKey}_${actionKey.trim().toLowerCase()}`);
+    }
+
+    return [];
+  });
+}
+
+function mapAuthMeCompanies(
+  response: BackendAuthMeResponse,
+  companies: readonly Company[],
+): Company[] {
+  const mergedCompanies = new Map<string, Company>();
+
+  normalizeCompanies(companies).forEach((company) => {
+    const identity = company.backendId ?? company.id;
+    mergedCompanies.set(identity, company);
+  });
+
+  (response.empresas ?? []).forEach((company) => {
+    const backendId = normalizeNullableString(company.empresa_id);
+
+    if (!backendId) {
+      return;
+    }
+
+    const currentCompany = mergedCompanies.get(backendId);
+
+    mergedCompanies.set(backendId, {
+      id: currentCompany?.id ?? backendId,
+      dbId: currentCompany?.dbId ?? null,
+      backendId,
+      name:
+        normalizeNullableString(company.nombre_empresa) ??
+        currentCompany?.name ??
+        `Empresa ${backendId}`,
+      code: currentCompany?.code ?? backendId,
+      description: currentCompany?.description,
+      icon: currentCompany?.icon,
+      accentColor: currentCompany?.accentColor,
+    });
+  });
+
+  return Array.from(mergedCompanies.values());
+}
+
+function resolveActiveAuthMeCompany(
+  response: BackendAuthMeResponse,
+  session: LoginResponse,
+): BackendAuthMeCompany | null {
+  const responseCompanies = response.empresas ?? [];
+  const requestedBackendCompanyId =
+    normalizeNullableString(response.empresa_activa) ??
+    normalizeNullableString(response.empresa_id) ??
+    session.activeBackendCompanyId ??
+    null;
+
+  if (!responseCompanies.length) {
+    return null;
+  }
+
+  if (requestedBackendCompanyId) {
+    const matchingCompany = responseCompanies.find(
+      (company) => normalizeNullableString(company.empresa_id) === requestedBackendCompanyId,
+    );
+
+    if (matchingCompany) {
+      return matchingCompany;
+    }
+  }
+
+  if (session.activeCompanyId) {
+    const sessionCompany = session.companies?.find(
+      (company) => company.id === session.activeCompanyId,
+    );
+    const matchingCompany = responseCompanies.find(
+      (company) =>
+        normalizeNullableString(company.empresa_id) ===
+        normalizeNullableString(sessionCompany?.backendId ?? sessionCompany?.id),
+    );
+
+    if (matchingCompany) {
+      return matchingCompany;
+    }
+  }
+
+  return responseCompanies.length === 1 ? responseCompanies[0] : null;
 }
 
 export function resolveCompanyIdentityState(
@@ -99,29 +255,47 @@ export function mapBackendUserToAuthUser(user: BackendAuthUser): AuthUser {
     id: String(user.id),
     username,
     email: user.email,
-    displayName: user.nombre?.trim() || undefined,
+    displayName: buildDisplayName(user.nombre, user.apellido),
     roles: dedupeStrings([...(user.roles ?? []), roleName]),
     roleName,
     profileName: user.perfil ?? null,
-    permissions: normalizeEffectivePermissions(user.permisos ?? []),
+    permissions: normalizeEffectivePermissions(extractPermissionCodes(user.permisos)),
   };
 }
 
 export function mapBackendAuthMeToAuthUser(
   response: BackendAuthMeResponse,
   currentUser?: AuthUser,
+  activeCompany?: BackendAuthMeCompany | null,
 ): AuthUser {
-  const username = resolveUsername(response.email, currentUser?.username, response.id);
+  const username = resolveUsername(
+    response.email,
+    normalizeNullableString(response.username) ?? currentUser?.username,
+    response.id,
+  );
+  const roleName = activeCompany?.rol ?? response.rol ?? currentUser?.roleName ?? null;
+  const profileName =
+    activeCompany?.perfil ?? response.perfil ?? currentUser?.profileName ?? null;
+  const permissions = normalizeEffectivePermissions(
+    extractPermissionCodes(activeCompany?.permisos ?? response.permisos),
+  );
 
   return {
     id: String(response.id),
     username,
     email: response.email,
-    displayName: response.nombre?.trim() || currentUser?.displayName,
-    roles: dedupeStrings([response.rol]),
-    roleName: response.rol ?? null,
-    profileName: response.perfil ?? null,
-    permissions: normalizeEffectivePermissions(response.permisos ?? []),
+    displayName:
+      buildDisplayName(response.nombre, response.apellido, currentUser?.displayName) ??
+      currentUser?.displayName,
+    roles: dedupeStrings([
+      ...(currentUser?.roles ?? []),
+      response.rol,
+      activeCompany?.rol,
+      ...(response.empresas ?? []).map((company) => company.rol ?? undefined),
+    ]),
+    roleName,
+    profileName,
+    permissions,
   };
 }
 
@@ -129,11 +303,20 @@ export function mergeAuthenticatedContextIntoSession(
   session: LoginResponse,
   response: BackendAuthMeResponse,
 ): LoginResponse {
-  const nextUser = mapBackendAuthMeToAuthUser(response, session.user);
-  const companyState = resolveCompanyIdentityState(session.companies ?? [], {
+  const companies = mapAuthMeCompanies(response, session.companies ?? []);
+  const activeCompany = resolveActiveAuthMeCompany(response, {
+    ...session,
+    companies,
+  });
+  const nextUser = mapBackendAuthMeToAuthUser(response, session.user, activeCompany);
+  const companyState = resolveCompanyIdentityState(companies, {
     activeCompanyId: session.activeCompanyId ?? null,
     activeBackendCompanyId:
-      response.empresa_id ?? response.empresa_activa ?? session.activeBackendCompanyId ?? null,
+      normalizeNullableString(response.empresa_activa) ??
+      normalizeNullableString(response.empresa_id) ??
+      normalizeNullableString(activeCompany?.empresa_id) ??
+      session.activeBackendCompanyId ??
+      null,
   });
 
   return {

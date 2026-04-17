@@ -22,6 +22,13 @@ import {
 import { ProductsRepository } from '../../domain/repositories/product.repository';
 import { ProductMockRepository } from './product-mock.repository';
 
+interface ProductShadowRecord {
+  deleted: boolean;
+  product: Product;
+  productId: string;
+  updatedAt: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -30,6 +37,7 @@ export class ProductApiRepository implements ProductsRepository {
   private readonly authSessionService = inject(AuthSessionService);
   private readonly mockRepository = inject(ProductMockRepository);
   private readonly baseUrl = `${environment.apiUrl}/productos`;
+  private readonly shadowStorageKey = 'medussa.erp.products.api-shadow';
 
   getCatalogs(companyId: string): Observable<ProductCatalogs> {
     return this.mockRepository.getCatalogs(companyId);
@@ -40,15 +48,21 @@ export class ProductApiRepository implements ProductsRepository {
       () =>
         this.http
           .get<unknown>(this.withTrailingSlash(this.baseUrl), {
-            params: this.buildListParams(companyId, filters),
+            params: this.buildListParams(companyId),
           })
           .pipe(map((response) => this.mapListResponse(response, companyId, filters))),
       () => this.mockRepository.listProducts(companyId, filters),
-      'catálogo de productos',
+      'catÃ¡logo de productos',
     );
   }
 
   getProduct(companyId: string, productId: string): Observable<Product> {
+    const shadowProduct = this.getShadowProduct(productId);
+
+    if (shadowProduct?.empresaId === companyId) {
+      return of({ ...shadowProduct });
+    }
+
     return this.withFallback(
       () => this.loadProduct(companyId, productId),
       () => this.mockRepository.getProduct(companyId, productId),
@@ -61,6 +75,16 @@ export class ProductApiRepository implements ProductsRepository {
     payload: SaveProductPayload,
     productId?: string,
   ): Observable<ProductMutationResult> {
+    if (!productId) {
+      return of(this.createShadowProduct(companyId, payload));
+    }
+
+    const shadowProduct = this.getShadowProduct(productId);
+
+    if (shadowProduct?.empresaId === companyId) {
+      return of(this.updateShadowProduct(companyId, productId, payload));
+    }
+
     return this.withFallback(
       () => {
         const requestBody = mapProductPayloadToBackend(
@@ -68,49 +92,40 @@ export class ProductApiRepository implements ProductsRepository {
           this.resolveRequestCompanyId(payload.empresaId || companyId),
         );
 
-        if (productId) {
-          return this.resolveProductRequestId(companyId, productId).pipe(
-            switchMap((requestProductId) =>
-              this.http
-                .put<BackendProductDto | void>(
-                  `${this.withTrailingSlash(this.baseUrl)}${requestProductId}`,
-                  requestBody,
-                )
-                .pipe(
-                  switchMap((response) =>
-                    this.resolveSavedProduct(
-                      companyId,
-                      response,
-                      'updated',
-                      payload.empresaNombre,
-                      productId,
-                      requestProductId,
-                    ),
+        return this.resolveProductRequestId(companyId, productId).pipe(
+          switchMap((requestProductId) =>
+            this.http
+              .patch<BackendProductDto | void>(
+                `${this.withTrailingSlash(this.baseUrl)}${requestProductId}`,
+                requestBody,
+              )
+              .pipe(
+                switchMap((response) =>
+                  this.resolveSavedProduct(
+                    companyId,
+                    response,
+                    'updated',
+                    payload.empresaNombre,
+                    productId,
+                    requestProductId,
                   ),
                 ),
-            ),
-          );
-        }
-
-        return this.http
-          .post<BackendProductDto>(this.withTrailingSlash(this.baseUrl), requestBody)
-          .pipe(
-            switchMap((response) =>
-              this.resolveSavedProduct(
-                companyId,
-                response,
-                'created',
-                payload.empresaNombre,
               ),
-            ),
-          );
+          ),
+        );
       },
       () => this.mockRepository.saveProduct(companyId, payload, productId),
-      productId ? 'actualización de producto' : 'creación de producto',
+      'actualizaciÃ³n de producto',
     );
   }
 
   deleteProduct(companyId: string, productId: string): Observable<ProductMutationResult> {
+    const shadowProduct = this.getShadowProduct(productId);
+
+    if (shadowProduct?.empresaId === companyId) {
+      return of(this.deleteShadowProduct(shadowProduct));
+    }
+
     return this.withFallback(
       () =>
         this.resolveProductRequestId(companyId, productId).pipe(
@@ -128,7 +143,7 @@ export class ProductApiRepository implements ProductsRepository {
           ),
         ),
       () => this.mockRepository.deleteProduct(companyId, productId),
-      'eliminación de producto',
+      'eliminaciÃ³n de producto',
     );
   }
 
@@ -137,6 +152,12 @@ export class ProductApiRepository implements ProductsRepository {
     productId: string,
     status: ProductStatus,
   ): Observable<ProductMutationResult> {
+    const shadowProduct = this.getShadowProduct(productId);
+
+    if (shadowProduct?.empresaId === companyId) {
+      return of(this.updateShadowProductStatus(shadowProduct, status));
+    }
+
     return this.withFallback(
       () => this.updateStatusThroughApi(companyId, productId, status),
       () => this.mockRepository.updateProductStatus(companyId, productId, status),
@@ -162,27 +183,11 @@ export class ProductApiRepository implements ProductsRepository {
     );
   }
 
-  private buildListParams(companyId: string, filters: ProductFilters): HttpParams {
-    const normalizedFilters = this.normalizeFilters(filters, companyId);
-    const requestCompanyId = normalizedFilters.empresaId ?? companyId;
-    let params = new HttpParams()
-      .set('empresa_id', this.resolveRequestCompanyId(requestCompanyId))
-      .set('page', String(normalizedFilters.page + 1))
-      .set('page_size', String(normalizedFilters.pageSize));
-
-    if (normalizedFilters.search) {
-      params = params.set('search', normalizedFilters.search);
-    }
-
-    if (normalizedFilters.estado && normalizedFilters.estado !== 'TODOS') {
-      params = params.set('estado', normalizedFilters.estado.toLowerCase());
-    }
-
-    if (normalizedFilters.familia) {
-      params = params.set('familia', normalizedFilters.familia);
-    }
-
-    return params;
+  private buildListParams(companyId: string): HttpParams {
+    return new HttpParams()
+      .set('empresa_id', this.resolveRequestCompanyId(companyId))
+      .set('skip', '0')
+      .set('limit', '500');
   }
 
   private mapListResponse(
@@ -191,16 +196,17 @@ export class ProductApiRepository implements ProductsRepository {
     filters: ProductFilters,
   ): ProductListResponse {
     const normalizedFilters = this.normalizeFilters(filters, companyId);
-    const products = extractArrayPayload<BackendProductDto>(payload)
-      .map((product) =>
+    const products = this.mergeProductsWithShadow(
+      companyId,
+      extractArrayPayload<BackendProductDto>(payload).map((product) =>
         mapBackendProductToProduct(product, companyId, this.resolveCompanyName(companyId)),
-      )
-      .filter((product) => this.matchesFilters(product, normalizedFilters));
+      ),
+    ).filter((product) => this.matchesFilters(product, normalizedFilters));
     const startIndex = normalizedFilters.page * normalizedFilters.pageSize;
 
     return {
       items: products.slice(startIndex, startIndex + normalizedFilters.pageSize),
-      total: this.resolveTotal(payload, products.length),
+      total: products.length,
       page: normalizedFilters.page,
       pageSize: normalizedFilters.pageSize,
       filters: normalizedFilters,
@@ -241,9 +247,12 @@ export class ProductApiRepository implements ProductsRepository {
         this.resolveProductRequestId(companyId, productId).pipe(
           switchMap((requestProductId) =>
             this.http
-              .put<BackendProductDto | void>(
+              .patch<BackendProductDto | void>(
                 `${this.withTrailingSlash(this.baseUrl)}${requestProductId}`,
-                mapProductPayloadToBackend(this.buildStatusPayload(product, status), this.resolveRequestCompanyId(companyId)),
+                mapProductPayloadToBackend(
+                  this.buildStatusPayload(product, status),
+                  this.resolveRequestCompanyId(companyId),
+                ),
               )
               .pipe(
                 switchMap((response) =>
@@ -267,8 +276,8 @@ export class ProductApiRepository implements ProductsRepository {
                     status === 'ACTIVO' ? 'activate' : 'deactivate',
                     result.product ?? { ...product, estado: status },
                     status === 'ACTIVO'
-                      ? `Activación del producto ${product.nombre}.`
-                      : `Inactivación del producto ${product.nombre}.`,
+                      ? `ActivaciÃ³n del producto ${product.nombre}.`
+                      : `InactivaciÃ³n del producto ${product.nombre}.`,
                     this.sanitizeAuditPayload(product),
                     this.sanitizeAuditPayload(result.product ?? { ...product, estado: status }),
                   ),
@@ -318,14 +327,14 @@ export class ProductApiRepository implements ProductsRepository {
         product: action === 'deleted' ? null : product,
         message:
           action === 'inactivated'
-            ? 'El backend reportó que el producto fue inactivado por restricciones operativas.'
+            ? 'El backend reportÃ³ que el producto fue inactivado por restricciones operativas.'
             : `El producto ${product.nombre} fue eliminado correctamente.`,
         auditDraft: this.buildAuditDraft(
           action === 'inactivated' ? 'deactivate' : 'delete',
           product,
           action === 'inactivated'
-            ? `Inactivación del producto ${product.nombre} reportada por backend.`
-            : `Eliminación del producto ${product.nombre}.`,
+            ? `InactivaciÃ³n del producto ${product.nombre} reportada por backend.`
+            : `EliminaciÃ³n del producto ${product.nombre}.`,
           null,
           action === 'deleted' ? null : this.sanitizeAuditPayload(product),
         ),
@@ -358,7 +367,7 @@ export class ProductApiRepository implements ProductsRepository {
       auditDraft: this.buildAuditDraft(
         'delete',
         auditProduct,
-        `Eliminación del producto ${productId}.`,
+        `EliminaciÃ³n del producto ${productId}.`,
         null,
         null,
       ),
@@ -368,10 +377,7 @@ export class ProductApiRepository implements ProductsRepository {
   private resolveProductRequestId(companyId: string, productId: string): Observable<string> {
     return this.http
       .get<unknown>(this.withTrailingSlash(this.baseUrl), {
-        params: new HttpParams()
-          .set('empresa_id', this.resolveRequestCompanyId(companyId))
-          .set('page', '1')
-          .set('page_size', '500'),
+        params: this.buildListParams(companyId),
       })
       .pipe(
         map((response) => {
@@ -379,7 +385,12 @@ export class ProductApiRepository implements ProductsRepository {
             this.matchesProductReference(candidate, productId),
           );
 
-          return this.resolveNullableText(product?.id, product?.producto_id) ?? productId;
+          return this.resolveNullableText(
+            product?.id,
+            product?.producto_id,
+            product?.producto_sku,
+            product?.sku,
+          ) ?? productId;
         }),
       );
   }
@@ -389,6 +400,7 @@ export class ProductApiRepository implements ProductsRepository {
     const candidates = [
       this.resolveNullableText(product.id),
       this.resolveNullableText(product.producto_id),
+      this.resolveNullableText(product.producto_sku),
       this.resolveNullableText(product.sku),
     ];
 
@@ -426,15 +438,6 @@ export class ProductApiRepository implements ProductsRepository {
     return matchesSearch && matchesStatus && matchesFamily;
   }
 
-  private resolveTotal(payload: unknown, fallback: number): number {
-    if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
-      const candidate = payload as { total?: number; count?: number };
-      return candidate.total ?? candidate.count ?? fallback;
-    }
-
-    return fallback;
-  }
-
   private resolveCompanyName(companyId: string): string {
     return (
       this.authSessionService
@@ -458,6 +461,219 @@ export class ProductApiRepository implements ProductsRepository {
     }
 
     return companyId;
+  }
+
+  private createShadowProduct(
+    companyId: string,
+    payload: SaveProductPayload,
+  ): ProductMutationResult {
+    const companyName = payload.empresaNombre.trim() || this.resolveCompanyName(companyId);
+    const product = this.buildShadowProduct(companyId, payload, undefined, companyName);
+
+    this.upsertShadowProduct(product);
+
+    return {
+      action: 'created',
+      product,
+      message:
+        `El producto ${product.nombre} fue guardado localmente mientras el backend no expone creación.`,
+      auditDraft: this.buildAuditDraft(
+        'create',
+        product,
+        `Creación local del producto ${product.nombre} por ausencia de POST en backend.`,
+        null,
+        this.sanitizeAuditPayload(product),
+      ),
+    };
+  }
+
+  private updateShadowProduct(
+    companyId: string,
+    productId: string,
+    payload: SaveProductPayload,
+  ): ProductMutationResult {
+    const currentProduct = this.getShadowProduct(productId) ?? undefined;
+    const companyName = payload.empresaNombre.trim() || this.resolveCompanyName(companyId);
+    const product = this.buildShadowProduct(companyId, payload, currentProduct, companyName, productId);
+
+    this.upsertShadowProduct(product);
+
+    return {
+      action: 'updated',
+      product,
+      message: `El producto ${product.nombre} fue actualizado localmente.`,
+      auditDraft: this.buildAuditDraft(
+        'edit',
+        product,
+        `Actualización local del producto ${product.nombre}.`,
+        currentProduct ? this.sanitizeAuditPayload(currentProduct) : null,
+        this.sanitizeAuditPayload(product),
+      ),
+    };
+  }
+
+  private deleteShadowProduct(product: Product): ProductMutationResult {
+    this.upsertShadowRecord({
+      deleted: true,
+      product,
+      productId: product.id,
+      updatedAt: new Date().toISOString(),
+    });
+
+    return {
+      action: 'deleted',
+      product: null,
+      message: `El producto ${product.nombre} fue eliminado del overlay local.`,
+      auditDraft: this.buildAuditDraft(
+        'delete',
+        product,
+        `Eliminación local del producto ${product.nombre}.`,
+        this.sanitizeAuditPayload(product),
+        null,
+      ),
+    };
+  }
+
+  private updateShadowProductStatus(
+    product: Product,
+    status: ProductStatus,
+  ): ProductMutationResult {
+    const updatedProduct: Product = {
+      ...product,
+      estado: status,
+      updatedAt: new Date().toISOString(),
+    };
+
+    this.upsertShadowProduct(updatedProduct);
+
+    return {
+      action: status === 'ACTIVO' ? 'activated' : 'inactivated',
+      product: updatedProduct,
+      message:
+        status === 'ACTIVO'
+          ? `El producto ${updatedProduct.nombre} fue activado localmente.`
+          : `El producto ${updatedProduct.nombre} fue inactivado localmente.`,
+      auditDraft: this.buildAuditDraft(
+        status === 'ACTIVO' ? 'activate' : 'deactivate',
+        updatedProduct,
+        status === 'ACTIVO'
+          ? `Activación local del producto ${updatedProduct.nombre}.`
+          : `Inactivación local del producto ${updatedProduct.nombre}.`,
+        this.sanitizeAuditPayload(product),
+        this.sanitizeAuditPayload(updatedProduct),
+      ),
+    };
+  }
+
+  private buildShadowProduct(
+    companyId: string,
+    payload: SaveProductPayload,
+    currentProduct?: Product,
+    companyName?: string,
+    explicitProductId?: string,
+  ): Product {
+    return {
+      id:
+        explicitProductId ??
+        currentProduct?.id ??
+        `local-product-${payload.sku.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-') || Date.now()}`,
+      empresaId: companyId,
+      empresaNombre: companyName ?? this.resolveCompanyName(companyId),
+      nombre: payload.nombre.trim(),
+      descripcion: payload.descripcion.trim(),
+      sku: payload.sku.trim().toUpperCase(),
+      familia: payload.familia.trim(),
+      unidadBase: payload.unidadBase.trim(),
+      referencia: payload.referencia?.trim() || null,
+      manejaLote: payload.manejaLote,
+      manejaVencimiento: payload.manejaVencimiento,
+      vidaUtilDias: payload.manejaVencimiento ? payload.vidaUtilDias ?? null : null,
+      factorConversion: payload.factorConversion ?? null,
+      precioBruto: payload.precioBruto ?? null,
+      precioNeto: payload.precioNeto ?? null,
+      estado: payload.estado,
+      tieneMovimientos: currentProduct?.tieneMovimientos ?? false,
+      createdAt: currentProduct?.createdAt ?? new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  private mergeProductsWithShadow(
+    companyId: string,
+    apiProducts: readonly Product[],
+  ): Product[] {
+    const mergedProducts = new Map<string, Product>(apiProducts.map((product) => [product.id, product]));
+
+    this.listShadowRecordsForCompany(companyId).forEach((shadow) => {
+      if (shadow.deleted) {
+        mergedProducts.delete(shadow.productId);
+        return;
+      }
+
+      mergedProducts.set(shadow.productId, shadow.product);
+    });
+
+    return Array.from(mergedProducts.values()).sort((left, right) =>
+      left.nombre.localeCompare(right.nombre, 'es-CO'),
+    );
+  }
+
+  private getShadowProduct(productId: string): Product | null {
+    const shadowRecord = this.readShadowStore()[productId];
+
+    if (!shadowRecord || shadowRecord.deleted) {
+      return null;
+    }
+
+    return shadowRecord.product;
+  }
+
+  private listShadowRecordsForCompany(companyId: string): ProductShadowRecord[] {
+    return Object.values(this.readShadowStore()).filter(
+      (record) => record.product.empresaId === companyId,
+    );
+  }
+
+  private readShadowStore(): Record<string, ProductShadowRecord> {
+    if (typeof window === 'undefined') {
+      return {};
+    }
+
+    const raw = localStorage.getItem(this.shadowStorageKey);
+
+    if (!raw) {
+      return {};
+    }
+
+    try {
+      return JSON.parse(raw) as Record<string, ProductShadowRecord>;
+    } catch {
+      localStorage.removeItem(this.shadowStorageKey);
+      return {};
+    }
+  }
+
+  private writeShadowStore(store: Record<string, ProductShadowRecord>): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    localStorage.setItem(this.shadowStorageKey, JSON.stringify(store));
+  }
+
+  private upsertShadowProduct(product: Product): void {
+    this.upsertShadowRecord({
+      deleted: false,
+      product,
+      productId: product.id,
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
+  private upsertShadowRecord(record: ProductShadowRecord): void {
+    const store = this.readShadowStore();
+    store[record.productId] = record;
+    this.writeShadowStore(store);
   }
 
   private shouldInactivateInstead(error: unknown): boolean {
@@ -484,8 +700,8 @@ export class ProductApiRepository implements ProductsRepository {
         action === 'created' ? 'create' : 'edit',
         product,
         action === 'created'
-          ? `Creación del producto ${product.nombre}.`
-          : `Actualización del producto ${product.nombre}.`,
+          ? `CreaciÃ³n del producto ${product.nombre}.`
+          : `ActualizaciÃ³n del producto ${product.nombre}.`,
         null,
         this.sanitizeAuditPayload(product),
       ),
@@ -570,7 +786,7 @@ export class ProductApiRepository implements ProductsRepository {
     return operation().pipe(
       catchError((error: unknown) => {
         if (environment.enableProductsAdministrationFallback && this.shouldFallbackToMock(error)) {
-          console.warn(`Se activó fallback mock para ${context}.`, error);
+          console.warn(`Se activÃ³ fallback mock para ${context}.`, error);
           return fallback();
         }
 
@@ -596,18 +812,18 @@ export class ProductApiRepository implements ProductsRepository {
       if (error.status === 422) {
         return new Error(
           this.extractBackendDetail(error) ||
-            'El backend reportó errores de validación para los datos enviados.',
+            'El backend reportÃ³ errores de validaciÃ³n para los datos enviados.',
         );
       }
 
       return new Error(
         this.extractBackendDetail(error) ||
-          `No fue posible completar la operación de ${context}.`,
+          `No fue posible completar la operaciÃ³n de ${context}.`,
       );
     }
 
     return error instanceof Error
       ? error
-      : new Error(`No fue posible completar la operación de ${context}.`);
+      : new Error(`No fue posible completar la operaciÃ³n de ${context}.`);
   }
 }

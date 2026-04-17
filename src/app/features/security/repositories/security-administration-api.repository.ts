@@ -818,6 +818,7 @@ export class SecurityAdministrationApiRepository
       nombre: payload.name.trim(),
       descripcion: payload.description.trim(),
       estado: payload.status === 'active' ? 'activo' : 'inactivo',
+      permisos: [],
     };
   }
 
