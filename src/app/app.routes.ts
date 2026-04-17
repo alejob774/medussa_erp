@@ -136,6 +136,50 @@ export const routes: Routes = [
               permission: 'drivers.view',
             },
           },
+          {
+            path: 'demanda',
+            loadComponent: () =>
+              import(
+                './features/demand-forecast/presentation/pages/demand-forecast-page/demand-forecast-page.component'
+              ).then((module) => module.DemandForecastPageComponent),
+            canActivate: [permissionGuard],
+            data: {
+              permission: 'demand.view',
+            },
+          },
+          {
+            path: 'analisis-demanda',
+            loadComponent: () =>
+              import(
+                './features/demand-analysis/presentation/pages/demand-analysis-page/demand-analysis-page.component'
+              ).then((module) => module.DemandAnalysisPageComponent),
+            canActivate: [permissionGuard],
+            data: {
+              permission: 'demand.analysis.view',
+            },
+          },
+          {
+            path: 'diseno-productos',
+            loadComponent: () =>
+              import(
+                './features/product-development/presentation/pages/product-development-page/product-development-page.component'
+              ).then((module) => module.ProductDevelopmentPageComponent),
+            canActivate: [permissionGuard],
+            data: {
+              permission: 'product.development.view',
+            },
+          },
+          {
+            path: 'analisis-compras',
+            loadComponent: () =>
+              import(
+                './features/purchase-analysis/presentation/pages/purchase-analysis-page/purchase-analysis-page.component'
+              ).then((module) => module.PurchaseAnalysisPageComponent),
+            canActivate: [permissionGuard],
+            data: {
+              permission: 'purchase.analysis.view',
+            },
+          },
         ],
       },
       {

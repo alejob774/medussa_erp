@@ -1,4 +1,4 @@
-import { NavigationSection } from '../models/navigation-item.model';
+  import { NavigationSection } from '../models/navigation-item.model';
 
 const ALL_COMPANIES = [
   'medussa-holding',
@@ -58,6 +58,38 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
             route: '/supply-chain-management',
             icon: 'conversion_path',
             requiredPermissions: ['warehouse.view'],
+            companyIds: ALL_COMPANIES,
+          },
+          {
+            id: 'scm-planeacion-demanda',
+            label: 'Planeacion de demanda',
+            route: '/supply-chain-management/demanda',
+            icon: 'query_stats',
+            requiredPermissions: ['demand.view'],
+            companyIds: ALL_COMPANIES,
+          },
+          {
+            id: 'scm-analisis-demanda',
+            label: 'Analisis de demanda',
+            route: '/supply-chain-management/analisis-demanda',
+            icon: 'monitoring',
+            requiredPermissions: ['demand.analysis.view'],
+            companyIds: ALL_COMPANIES,
+          },
+          {
+            id: 'scm-diseno-productos',
+            label: 'Diseno y desarrollo',
+            route: '/supply-chain-management/diseno-productos',
+            icon: 'experiment',
+            requiredPermissions: ['product.development.view'],
+            companyIds: ALL_COMPANIES,
+          },
+          {
+            id: 'scm-analisis-compras',
+            label: 'Analisis de compras',
+            route: '/supply-chain-management/analisis-compras',
+            icon: 'insights',
+            requiredPermissions: ['purchase.analysis.view'],
             companyIds: ALL_COMPANIES,
           },
         ],
