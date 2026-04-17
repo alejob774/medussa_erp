@@ -74,7 +74,7 @@ export interface PerfilCreateBackendRequest {
   empresa_id: string;
   nombre: string;
   descripcion: string;
-  estado: string;
+  estado: boolean;
   permisos: Record<string, string[]>;
 }
 
