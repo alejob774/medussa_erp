@@ -169,6 +169,17 @@ export const routes: Routes = [
               permission: 'product.development.view',
             },
           },
+          {
+            path: 'analisis-compras',
+            loadComponent: () =>
+              import(
+                './features/purchase-analysis/presentation/pages/purchase-analysis-page/purchase-analysis-page.component'
+              ).then((module) => module.PurchaseAnalysisPageComponent),
+            canActivate: [permissionGuard],
+            data: {
+              permission: 'purchase.analysis.view',
+            },
+          },
         ],
       },
       {

@@ -84,6 +84,14 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
             requiredPermissions: ['product.development.view'],
             companyIds: ALL_COMPANIES,
           },
+          {
+            id: 'scm-analisis-compras',
+            label: 'Analisis de compras',
+            route: '/supply-chain-management/analisis-compras',
+            icon: 'insights',
+            requiredPermissions: ['purchase.analysis.view'],
+            companyIds: ALL_COMPANIES,
+          },
         ],
       },
       {

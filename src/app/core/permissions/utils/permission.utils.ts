@@ -41,6 +41,8 @@ const LEGACY_TO_BACKEND_PERMISSION_ALIASES: Partial<
   'product.development.edit': ['desarrollo_productos_edit', 'warehouse.view', 'inventory.view'],
   'product.development.approve': ['desarrollo_productos_approve', 'production.view', 'warehouse.view'],
   'product.development.launch': ['desarrollo_productos_launch', 'products.create', 'warehouse.view'],
+  'purchase.analysis.view': ['analisis_compras_view', 'warehouse.view', 'purchases.view'],
+  'purchase.analysis.refresh': ['analisis_compras_refresh', 'warehouse.view', 'purchases.view'],
   'settings.companies.view': ['empresas_view'],
   'settings.general.view': ['configuracion_view'],
   'security.users.view': ['usuarios_view', 'roles_view'],

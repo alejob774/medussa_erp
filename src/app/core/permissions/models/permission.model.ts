@@ -47,6 +47,8 @@ export type LegacyPermissionKey =
   | 'product.development.edit'
   | 'product.development.approve'
   | 'product.development.launch'
+  | 'purchase.analysis.view'
+  | 'purchase.analysis.refresh'
   | 'settings.companies.view'
   | 'settings.general.view'
   | 'security.users.view'
