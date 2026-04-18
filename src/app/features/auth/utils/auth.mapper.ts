@@ -39,6 +39,14 @@ function normalizeNullableString(value: string | null | undefined): string | nul
   return normalizedValue ? normalizedValue : null;
 }
 
+function normalizeComparableText(value: string | null | undefined): string {
+  return (value ?? '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
 function normalizeCompanies(companies: readonly Company[] = []): Company[] {
   return companies.map((company) => ({
     ...company,
@@ -194,6 +202,19 @@ function resolveActiveAuthMeCompany(
     if (matchingCompany) {
       return matchingCompany;
     }
+
+    const normalizedSessionCompanyName = normalizeComparableText(sessionCompany?.name);
+
+    if (normalizedSessionCompanyName) {
+      const matchingCompanyByName = responseCompanies.find(
+        (company) =>
+          normalizeComparableText(company.nombre_empresa) === normalizedSessionCompanyName,
+      );
+
+      if (matchingCompanyByName) {
+        return matchingCompanyByName;
+      }
+    }
   }
 
   return responseCompanies.length === 1 ? responseCompanies[0] : null;
@@ -276,14 +297,17 @@ export function mapBackendAuthMeToAuthUser(
   const roleName = activeCompany?.rol ?? response.rol ?? currentUser?.roleName ?? null;
   const profileName =
     activeCompany?.perfil ?? response.perfil ?? currentUser?.profileName ?? null;
-  const permissions = normalizeEffectivePermissions(
-    extractPermissionCodes(activeCompany?.permisos ?? response.permisos),
+  const extractedPermissions = extractPermissionCodes(
+    activeCompany?.permisos ?? response.permisos,
   );
+  const permissions = extractedPermissions.length
+    ? normalizeEffectivePermissions(extractedPermissions)
+    : [...(currentUser?.permissions ?? [])];
 
   return {
-    id: String(response.id),
+    id: response.id !== null && response.id !== undefined ? String(response.id) : currentUser?.id ?? 'usuario',
     username,
-    email: response.email,
+    email: normalizeNullableString(response.email) ?? currentUser?.email ?? `${username}@medussa.local`,
     displayName:
       buildDisplayName(response.nombre, response.apellido, currentUser?.displayName) ??
       currentUser?.displayName,
