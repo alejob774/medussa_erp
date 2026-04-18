@@ -84,8 +84,8 @@ export const INITIAL_VENDORS_STORE: VendorStore = {
     },
     {
       id: 'vendor-ret-001',
-      empresaId: 'medussa-retail',
-      empresaNombre: 'Medussa Retail',
+      empresaId: 'medussa-holding',
+      empresaNombre: 'Medussa Holding',
       idVendedor: 'VEN-R-001',
       nombreVendedor: 'Juliana Ríos Torres',
       tipoVendedor: 'Ruta',
@@ -106,8 +106,8 @@ export const INITIAL_VENDORS_STORE: VendorStore = {
     },
     {
       id: 'vendor-ret-002',
-      empresaId: 'medussa-retail',
-      empresaNombre: 'Medussa Retail',
+      empresaId: 'medussa-holding',
+      empresaNombre: 'Medussa Holding',
       idVendedor: 'VEN-R-002',
       nombreVendedor: 'Carlos Quintero Vega',
       tipoVendedor: 'Preventa',
@@ -128,8 +128,8 @@ export const INITIAL_VENDORS_STORE: VendorStore = {
     },
     {
       id: 'vendor-ret-003',
-      empresaId: 'medussa-retail',
-      empresaNombre: 'Medussa Retail',
+      empresaId: 'medussa-holding',
+      empresaNombre: 'Medussa Holding',
       idVendedor: 'VEN-R-003',
       nombreVendedor: 'Sandra Mejía Pardo',
       tipoVendedor: 'Televentas',
@@ -150,8 +150,8 @@ export const INITIAL_VENDORS_STORE: VendorStore = {
     },
     {
       id: 'vendor-ret-004',
-      empresaId: 'medussa-retail',
-      empresaNombre: 'Medussa Retail',
+      empresaId: 'medussa-holding',
+      empresaNombre: 'Medussa Holding',
       idVendedor: 'VEN-R-004',
       nombreVendedor: 'Maria Fernanda Rivas',
       tipoVendedor: 'Ruta',
@@ -172,8 +172,8 @@ export const INITIAL_VENDORS_STORE: VendorStore = {
     },
     {
       id: 'vendor-ret-005',
-      empresaId: 'medussa-retail',
-      empresaNombre: 'Medussa Retail',
+      empresaId: 'medussa-holding',
+      empresaNombre: 'Medussa Holding',
       idVendedor: 'VEN-R-005',
       nombreVendedor: 'Vendedor provisional',
       tipoVendedor: 'Ruta',
@@ -194,8 +194,8 @@ export const INITIAL_VENDORS_STORE: VendorStore = {
     },
     {
       id: 'vendor-ret-006',
-      empresaId: 'medussa-retail',
-      empresaNombre: 'Medussa Retail',
+      empresaId: 'medussa-holding',
+      empresaNombre: 'Medussa Holding',
       idVendedor: 'VEN-R-006',
       nombreVendedor: 'Alvaro Rivas',
       tipoVendedor: 'Ruta',
@@ -216,8 +216,8 @@ export const INITIAL_VENDORS_STORE: VendorStore = {
     },
     {
       id: 'vendor-ret-007',
-      empresaId: 'medussa-retail',
-      empresaNombre: 'Medussa Retail',
+      empresaId: 'medussa-holding',
+      empresaNombre: 'Medussa Holding',
       idVendedor: 'VEN-R-007',
       nombreVendedor: 'Brayan Castro',
       tipoVendedor: 'Ruta',
@@ -238,8 +238,8 @@ export const INITIAL_VENDORS_STORE: VendorStore = {
     },
     {
       id: 'vendor-ret-008',
-      empresaId: 'medussa-retail',
-      empresaNombre: 'Medussa Retail',
+      empresaId: 'medussa-holding',
+      empresaNombre: 'Medussa Holding',
       idVendedor: 'VEN-R-008',
       nombreVendedor: 'Jorge Tellez',
       tipoVendedor: 'Ruta',
@@ -349,3 +349,4 @@ export const INITIAL_VENDORS_STORE: VendorStore = {
   ],
   auditTrail: [],
 };
+

@@ -32,8 +32,8 @@ export const INITIAL_SUPPLIERS_STORE: SupplierStore = {
   suppliers: [
     {
       id: 'supplier-ret-001',
-      empresaId: 'medussa-retail',
-      empresaNombre: 'Medussa Retail',
+      empresaId: 'medussa-holding',
+      empresaNombre: 'Medussa Holding',
       nit: '900.321.654-1',
       nombreProveedor: 'Ganadería La Colina S.A.S.',
       ciudadId: '05001',
@@ -53,8 +53,8 @@ export const INITIAL_SUPPLIERS_STORE: SupplierStore = {
     },
     {
       id: 'supplier-ret-002',
-      empresaId: 'medussa-retail',
-      empresaNombre: 'Medussa Retail',
+      empresaId: 'medussa-holding',
+      empresaNombre: 'Medussa Holding',
       nit: '860.114.889-7',
       nombreProveedor: 'Lácteos del Valle Integrado',
       ciudadId: '76001',
@@ -74,8 +74,8 @@ export const INITIAL_SUPPLIERS_STORE: SupplierStore = {
     },
     {
       id: 'supplier-ret-003',
-      empresaId: 'medussa-retail',
-      empresaNombre: 'Medussa Retail',
+      empresaId: 'medussa-holding',
+      empresaNombre: 'Medussa Holding',
       nit: '901.778.442-5',
       nombreProveedor: 'Quimiplus Andina S.A.S.',
       ciudadId: '11001',
@@ -95,8 +95,8 @@ export const INITIAL_SUPPLIERS_STORE: SupplierStore = {
     },
     {
       id: 'supplier-ret-004',
-      empresaId: 'medussa-retail',
-      empresaNombre: 'Medussa Retail',
+      empresaId: 'medussa-holding',
+      empresaNombre: 'Medussa Holding',
       nit: '830.556.199-2',
       nombreProveedor: 'Empaques del Caribe Flex',
       ciudadId: '08001',
@@ -116,8 +116,8 @@ export const INITIAL_SUPPLIERS_STORE: SupplierStore = {
     },
     {
       id: 'supplier-ret-005',
-      empresaId: 'medussa-retail',
-      empresaNombre: 'Medussa Retail',
+      empresaId: 'medussa-holding',
+      empresaNombre: 'Medussa Holding',
       nit: '901.004.228-9',
       nombreProveedor: 'Etiqprint Soluciones Gráficas',
       ciudadId: '13001',
@@ -137,8 +137,8 @@ export const INITIAL_SUPPLIERS_STORE: SupplierStore = {
     },
     {
       id: 'supplier-ret-006',
-      empresaId: 'medussa-retail',
-      empresaNombre: 'Medussa Retail',
+      empresaId: 'medussa-holding',
+      empresaNombre: 'Medussa Holding',
       nit: '900.889.331-0',
       nombreProveedor: 'Servirepuestos Industriales S.A.S.',
       ciudadId: '17001',
@@ -159,3 +159,4 @@ export const INITIAL_SUPPLIERS_STORE: SupplierStore = {
   ],
   auditTrail: [],
 };
+

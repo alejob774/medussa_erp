@@ -60,7 +60,7 @@ import { ForecastTableComponent } from '../../components/forecast-table/forecast
             <article class="erp-meta-card">
               <p class="erp-meta-card__label">Empresa activa</p>
               <p class="mt-2 text-lg font-semibold text-slate-900">{{ activeCompanyName }}</p>
-              <p class="erp-meta-card__hint">Experiencia principal SCM sobre El Arbolito en local.</p>
+              <p class="erp-meta-card__hint">Experiencia principal SCM sobre Medussa Holding en local.</p>
             </article>
             <article class="erp-meta-card">
               <p class="erp-meta-card__label">Version oficial</p>

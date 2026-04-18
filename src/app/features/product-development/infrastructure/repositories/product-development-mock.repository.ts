@@ -42,7 +42,10 @@ const PRODUCTS_STORAGE_KEY = 'medussa.erp.mock.products';
 const SUPPLIERS_STORAGE_KEY = 'medussa.erp.mock.suppliers';
 const FORECAST_STORAGE_KEY = 'medussa.erp.mock.demand-forecasts';
 
-const EL_ARBOLITO_NAME = 'Industrias Alimenticias El Arbolito';
+const COMPANY_DISPLAY_NAMES: Record<string, string> = {
+  'medussa-holding': 'Medussa Holding',
+  'medussa-retail': 'Industrias Alimenticias El Arbolito',
+};
 const CATEGORIES = ['Lacteos', 'Yogures', 'Quesos', 'Bebidas', 'Postres', 'Innovacion logistica'];
 const TARGET_MARKETS = [
   'Retail moderno',
@@ -348,7 +351,7 @@ export class ProductDevelopmentMockRepository implements ProductDevelopmentRepos
         empresaNombre: this.resolveCompanyName(companyId),
         nombreProducto: 'Yogurt proteico vainilla 250 ml',
         categoria: 'Yogures',
-        skuPropuesto: 'ARB-YOG-250-PRO',
+        skuPropuesto: 'HOLD-YOG-250-PRO',
         mercadoObjetivo: 'Retail moderno',
         proyeccionVentas: 8400,
         fechaLanzamiento: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 15).toISOString().slice(0, 10),
@@ -751,7 +754,7 @@ export class ProductDevelopmentMockRepository implements ProductDevelopmentRepos
   }
 
   private resolveCompanyName(companyId: string): string {
-    return companyId === 'medussa-retail' ? EL_ARBOLITO_NAME : 'Empresa activa';
+    return COMPANY_DISPLAY_NAMES[companyId] ?? 'Empresa activa';
   }
 
   private normalizeText(value: string | null | undefined): string {

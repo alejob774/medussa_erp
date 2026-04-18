@@ -106,7 +106,7 @@ import { NavigationFacadeService } from '../../../navigation/services/navigation
             <p class="erp-topbar__eyebrow">Medussa ERP</p>
             <h1 class="erp-topbar__title">Operacion multiempresa centralizada</h1>
             <p class="erp-topbar__subtitle">
-              El Arbolito funciona como base operativa de SCM en demo, sin perder el soporte multiempresa del ERP.
+              Medussa Holding concentra la base operativa de demo para SCM y maestros, sin perder el soporte multiempresa del ERP.
             </p>
           </div>
 

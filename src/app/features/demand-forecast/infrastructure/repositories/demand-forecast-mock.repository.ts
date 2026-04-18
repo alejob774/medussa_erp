@@ -61,7 +61,10 @@ const CLIENTS_STORAGE_KEY = 'medussa.erp.mock.clients';
 const VENDORS_STORAGE_KEY = 'medussa.erp.mock.vendors';
 const ROUTES_STORAGE_KEY = 'medussa.erp.mock.routes';
 
-const EL_ARBOLITO_NAME = 'Industrias Alimenticias El Arbolito';
+const COMPANY_DISPLAY_NAMES: Record<string, string> = {
+  'medussa-holding': 'Medussa Holding',
+  'medussa-retail': 'Industrias Alimenticias El Arbolito',
+};
 const BASE_CATALOGS: DemandBaseCatalogs = {
   channels: [
     'Tradicional / TAT',
@@ -375,7 +378,7 @@ export class DemandForecastMockRepository implements DemandForecastRepository {
         includeOnlyActiveProducts: true,
         nombreForecast: 'Base operativa SCM',
         observaciones: 'Version base creada para planeacion de demanda en entorno local.',
-        usuario: 'demo.el-arbolito',
+        usuario: 'demo.medussa-holding',
       },
       1,
       true,
@@ -1197,7 +1200,7 @@ export class DemandForecastMockRepository implements DemandForecastRepository {
   }
 
   private resolveCompanyName(companyId: string): string {
-    return companyId === 'medussa-retail' ? EL_ARBOLITO_NAME : 'Empresa activa';
+    return COMPANY_DISPLAY_NAMES[companyId] ?? 'Empresa activa';
   }
 
   private hashValue(value: string): number {

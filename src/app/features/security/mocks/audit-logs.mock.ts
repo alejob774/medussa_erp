@@ -176,8 +176,8 @@ export const AUDIT_LOG_MOCK_DETAILS: AuditLogDetail[] = [
   buildLog({
     id: 'AUD-20260330-0009',
     user: 'admin.medussa',
-    companyId: 'medussa-retail',
-    companyName: 'Industrias Alimenticias El Arbolito',
+    companyId: 'medussa-holding',
+    companyName: 'Medussa Holding',
     module: 'usuarios',
     action: 'create',
     description: 'Alta de usuario para coordinador de tienda Bogotá Norte.',
@@ -193,8 +193,8 @@ export const AUDIT_LOG_MOCK_DETAILS: AuditLogDetail[] = [
   buildLog({
     id: 'AUD-20260330-0010',
     user: 'ventas',
-    companyId: 'medussa-retail',
-    companyName: 'Industrias Alimenticias El Arbolito',
+    companyId: 'medussa-holding',
+    companyName: 'Medussa Holding',
     module: 'auditoria',
     action: 'view',
     description: 'Consulta de bitácora operativa para tienda Medellín Centro.',
@@ -203,7 +203,7 @@ export const AUDIT_LOG_MOCK_DETAILS: AuditLogDetail[] = [
     browserAgent: EDGE_AGENT,
     beforePayload: {
       filtros: {
-        empresa: 'medussa-retail',
+        empresa: 'medussa-holding',
       },
     },
     afterPayload: {
@@ -369,3 +369,4 @@ export const AUDIT_LOG_MOCK_DETAILS: AuditLogDetail[] = [
     },
   }),
 ];
+

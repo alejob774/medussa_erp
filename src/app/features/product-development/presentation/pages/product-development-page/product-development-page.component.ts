@@ -50,7 +50,7 @@ import { ProductDevelopmentRisksComponent } from '../../components/product-devel
             <article class="erp-meta-card">
               <p class="erp-meta-card__label">Empresa activa</p>
               <p class="mt-2 text-lg font-semibold text-slate-900">{{ activeCompanyName }}</p>
-              <p class="erp-meta-card__hint">Caso principal de innovacion sobre El Arbolito.</p>
+              <p class="erp-meta-card__hint">Caso principal de innovacion sobre Medussa Holding.</p>
             </article>
             <article class="erp-meta-card">
               <p class="erp-meta-card__label">Proyecto seleccionado</p>

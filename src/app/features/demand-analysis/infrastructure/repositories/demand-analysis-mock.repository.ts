@@ -37,7 +37,10 @@ const ANALYSIS_STORAGE_KEY = 'medussa.erp.mock.demand-analysis';
 const FORECAST_STORAGE_KEY = 'medussa.erp.mock.demand-forecasts';
 const PRODUCTS_STORAGE_KEY = 'medussa.erp.mock.products';
 const CLIENTS_STORAGE_KEY = 'medussa.erp.mock.clients';
-const EL_ARBOLITO_NAME = 'Industrias Alimenticias El Arbolito';
+const COMPANY_DISPLAY_NAMES: Record<string, string> = {
+  'medussa-holding': 'Medussa Holding',
+  'medussa-retail': 'Industrias Alimenticias El Arbolito',
+};
 
 @Injectable({
   providedIn: 'root',
@@ -314,7 +317,9 @@ export class DemandAnalysisMockRepository implements DemandAnalysisRepository {
     const analysis: DemandAnalysis = {
       id: this.buildAnalysisId(companyId, forecastAggregate.forecast.id),
       empresaId: companyId,
-      empresaNombre: companyId === 'medussa-retail' ? EL_ARBOLITO_NAME : forecastAggregate.forecast.empresaNombre,
+      empresaNombre:
+        COMPANY_DISPLAY_NAMES[companyId] ??
+        forecastAggregate.forecast.empresaNombre,
       fechaDesde: filters.fechaDesde,
       fechaHasta: filters.fechaHasta,
       canal: filters.canal,
