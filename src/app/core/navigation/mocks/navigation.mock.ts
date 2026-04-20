@@ -92,6 +92,14 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
             requiredPermissions: ['purchase.analysis.view'],
             companyIds: ALL_COMPANIES,
           },
+          {
+            id: 'scm-gestion-presupuesto',
+            label: 'Gestion de Presupuesto',
+            route: '/supply-chain-management/gestion-presupuesto',
+            icon: 'account_balance_wallet',
+            requiredPermissions: ['budget.management.view'],
+            companyIds: ALL_COMPANIES,
+          },
         ],
       },
       {

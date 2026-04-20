@@ -18,6 +18,7 @@ export const SECURITY_PERMISSION_MODULES: readonly SecurityPermissionModuleCatal
   { key: 'roles', name: 'Roles' },
   { key: 'perfiles', name: 'Perfiles' },
   { key: 'configuracion', name: 'Configuracion' },
+  { key: 'presupuestos', name: 'Presupuestos SCM' },
   { key: 'auditoria', name: 'Auditoria' },
 ];
 
@@ -311,6 +312,7 @@ const MOCK_PROFILES: ProfileDetailVm[] = [
       roles: { view: true, create: true, edit: true },
       perfiles: { view: true, create: true, edit: true, delete: true },
       configuracion: { view: true, edit: true, approve: true },
+      presupuestos: { view: true, create: true, edit: true, approve: true },
       auditoria: { view: true, export: true },
     }),
   },
@@ -324,6 +326,7 @@ const MOCK_PROFILES: ProfileDetailVm[] = [
       usuarios: { view: true },
       perfiles: { view: true },
       configuracion: { view: true },
+      presupuestos: { view: true, edit: true, export: true },
       auditoria: { view: true, export: true },
     }),
   },
@@ -350,6 +353,7 @@ const MOCK_PROFILES: ProfileDetailVm[] = [
       roles: { view: true },
       perfiles: { view: true, edit: true },
       configuracion: { view: true },
+      presupuestos: { view: true, create: true, edit: true, approve: true },
       auditoria: { view: true, export: true },
     }),
   },

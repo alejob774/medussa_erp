@@ -180,6 +180,17 @@ export const routes: Routes = [
               permission: 'purchase.analysis.view',
             },
           },
+          {
+            path: 'gestion-presupuesto',
+            loadComponent: () =>
+              import(
+                './features/budget-management/presentation/pages/budget-management-page/budget-management-page.component'
+              ).then((module) => module.BudgetManagementPageComponent),
+            canActivate: [permissionGuard],
+            data: {
+              permission: 'budget.management.view',
+            },
+          },
         ],
       },
       {
