@@ -72,27 +72,12 @@ export class SecurityAdministrationApiRepository
   private readonly userShadowStorageKey = 'medussa.erp.security.user-shadow';
 
   listUsers(companyId: string, filters: SecurityListFilters): Observable<UserRowVm[]> {
-    return this.withFallback(
-      () =>
-        forkJoin({
-          users: this.fetchUsers(),
-          roles: this.fetchRolesCatalog(companyId, true),
-          profiles: this.fetchProfilesCatalog(companyId, true).pipe(
-            map((profiles) => profiles.map((profile) => this.mapProfileRow(profile, companyId))),
-          ),
-        }).pipe(
-          map(({ users, roles, profiles }) =>
-            this.mergeUserRowsWithShadow(
-              companyId,
-              users
-                .map((user) => this.mapUserRow(user, companyId, roles, profiles))
-                .filter((user) => !!user.activeAssignment),
-            )
-              .filter((user) => this.matchesUserFilters(user, filters))
-              .sort((left, right) => left.name.localeCompare(right.name)),
-          ),
-        ),
-      () => this.mockRepository.listUsers(companyId, filters),
+    return this.loadUserRowsBase(companyId).pipe(
+      map((users) =>
+        this.mergeUserRowsWithShadow(companyId, users)
+          .filter((user) => this.matchesUserFilters(user, filters))
+          .sort((left, right) => left.name.localeCompare(right.name)),
+      ),
     );
   }
 
@@ -176,6 +161,10 @@ export class SecurityAdministrationApiRepository
       payload.assignedCompanies.map((assignment) => assignment.companyId),
     );
 
+    if (userId) {
+      return this.saveUserLocally(companyId, payload, userId, catalogCompanyIds);
+    }
+
     return this.withFallback(
       () =>
         forkJoin({
@@ -187,52 +176,21 @@ export class SecurityAdministrationApiRepository
             const activeRoles = roles[companyId] ?? [];
             const activeProfiles = profiles[companyId] ?? [];
 
-            if (!userId) {
-              return this.http
-                .post<UsuarioBackendListItem>(
-                  this.withTrailingSlash(this.usersUrl),
-                  this.buildCreateUserPayload(payload),
-                )
-                .pipe(
-                  switchMap((createdUser) =>
-                    this.loadUserRow(
-                      this.resolveId(createdUser?.id, 'usuario'),
-                      companyId,
-                      activeRoles,
-                      activeProfiles,
-                    ),
-                  ),
-                );
-            }
-
-            return this.fetchUserDetail(userId).pipe(
-              map((user) => this.mapUserRow(user, companyId, activeRoles, activeProfiles)),
-              catchError(() =>
-                of(
-                  this.buildUserRowFromPayload(
-                    userId,
+            return this.http
+              .post<UsuarioBackendListItem>(
+                this.withTrailingSlash(this.usersUrl),
+                this.buildCreateUserPayload(payload),
+              )
+              .pipe(
+                switchMap((createdUser) =>
+                  this.loadUserRow(
+                    this.resolveId(createdUser?.id, 'usuario'),
                     companyId,
-                    payload,
-                    roles,
-                    profiles,
+                    activeRoles,
+                    activeProfiles,
                   ),
                 ),
-              ),
-              map((currentUser) =>
-                this.buildUserRowFromPayload(
-                  userId,
-                  companyId,
-                  payload,
-                  roles,
-                  profiles,
-                  currentUser,
-                ),
-              ),
-              map((shadowRow) => {
-                this.upsertUserShadow(shadowRow, false);
-                return shadowRow;
-              }),
-            );
+              );
           }),
         ),
       () => this.mockRepository.saveUser(companyId, payload, userId),
@@ -245,61 +203,7 @@ export class SecurityAdministrationApiRepository
     userId: string,
     status: SecurityRecordStatus,
   ): Observable<UserRowVm> {
-    return this.withFallback(
-      () => {
-        if (status === 'active') {
-          const shadow = this.getUserShadow(userId);
-
-          if (shadow) {
-            const restoredRow: UserRowVm = {
-              ...shadow.row,
-              status: 'active',
-            };
-
-            this.upsertUserShadow(restoredRow, false);
-            return of(restoredRow);
-          }
-
-          return forkJoin({
-            roles: this.fetchRolesCatalog(companyId, true),
-            profiles: this.fetchProfilesCatalog(companyId, true).pipe(
-              map((profiles) => profiles.map((profile) => this.mapProfileRow(profile, companyId))),
-            ),
-          }).pipe(
-            switchMap(({ roles, profiles }) => this.loadUserRow(userId, companyId, roles, profiles)),
-          );
-        }
-
-        return forkJoin({
-          roles: this.fetchRolesCatalog(companyId, true),
-          profiles: this.fetchProfilesCatalog(companyId, true).pipe(
-            map((profiles) => profiles.map((profile) => this.mapProfileRow(profile, companyId))),
-          ),
-        }).pipe(
-          switchMap(({ roles, profiles }) =>
-            this.loadUserRow(userId, companyId, roles, profiles).pipe(
-              switchMap((currentUser) =>
-                this.http
-                  .delete<void>(`${this.withTrailingSlash(this.usersUrl)}${userId}`)
-                  .pipe(
-                    map(() => {
-                      const inactiveUser: UserRowVm = {
-                        ...currentUser,
-                        status: 'inactive',
-                      };
-
-                      this.upsertUserShadow(inactiveUser, true);
-                      return inactiveUser;
-                    }),
-                  ),
-              ),
-            ),
-          ),
-        );
-      },
-      () => this.mockRepository.updateUserStatus(companyId, userId, status),
-      'usuario',
-    );
+    return this.updateUserStatusLocally(companyId, userId, status);
   }
 
   saveRole(
@@ -406,24 +310,21 @@ export class SecurityAdministrationApiRepository
   ): Observable<ProfileDetailVm> {
     return this.withFallback(
       () => {
-        const requestBody = this.buildProfilePayload(companyId, payload);
+        const requestCompanyId = this.resolveRequestCompanyId(companyId);
+        const requestBody = this.buildProfilePayload(requestCompanyId, payload);
+        const profilesUrl = this.getProfilesByCompanyUrl(requestCompanyId);
 
         if (profileId) {
           return this.http
-            .put<void>(
-              `${this.getProfilesByCompanyUrl(companyId)}/${profileId}`,
-              requestBody,
-            )
+            .put<void>(`${profilesUrl}/${profileId}`, requestBody)
             .pipe(switchMap(() => this.loadProfileById(companyId, profileId)));
         }
 
-        return this.http
-          .post<PerfilBackendResponse>(this.getProfilesByCompanyUrl(companyId), requestBody)
-          .pipe(
-            switchMap((createdProfile) =>
-              this.loadProfileById(companyId, this.resolveId(createdProfile?.id, 'perfil')),
-            ),
-          );
+        return this.http.post<PerfilBackendResponse>(profilesUrl, requestBody).pipe(
+          switchMap((createdProfile) =>
+            this.loadProfileById(companyId, this.resolveId(createdProfile?.id, 'perfil')),
+          ),
+        );
       },
       () => this.mockRepository.saveProfile(companyId, payload, profileId),
       'perfil',
@@ -437,9 +338,12 @@ export class SecurityAdministrationApiRepository
   ): Observable<ProfileDetailVm> {
     return this.withFallback(
       () => {
+        const requestCompanyId = this.resolveRequestCompanyId(companyId);
+        const profilesUrl = this.getProfilesByCompanyUrl(requestCompanyId);
+
         if (status === 'inactive') {
           return this.http
-            .delete<void>(`${this.getProfilesByCompanyUrl(companyId)}/${profileId}`)
+            .delete<void>(`${profilesUrl}/${profileId}`)
             .pipe(map(() => this.buildInactiveProfileFallback(companyId, profileId)));
         }
 
@@ -447,8 +351,8 @@ export class SecurityAdministrationApiRepository
           switchMap((profile) =>
             this.http
               .put<void>(
-                `${this.getProfilesByCompanyUrl(companyId)}/${profileId}`,
-                this.buildProfilePayload(companyId, {
+                `${profilesUrl}/${profileId}`,
+                this.buildProfilePayload(requestCompanyId, {
                   name: profile.name,
                   description: profile.description ?? '',
                   status,
@@ -470,6 +374,89 @@ export class SecurityAdministrationApiRepository
         ...permission,
         actions: normalizePermissionActionSet(permission.actions),
       })),
+    );
+  }
+
+  private loadUserRowsBase(companyId: string): Observable<UserRowVm[]> {
+    return this.withFallback(
+      () =>
+        forkJoin({
+          users: this.fetchUsers(),
+          roles: this.fetchRolesCatalog(companyId, true),
+          profiles: this.fetchProfilesCatalog(companyId, true).pipe(
+            map((profiles) => profiles.map((profile) => this.mapProfileRow(profile, companyId))),
+          ),
+        }).pipe(
+          map(({ users, roles, profiles }) =>
+            users
+              .map((user) => this.mapUserRow(user, companyId, roles, profiles))
+              .filter((user) => !!user.activeAssignment),
+          ),
+        ),
+      () => this.mockRepository.listUsers(companyId, { search: '', status: 'all' }),
+      'usuario',
+    );
+  }
+
+  private saveUserLocally(
+    companyId: string,
+    payload: UserFormValue,
+    userId: string,
+    catalogCompanyIds: string[],
+  ): Observable<UserRowVm> {
+    // The observable backend clone does not expose reliable user mutation endpoints.
+    return forkJoin({
+      roles: this.listRoleCatalogs(catalogCompanyIds),
+      profiles: this.listProfileCatalogs(catalogCompanyIds),
+      users: this.loadUserRowsBase(companyId),
+    }).pipe(
+      map(({ roles, profiles, users }) => {
+        this.validateUserReferences(payload, roles, profiles);
+
+        const mergedUsers = this.mergeUserRowsWithShadow(companyId, users);
+        this.validateUserEmail(payload.email, mergedUsers, userId);
+
+        const currentUser =
+          this.getUserShadow(userId)?.row ??
+          mergedUsers.find((candidate) => candidate.userId === userId);
+        const shadowRow = this.buildUserRowFromPayload(
+          userId,
+          companyId,
+          payload,
+          roles,
+          profiles,
+          currentUser,
+        );
+
+        this.upsertUserShadow(shadowRow, false);
+        return shadowRow;
+      }),
+    );
+  }
+
+  private updateUserStatusLocally(
+    companyId: string,
+    userId: string,
+    status: SecurityRecordStatus,
+  ): Observable<UserRowVm> {
+    return this.loadUserRowsBase(companyId).pipe(
+      map((users) => {
+        const currentUser = this.mergeUserRowsWithShadow(companyId, users).find(
+          (candidate) => candidate.userId === userId,
+        );
+
+        if (!currentUser) {
+          throw new Error('No se encontró el usuario solicitado.');
+        }
+
+        const updatedUser: UserRowVm = {
+          ...currentUser,
+          status,
+        };
+
+        this.upsertUserShadow(updatedUser, false);
+        return updatedUser;
+      }),
     );
   }
 
@@ -503,8 +490,10 @@ export class SecurityAdministrationApiRepository
     companyId: string,
     includeInactive: boolean,
   ): Observable<PerfilBackendResponse[]> {
+    const requestCompanyId = this.resolveRequestCompanyId(companyId);
+
     return this.http
-      .get<unknown>(this.getProfilesByCompanyUrl(companyId))
+      .get<unknown>(this.getProfilesByCompanyUrl(requestCompanyId))
       .pipe(
         map((response) =>
           this.extractArrayPayload<PerfilBackendResponse>(response).filter((profile) =>
@@ -514,8 +503,8 @@ export class SecurityAdministrationApiRepository
       );
   }
 
-  private getProfilesByCompanyUrl(companyId: string): string {
-    return `${this.withTrailingSlash(this.profilesUrl)}${this.resolveRequestCompanyId(companyId)}/perfiles`;
+  private getProfilesByCompanyUrl(requestCompanyId: string): string {
+    return `${this.withTrailingSlash(this.profilesUrl)}${requestCompanyId}/perfiles`;
   }
 
   private loadUserRow(
@@ -822,14 +811,14 @@ export class SecurityAdministrationApiRepository
   }
 
   private buildProfilePayload(
-    companyId: string,
+    requestCompanyId: string,
     payload: ProfileFormValue,
   ): PerfilCreateBackendRequest | PerfilUpdateBackendRequest {
     return {
-      empresa_id: this.resolveRequestCompanyId(companyId),
+      empresa_id: requestCompanyId,
       nombre: payload.name.trim(),
       descripcion: payload.description.trim(),
-      estado: payload.status === 'active' ? 'activo' : 'inactivo',
+      estado: payload.status === 'active',
       permisos: this.serializePermissionMatrix(payload.permissions),
     };
   }
@@ -1053,6 +1042,26 @@ export class SecurityAdministrationApiRepository
         throw new Error('Selecciona un perfil válido para la empresa asignada.');
       }
     });
+  }
+
+  private validateUserEmail(
+    email: string,
+    users: readonly UserRowVm[],
+    currentUserId?: string,
+  ): void {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!normalizedEmail) {
+      return;
+    }
+
+    if (
+      users.some(
+        (user) => user.userId !== currentUserId && user.email.trim().toLowerCase() === normalizedEmail,
+      )
+    ) {
+      throw new Error('Ya existe un usuario con ese correo registrado.');
+    }
   }
 
   private resolveStatus(value: unknown): SecurityRecordStatus {

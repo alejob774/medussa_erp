@@ -1,7 +1,22 @@
+import { resolveDefaultZoneByCityId } from '../../../../core/catalogs/data/zones.catalog';
 import { CityCatalogItem } from '../../domain/models/city-catalog.model';
 import { SaveClientPayload } from '../../domain/models/client-form.model';
 import { Client, ClientStatus } from '../../domain/models/client.model';
 import { IdentificationTypeOption } from '../../domain/models/identification-type.model';
+
+const KNOWN_CITY_IDS: Record<string, string> = {
+  barranquilla: '08001',
+  bogota: '11001',
+  'bogota d.c.': '11001',
+  bucaramanga: '68001',
+  cali: '76001',
+  cartagena: '13001',
+  cucuta: '54001',
+  ibague: '73001',
+  manizales: '17001',
+  medellin: '05001',
+  pereira: '66001',
+};
 
 export interface BackendClientDto {
   id?: number | string | null;
@@ -10,6 +25,7 @@ export interface BackendClientDto {
   company_id?: number | string | null;
   empresa_nombre?: string | null;
   company_name?: string | null;
+  id_cli?: string | null;
   id_cliente?: string | null;
   customer_code?: string | null;
   tipo_identificacion?: string | null;
@@ -18,6 +34,7 @@ export interface BackendClientDto {
   name?: string | null;
   nombre_comercial?: string | null;
   trade_name?: string | null;
+  ciudad?: string | null;
   ciudad_id?: number | string | null;
   city_id?: number | string | null;
   ciudad_nombre?: string | null;
@@ -62,15 +79,10 @@ export interface BackendClientCatalogsDto {
 }
 
 export interface BackendSaveClientPayload {
-  empresa_id: string;
-  empresa_nombre?: string | null;
-  id_cliente: string;
-  tipo_identificacion: string;
+  id_cli: string;
   nombre: string;
   nombre_comercial: string | null;
-  ciudad_id: string;
-  ciudad_nombre: string | null;
-  zona: string | null;
+  ciudad: string;
   direccion: string;
   telefono: string | null;
   email: string | null;
@@ -83,42 +95,43 @@ export function mapBackendClientToClient(
   companyNameFallback: string,
 ): Client {
   const nombre = resolveText(dto.nombre, dto.name, 'Cliente sin nombre');
+  const idCliente = resolveText(dto.id_cli, dto.id_cliente, dto.customer_code, '');
+  const ciudadNombre = resolveText(dto.ciudad, dto.ciudad_nombre, dto.city_name, '');
+  const ciudadId = resolveCityId(ciudadNombre, dto.ciudad_id, dto.city_id);
 
   return {
-    id: resolveId(dto.id, dto.cliente_id, dto.id_cliente, dto.customer_code, nombre),
+    id: resolveId(dto.id, dto.cliente_id, dto.id_cli, dto.id_cliente, dto.customer_code, nombre),
     empresaId: resolveText(dto.empresa_id, dto.company_id, companyIdFallback),
     empresaNombre: resolveText(dto.empresa_nombre, dto.company_name, companyNameFallback),
-    idCliente: resolveText(dto.id_cliente, dto.customer_code, ''),
-    tipoIdentificacion: resolveText(dto.tipo_identificacion, dto.identification_type, ''),
+    idCliente,
+    tipoIdentificacion: resolveText(
+      dto.tipo_identificacion,
+      dto.identification_type,
+      inferIdentificationType(idCliente),
+    ),
     nombre,
     nombreComercial: resolveNullableText(dto.nombre_comercial, dto.trade_name),
-    ciudadId: resolveText(dto.ciudad_id, dto.city_id, ''),
-    ciudadNombre: resolveText(dto.ciudad_nombre, dto.city_name, ''),
+    ciudadId,
+    ciudadNombre,
     direccion: resolveText(dto.direccion, dto.address, ''),
     telefono: resolveNullableText(dto.telefono, dto.phone),
     email: resolveNullableText(dto.email),
     estado: resolveStatus(dto.estado, dto.activo),
     createdAt: resolveNullableText(dto.created_at, dto.fecha_creacion) ?? new Date().toISOString(),
     updatedAt: resolveNullableText(dto.updated_at, dto.fecha_actualizacion),
-    zona: resolveNullableText(dto.zona),
+    zona: resolveNullableText(dto.zona) ?? resolveDefaultZoneByCityId(ciudadId),
     tieneDependenciasActivas: resolveBoolean(dto.dependencies_active, dto.dependencias_activas),
   };
 }
 
 export function mapClientPayloadToBackend(
   payload: SaveClientPayload,
-  requestCompanyId: string,
 ): BackendSaveClientPayload {
   return {
-    empresa_id: requestCompanyId,
-    empresa_nombre: payload.empresaNombre.trim() || null,
-    id_cliente: payload.idCliente.trim().toUpperCase(),
-    tipo_identificacion: payload.tipoIdentificacion.trim(),
+    id_cli: payload.idCliente.trim().toUpperCase(),
     nombre: payload.nombre.trim(),
     nombre_comercial: payload.nombreComercial?.trim() || null,
-    ciudad_id: payload.ciudadId,
-    ciudad_nombre: payload.ciudadNombre?.trim() || null,
-    zona: payload.zona.trim() || null,
+    ciudad: resolveCityName(payload.ciudadNombre, payload.ciudadId),
     direccion: payload.direccion.trim(),
     telefono: payload.telefono?.trim() || null,
     email: payload.email?.trim().toLowerCase() || null,
@@ -286,4 +299,43 @@ function resolveNullableText(...values: Array<number | string | null | undefined
 
 function resolveText(...values: Array<number | string | null | undefined>): string {
   return resolveNullableText(...values) ?? '';
+}
+
+function inferIdentificationType(idCliente: string): string {
+  const normalizedId = idCliente.replace(/[^A-Za-z0-9-]/g, '').trim();
+
+  if (!normalizedId) {
+    return 'NIT';
+  }
+
+  return /[A-Za-z-]/.test(normalizedId) ? 'NIT' : 'CC';
+}
+
+function resolveCityId(
+  cityName: string,
+  ...values: Array<number | string | null | undefined>
+): string {
+  const explicitCityId = resolveNullableText(...values);
+
+  if (explicitCityId) {
+    return explicitCityId;
+  }
+
+  const normalizedCityName = normalizeText(cityName);
+  return KNOWN_CITY_IDS[normalizedCityName] ?? cityName;
+}
+
+function resolveCityName(cityName?: string | null, cityId?: string | null): string {
+  const normalizedCityName = cityName?.trim();
+
+  if (normalizedCityName) {
+    return normalizedCityName;
+  }
+
+  const matchingCity = Object.entries(KNOWN_CITY_IDS).find(([, knownCityId]) => knownCityId === cityId);
+
+  return matchingCity?.[0]
+    ?.split(' ')
+    .map((token) => token.charAt(0).toUpperCase() + token.slice(1))
+    .join(' ') ?? (cityId?.trim() || '');
 }

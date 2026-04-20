@@ -481,7 +481,7 @@ export class UsersRolesPageComponent {
       .subscribe({
         next: () => {
           this.successMessage = this.selectedUser
-            ? 'El usuario se actualizo correctamente.'
+            ? 'El usuario se actualizo localmente sobre el overlay de seguridad.'
             : 'El usuario se creo correctamente.';
           this.closeUserPanel();
           this.loadUsers();
@@ -509,7 +509,8 @@ export class UsersRolesPageComponent {
       .pipe(finalize(() => (this.loadingUsers = false)))
       .subscribe({
         next: () => {
-          this.successMessage = `El usuario ${user.name} fue ${this.successStatusLabel(nextStatus)}.`;
+          this.successMessage =
+            `El usuario ${user.name} fue ${this.successStatusLabel(nextStatus)} localmente.`;
           this.loadUsers(false);
         },
         error: (error: unknown) => {

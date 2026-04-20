@@ -8,32 +8,42 @@ export interface BackendProductDto {
   company_id?: number | string | null;
   empresa_nombre?: string | null;
   company_name?: string | null;
+  producto_nom?: string | null;
   nombre?: string | null;
   name?: string | null;
+  producto_descrip?: string | null;
   descripcion?: string | null;
   description?: string | null;
+  producto_sku?: string | null;
   sku?: string | null;
   codigo_sku?: string | null;
+  producto_fam?: string | null;
   familia?: string | null;
   family?: string | null;
+  uom_base?: string | null;
   unidad_base?: string | null;
   base_unit?: string | null;
+  producto_ref?: string | null;
   referencia?: string | null;
   reference?: string | null;
   maneja_lote?: boolean | string | number | null;
   uses_lot?: boolean | string | number | null;
   lote?: boolean | string | number | null;
+  maneja_venc?: boolean | string | number | null;
   maneja_vencimiento?: boolean | string | number | null;
   uses_expiration?: boolean | string | number | null;
   expiration_control?: boolean | string | number | null;
+  vida_util?: number | string | null;
   vida_util_dias?: number | string | null;
   shelf_life_days?: number | string | null;
+  fact_convers?: number | string | null;
   factor_conversion?: number | string | null;
   conversion_factor?: number | string | null;
   precio_bruto?: number | string | null;
   gross_price?: number | string | null;
   precio_neto?: number | string | null;
   net_price?: number | string | null;
+  producto_status?: boolean | string | null;
   estado?: boolean | string | null;
   activo?: boolean | null;
   movimientos_asociados?: boolean | string | number | null;
@@ -54,20 +64,17 @@ export interface BackendProductCatalogsDto {
 
 export interface BackendSaveProductPayload {
   empresa_id: string;
-  empresa_nombre?: string | null;
-  nombre: string;
-  descripcion: string;
-  sku: string;
-  familia: string;
-  unidad_base: string;
-  referencia: string | null;
+  producto_nom: string;
+  producto_sku: string;
+  producto_fam: string;
+  producto_descrip: string;
+  uom_base: string;
+  producto_ref: string | null;
   maneja_lote: boolean;
-  maneja_vencimiento: boolean;
-  vida_util_dias: number | null;
-  factor_conversion: number | null;
-  precio_bruto: number | null;
-  precio_neto: number | null;
-  estado: boolean;
+  maneja_venc: boolean;
+  vida_util: number | null;
+  fact_convers: number | null;
+  producto_status: string;
 }
 
 export function mapBackendProductToProduct(
@@ -75,29 +82,34 @@ export function mapBackendProductToProduct(
   companyIdFallback: string,
   companyNameFallback: string,
 ): Product {
-  const nombre = resolveText(dto.nombre, dto.name, 'Producto sin nombre');
+  const nombre = resolveText(dto.producto_nom, dto.nombre, dto.name, 'Producto sin nombre');
 
   return {
-    id: resolveId(dto.id, dto.producto_id, dto.sku, nombre),
+    id: resolveId(dto.id, dto.producto_id, dto.producto_sku, dto.sku, nombre),
     empresaId: resolveText(dto.empresa_id, dto.company_id, companyIdFallback),
     empresaNombre: resolveText(dto.empresa_nombre, dto.company_name, companyNameFallback),
     nombre,
-    descripcion: resolveText(dto.descripcion, dto.description, ''),
-    sku: resolveText(dto.sku, dto.codigo_sku, ''),
-    familia: resolveText(dto.familia, dto.family, 'Sin familia'),
-    unidadBase: resolveText(dto.unidad_base, dto.base_unit, 'UND'),
-    referencia: resolveNullableText(dto.referencia, dto.reference),
+    descripcion: resolveText(dto.producto_descrip, dto.descripcion, dto.description, ''),
+    sku: resolveText(dto.producto_sku, dto.sku, dto.codigo_sku, ''),
+    familia: resolveText(dto.producto_fam, dto.familia, dto.family, 'Sin familia'),
+    unidadBase: resolveText(dto.uom_base, dto.unidad_base, dto.base_unit, 'UND'),
+    referencia: resolveNullableText(dto.producto_ref, dto.referencia, dto.reference),
     manejaLote: resolveBoolean(dto.maneja_lote, dto.uses_lot, dto.lote),
     manejaVencimiento: resolveBoolean(
+      dto.maneja_venc,
       dto.maneja_vencimiento,
       dto.uses_expiration,
       dto.expiration_control,
     ),
-    vidaUtilDias: resolveNullableNumber(dto.vida_util_dias, dto.shelf_life_days),
-    factorConversion: resolveNullableNumber(dto.factor_conversion, dto.conversion_factor),
+    vidaUtilDias: resolveNullableNumber(dto.vida_util, dto.vida_util_dias, dto.shelf_life_days),
+    factorConversion: resolveNullableNumber(
+      dto.fact_convers,
+      dto.factor_conversion,
+      dto.conversion_factor,
+    ),
     precioBruto: resolveNullableNumber(dto.precio_bruto, dto.gross_price),
     precioNeto: resolveNullableNumber(dto.precio_neto, dto.net_price),
-    estado: resolveStatus(dto.estado, dto.activo),
+    estado: resolveStatus(dto.producto_status, dto.estado, dto.activo),
     tieneMovimientos: resolveBoolean(dto.movimientos_asociados, dto.has_movements),
     createdAt: resolveNullableText(dto.created_at, dto.fecha_creacion) ?? new Date().toISOString(),
     updatedAt: resolveNullableText(dto.updated_at, dto.fecha_actualizacion),
@@ -110,20 +122,17 @@ export function mapProductPayloadToBackend(
 ): BackendSaveProductPayload {
   return {
     empresa_id: requestCompanyId,
-    empresa_nombre: payload.empresaNombre.trim() || null,
-    nombre: payload.nombre.trim(),
-    descripcion: payload.descripcion.trim(),
-    sku: payload.sku.trim().toUpperCase(),
-    familia: payload.familia.trim(),
-    unidad_base: payload.unidadBase.trim(),
-    referencia: payload.referencia?.trim() || null,
+    producto_nom: payload.nombre.trim(),
+    producto_sku: payload.sku.trim().toUpperCase(),
+    producto_fam: payload.familia.trim(),
+    producto_descrip: payload.descripcion.trim(),
+    uom_base: payload.unidadBase.trim(),
+    producto_ref: payload.referencia?.trim() || null,
     maneja_lote: payload.manejaLote,
-    maneja_vencimiento: payload.manejaVencimiento,
-    vida_util_dias: payload.manejaVencimiento ? payload.vidaUtilDias ?? null : null,
-    factor_conversion: payload.factorConversion ?? null,
-    precio_bruto: payload.precioBruto ?? null,
-    precio_neto: payload.precioNeto ?? null,
-    estado: payload.estado === 'ACTIVO',
+    maneja_venc: payload.manejaVencimiento,
+    vida_util: payload.manejaVencimiento ? payload.vidaUtilDias ?? null : null,
+    fact_convers: payload.factorConversion ?? null,
+    producto_status: payload.estado === 'ACTIVO' ? 'Activo' : 'Inactivo',
   };
 }
 
@@ -216,7 +225,7 @@ function resolveBoolean(...values: Array<boolean | string | number | null | unde
     if (typeof value === 'string') {
       const normalizedValue = value.trim().toLowerCase();
 
-      if (['si', 'sí', 'yes', 'true', '1', 'activo', 'active'].includes(normalizedValue)) {
+      if (['si', 'sÃ­', 'yes', 'true', '1', 'activo', 'active'].includes(normalizedValue)) {
         return true;
       }
 

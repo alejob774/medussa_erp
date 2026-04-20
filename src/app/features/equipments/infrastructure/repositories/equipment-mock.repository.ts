@@ -460,6 +460,10 @@ function normalizeText(value: string | null | undefined): string {
 }
 
 function resolveCompanyDisplayName(companyId: string, currentName?: string | null): string {
+  if (companyId === 'medussa-holding') {
+    return 'Medussa Holding';
+  }
+
   if (companyId === 'medussa-retail') {
     return 'Industrias Alimenticias El Arbolito';
   }

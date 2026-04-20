@@ -15,7 +15,7 @@ const COMPANY_CATALOG: Record<string, Company> = {
     backendId: 'EMP-001',
     name: 'Medussa Holding',
     code: 'HOLD',
-    description: 'Vista corporativa y financiera del grupo.',
+    description: 'Base operativa y corporativa principal para la demo multiempresa.',
     icon: 'domain',
     accentColor: '#0f766e',
   },
@@ -24,7 +24,7 @@ const COMPANY_CATALOG: Record<string, Company> = {
     name: 'Industrias Alimenticias El Arbolito',
     code: 'ARB',
     description:
-      'Empresa operativa principal para SCM: pedidos, stock, produccion, compras, despacho y entrega.',
+      'Unidad comercial secundaria con contexto historico para comparativos y soporte multiempresa.',
     icon: 'storefront',
     accentColor: '#2f855a',
   },
@@ -115,7 +115,7 @@ export class CompanyMockFacadeService {
     switch (normalizedUsername) {
       case 'ventas':
         return {
-          companies: [COMPANY_CATALOG['medussa-retail']],
+          companies: [COMPANY_CATALOG['medussa-holding']],
           roles: ['sales-manager'],
           permissions: [
             'dashboard.view',
@@ -156,7 +156,7 @@ export class CompanyMockFacadeService {
             'marketing.view',
             'support.view',
           ],
-          defaultCompanyId: 'medussa-retail',
+          defaultCompanyId: 'medussa-holding',
         };
       case 'rrhh':
         return {
@@ -218,14 +218,14 @@ export class CompanyMockFacadeService {
       default:
         return {
           companies: [
-            COMPANY_CATALOG['medussa-retail'],
             COMPANY_CATALOG['medussa-holding'],
+            COMPANY_CATALOG['medussa-retail'],
             COMPANY_CATALOG['medussa-industrial'],
             COMPANY_CATALOG['medussa-services'],
           ],
           roles: ['super-admin'],
           permissions: ALL_PERMISSIONS,
-          defaultCompanyId: 'medussa-retail',
+          defaultCompanyId: 'medussa-holding',
         };
     }
   }

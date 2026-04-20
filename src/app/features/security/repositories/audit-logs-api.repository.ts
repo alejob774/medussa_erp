@@ -136,14 +136,6 @@ export class AuditLogsApiRepository implements AuditLogsRepository {
       params = params.set('user_id', filters.user.trim());
     }
 
-    if (filters.module !== 'all') {
-      params = params.set('modulo', filters.module);
-    }
-
-    if (filters.action !== 'all') {
-      params = params.set('accion', filters.action);
-    }
-
     return params;
   }
 
@@ -240,13 +232,25 @@ export class AuditLogsApiRepository implements AuditLogsRepository {
   }
 
   private normalizeModule(value: string | undefined): AuditLogModuleKey {
-    switch ((value ?? '').trim().toLowerCase()) {
+    const normalizedValue = (value ?? '').trim().toLowerCase();
+
+    switch (normalizedValue) {
+      case 'cliente':
+      case 'clientes':
+        return 'clientes';
+      case 'inventario':
+      case 'producto':
+      case 'productos':
+        return 'productos';
+      case 'seguridad':
+      case 'usuario':
       case 'usuarios':
+        return 'usuarios';
       case 'roles':
       case 'perfiles':
       case 'configuracion':
       case 'auditoria':
-        return value!.trim().toLowerCase() as AuditLogModuleKey;
+        return normalizedValue as AuditLogModuleKey;
       default:
         return 'auditoria';
     }
@@ -255,12 +259,46 @@ export class AuditLogsApiRepository implements AuditLogsRepository {
   private normalizeAction(value: string | undefined): AuditLogActionKey {
     switch ((value ?? '').trim().toLowerCase()) {
       case 'view':
+      case 'ver':
       case 'create':
+      case 'crear':
+      case 'create_role':
+      case 'create_profile':
       case 'edit':
+      case 'editar':
+      case 'actualizar':
       case 'delete':
+      case 'desactivar':
+      case 'eliminar':
+      case 'eliminar_logico':
       case 'approve':
+      case 'aprobar':
       case 'export':
-        return value!.trim().toLowerCase() as AuditLogActionKey;
+      case 'exportar': {
+        const normalizedValue = value!.trim().toLowerCase();
+
+        if (['create', 'crear', 'create_role', 'create_profile'].includes(normalizedValue)) {
+          return 'create';
+        }
+
+        if (['edit', 'editar', 'actualizar'].includes(normalizedValue)) {
+          return 'edit';
+        }
+
+        if (['delete', 'desactivar', 'eliminar', 'eliminar_logico'].includes(normalizedValue)) {
+          return 'delete';
+        }
+
+        if (['approve', 'aprobar'].includes(normalizedValue)) {
+          return 'approve';
+        }
+
+        if (['export', 'exportar'].includes(normalizedValue)) {
+          return 'export';
+        }
+
+        return 'view';
+      }
       default:
         return 'view';
     }

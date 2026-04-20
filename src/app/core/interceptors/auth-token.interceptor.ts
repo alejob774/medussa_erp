@@ -12,11 +12,8 @@ export const authTokenInterceptor: HttpInterceptorFn = (req, next) => {
   }
 
   const accessToken = authSessionService.getAccessToken();
-  const activeCompanyId = req.headers.has('X-Company-ID')
-    ? null
-    : authSessionService.getPreferredCompanyIdForRequest();
 
-  if (!accessToken && !activeCompanyId) {
+  if (!accessToken) {
     return next(req);
   }
 
@@ -24,10 +21,6 @@ export const authTokenInterceptor: HttpInterceptorFn = (req, next) => {
 
   if (accessToken) {
     setHeaders['Authorization'] = `Bearer ${accessToken}`;
-  }
-
-  if (activeCompanyId) {
-    setHeaders['X-Company-ID'] = activeCompanyId;
   }
 
   return next(

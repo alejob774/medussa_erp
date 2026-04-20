@@ -57,8 +57,8 @@ export const INITIAL_PRODUCTS_STORE: ProductStore = {
     },
     {
       id: 'prod-arb-001',
-      empresaId: 'medussa-retail',
-      empresaNombre: 'Industrias Alimenticias El Arbolito',
+      empresaId: 'medussa-holding',
+      empresaNombre: 'Medussa Holding',
       nombre: 'Yogurt bebible fresa 200 ml',
       descripcion: 'Producto terminado listo para despacho TAT con control de lote y vencimiento.',
       sku: 'ARB-YOG-200-FR',
@@ -78,8 +78,8 @@ export const INITIAL_PRODUCTS_STORE: ProductStore = {
     },
     {
       id: 'prod-arb-002',
-      empresaId: 'medussa-retail',
-      empresaNombre: 'Industrias Alimenticias El Arbolito',
+      empresaId: 'medussa-holding',
+      empresaNombre: 'Medussa Holding',
       nombre: 'Queso campesino 500 g',
       descripcion: 'Presentacion refrigerada para canal tradicional y mayorista.',
       sku: 'ARB-QUE-500',
@@ -99,8 +99,8 @@ export const INITIAL_PRODUCTS_STORE: ProductStore = {
     },
     {
       id: 'prod-arb-003',
-      empresaId: 'medussa-retail',
-      empresaNombre: 'Industrias Alimenticias El Arbolito',
+      empresaId: 'medussa-holding',
+      empresaNombre: 'Medussa Holding',
       nombre: 'Leche entera UHT 1L',
       descripcion: 'Referencia base de alta rotacion para pedidos diarios y rutas urbanas.',
       sku: 'ARB-UHT-1L',
@@ -120,8 +120,8 @@ export const INITIAL_PRODUCTS_STORE: ProductStore = {
     },
     {
       id: 'prod-arb-004',
-      empresaId: 'medussa-retail',
-      empresaNombre: 'Industrias Alimenticias El Arbolito',
+      empresaId: 'medussa-holding',
+      empresaNombre: 'Medussa Holding',
       nombre: 'Leche en polvo entera 25 kg',
       descripcion: 'Materia prima critica para respaldo de produccion y balance de demanda.',
       sku: 'ARB-MP-LPE25',
@@ -141,8 +141,8 @@ export const INITIAL_PRODUCTS_STORE: ProductStore = {
     },
     {
       id: 'prod-arb-005',
-      empresaId: 'medussa-retail',
-      empresaNombre: 'Industrias Alimenticias El Arbolito',
+      empresaId: 'medussa-holding',
+      empresaNombre: 'Medussa Holding',
       nombre: 'Bolsa doypack 1L',
       descripcion: 'Empaque flexible para linea de yogurt y bebidas lacteas.',
       sku: 'ARB-EMP-DP1',
@@ -162,8 +162,8 @@ export const INITIAL_PRODUCTS_STORE: ProductStore = {
     },
     {
       id: 'prod-arb-006',
-      empresaId: 'medussa-retail',
-      empresaNombre: 'Industrias Alimenticias El Arbolito',
+      empresaId: 'medussa-holding',
+      empresaNombre: 'Medussa Holding',
       nombre: 'Cultivo lactico mix',
       descripcion: 'Insumo de produccion para fermentacion controlada.',
       sku: 'ARB-MP-CLM',
@@ -183,8 +183,8 @@ export const INITIAL_PRODUCTS_STORE: ProductStore = {
     },
     {
       id: 'prod-arb-007',
-      empresaId: 'medussa-retail',
-      empresaNombre: 'Industrias Alimenticias El Arbolito',
+      empresaId: 'medussa-holding',
+      empresaNombre: 'Medussa Holding',
       nombre: 'Canastilla plastica 24 unidades',
       descripcion: 'Elemento logistico para consolidacion de despacho y devoluciones.',
       sku: 'ARB-LOG-C24',
@@ -331,3 +331,4 @@ export const INITIAL_PRODUCTS_STORE: ProductStore = {
   ],
   auditTrail: [],
 };
+

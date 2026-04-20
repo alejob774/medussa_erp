@@ -30,7 +30,10 @@ import { PurchaseAnalysisRepository } from '../../domain/repositories/purchase-a
 
 const STORAGE_KEY = 'medussa.erp.mock.purchase-analysis';
 const SUPPLIERS_STORAGE_KEY = 'medussa.erp.mock.suppliers';
-const EL_ARBOLITO_NAME = 'Industrias Alimenticias El Arbolito';
+const COMPANY_DISPLAY_NAMES: Record<string, string> = {
+  'medussa-holding': 'Medussa Holding',
+  'medussa-retail': 'Industrias Alimenticias El Arbolito',
+};
 const CATEGORIES = ['Materias primas', 'Insumos', 'Repuestos', 'Etiquetas', 'Empaques', 'Embalajes'];
 
 @Injectable({
@@ -184,7 +187,7 @@ export class PurchaseAnalysisMockRepository implements PurchaseAnalysisRepositor
     const analysis: PurchaseAnalysis = {
       id: this.buildAnalysisId(companyId, filters),
       empresaId: companyId,
-      empresaNombre: companyId === 'medussa-retail' ? EL_ARBOLITO_NAME : 'Empresa activa',
+      empresaNombre: COMPANY_DISPLAY_NAMES[companyId] ?? 'Empresa activa',
       fechaDesde: filters.fechaDesde,
       fechaHasta: filters.fechaHasta,
       categoria: filters.categoria,

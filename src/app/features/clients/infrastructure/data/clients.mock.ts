@@ -64,8 +64,8 @@ export const INITIAL_CLIENTS_STORE: ClientStore = {
     },
     {
       id: 'cli-ret-001',
-      empresaId: 'medussa-retail',
-      empresaNombre: 'Medussa Retail',
+      empresaId: 'medussa-holding',
+      empresaNombre: 'Medussa Holding',
       idCliente: 'CLR-0101',
       tipoIdentificacion: 'CC',
       nombre: 'Laura Fernández Gómez',
@@ -83,8 +83,8 @@ export const INITIAL_CLIENTS_STORE: ClientStore = {
     },
     {
       id: 'cli-ret-002',
-      empresaId: 'medussa-retail',
-      empresaNombre: 'Medussa Retail',
+      empresaId: 'medussa-holding',
+      empresaNombre: 'Medussa Holding',
       idCliente: 'CLR-0102',
       tipoIdentificacion: 'NIT',
       nombre: 'Mercados del Norte S.A.',
@@ -102,8 +102,8 @@ export const INITIAL_CLIENTS_STORE: ClientStore = {
     },
     {
       id: 'cli-ret-003',
-      empresaId: 'medussa-retail',
-      empresaNombre: 'Medussa Retail',
+      empresaId: 'medussa-holding',
+      empresaNombre: 'Medussa Holding',
       idCliente: 'CLR-0103',
       tipoIdentificacion: 'CE',
       nombre: 'Anton Petrov',
@@ -235,8 +235,8 @@ export const INITIAL_CLIENTS_STORE: ClientStore = {
     },
     {
       id: 'cli-ret-004',
-      empresaId: 'medussa-retail',
-      empresaNombre: 'Medussa Retail',
+      empresaId: 'medussa-holding',
+      empresaNombre: 'Medussa Holding',
       idCliente: 'CLR-0104',
       tipoIdentificacion: 'NIT',
       nombre: 'Tiendas El Faro S.A.S.',
@@ -254,8 +254,8 @@ export const INITIAL_CLIENTS_STORE: ClientStore = {
     },
     {
       id: 'cli-ret-005',
-      empresaId: 'medussa-retail',
-      empresaNombre: 'Medussa Retail',
+      empresaId: 'medussa-holding',
+      empresaNombre: 'Medussa Holding',
       idCliente: 'CLR-0105',
       tipoIdentificacion: 'NIT',
       nombre: 'Supermercados Brisa Norte S.A.S.',
@@ -273,8 +273,8 @@ export const INITIAL_CLIENTS_STORE: ClientStore = {
     },
     {
       id: 'cli-ret-006',
-      empresaId: 'medussa-retail',
-      empresaNombre: 'Medussa Retail',
+      empresaId: 'medussa-holding',
+      empresaNombre: 'Medussa Holding',
       idCliente: 'CLR-0106',
       tipoIdentificacion: 'NIT',
       nombre: 'Distribuidora Cafetera del Sur',
@@ -312,3 +312,4 @@ export const INITIAL_CLIENTS_STORE: ClientStore = {
   ],
   auditTrail: [],
 };
+

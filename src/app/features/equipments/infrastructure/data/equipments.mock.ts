@@ -34,8 +34,8 @@ export const INITIAL_EQUIPMENTS_STORE: EquipmentStore = {
   equipments: [
     {
       id: 'equipment-ret-001',
-      empresaId: 'medussa-retail',
-      empresaNombre: 'Medussa Retail',
+      empresaId: 'medussa-holding',
+      empresaNombre: 'Medussa Holding',
       idEquipo: 'EQ-RET-001',
       nombreEquipo: 'Tanque pulmón leche cruda',
       capacidad: 5000,
@@ -54,8 +54,8 @@ export const INITIAL_EQUIPMENTS_STORE: EquipmentStore = {
     },
     {
       id: 'equipment-ret-002',
-      empresaId: 'medussa-retail',
-      empresaNombre: 'Medussa Retail',
+      empresaId: 'medussa-holding',
+      empresaNombre: 'Medussa Holding',
       idEquipo: 'EQ-RET-002',
       nombreEquipo: 'Pasteurizador tubular PT-1200',
       capacidad: 1200,
@@ -74,8 +74,8 @@ export const INITIAL_EQUIPMENTS_STORE: EquipmentStore = {
     },
     {
       id: 'equipment-ret-003',
-      empresaId: 'medussa-retail',
-      empresaNombre: 'Medussa Retail',
+      empresaId: 'medussa-holding',
+      empresaNombre: 'Medussa Holding',
       idEquipo: 'EQ-RET-003',
       nombreEquipo: 'Mezclador de sólidos MX-800',
       capacidad: 800,
@@ -94,8 +94,8 @@ export const INITIAL_EQUIPMENTS_STORE: EquipmentStore = {
     },
     {
       id: 'equipment-ret-004',
-      empresaId: 'medussa-retail',
-      empresaNombre: 'Medussa Retail',
+      empresaId: 'medussa-holding',
+      empresaNombre: 'Medussa Holding',
       idEquipo: 'EQ-RET-004',
       nombreEquipo: 'Envasadora automática EA-24',
       capacidad: 24,
@@ -114,8 +114,8 @@ export const INITIAL_EQUIPMENTS_STORE: EquipmentStore = {
     },
     {
       id: 'equipment-ret-005',
-      empresaId: 'medussa-retail',
-      empresaNombre: 'Medussa Retail',
+      empresaId: 'medussa-holding',
+      empresaNombre: 'Medussa Holding',
       idEquipo: 'EQ-RET-005',
       nombreEquipo: 'Cuarto frío CF-03',
       capacidad: 12,
@@ -134,8 +134,8 @@ export const INITIAL_EQUIPMENTS_STORE: EquipmentStore = {
     },
     {
       id: 'equipment-ret-006',
-      empresaId: 'medussa-retail',
-      empresaNombre: 'Medussa Retail',
+      empresaId: 'medussa-holding',
+      empresaNombre: 'Medussa Holding',
       idEquipo: 'EQ-RET-006',
       nombreEquipo: 'Sistema de bombeo línea UHT',
       capacidad: 6000,
@@ -155,3 +155,4 @@ export const INITIAL_EQUIPMENTS_STORE: EquipmentStore = {
   ],
   auditTrail: [],
 };
+

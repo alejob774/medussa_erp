@@ -47,6 +47,7 @@ export interface RolBackendResponse {
   activo?: boolean | null;
   empresa_id?: string | null;
   global?: boolean;
+  permisos?: unknown;
 }
 
 export interface RolCreateBackendRequest {
@@ -54,6 +55,7 @@ export interface RolCreateBackendRequest {
   nombre: string;
   descripcion: string;
   estado: string;
+  permisos?: unknown;
 }
 
 export interface RolUpdateBackendRequest extends RolCreateBackendRequest {}
@@ -72,7 +74,7 @@ export interface PerfilCreateBackendRequest {
   empresa_id: string;
   nombre: string;
   descripcion: string;
-  estado: string;
+  estado: boolean;
   permisos: Record<string, string[]>;
 }
 

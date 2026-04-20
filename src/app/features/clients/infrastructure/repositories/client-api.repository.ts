@@ -1,4 +1,4 @@
-import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { catchError, map, Observable, of, switchMap, throwError } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
@@ -36,12 +36,14 @@ export class ClientApiRepository implements ClientsRepository {
   }
 
   listClients(companyId: string, filters: ClientFilters): Observable<ClientListResponse> {
+    if (!this.canUseBackendForCompany(companyId)) {
+      return this.mockRepository.listClients(companyId, filters);
+    }
+
     return this.withFallback(
       () =>
         this.http
-          .get<unknown>(this.withTrailingSlash(this.baseUrl), {
-            params: this.buildListParams(companyId, filters),
-          })
+          .get<unknown>(this.withTrailingSlash(this.baseUrl))
           .pipe(map((response) => this.mapListResponse(response, companyId, filters))),
       () => this.mockRepository.listClients(companyId, filters),
       'catálogo de clientes',
@@ -49,6 +51,10 @@ export class ClientApiRepository implements ClientsRepository {
   }
 
   getClient(companyId: string, clientId: string): Observable<Client> {
+    if (!this.canUseBackendForCompany(companyId)) {
+      return this.mockRepository.getClient(companyId, clientId);
+    }
+
     return this.withFallback(
       () => this.loadClient(companyId, clientId),
       () => this.mockRepository.getClient(companyId, clientId),
@@ -61,18 +67,19 @@ export class ClientApiRepository implements ClientsRepository {
     payload: SaveClientPayload,
     clientId?: string,
   ): Observable<ClientMutationResult> {
+    if (!this.canUseBackendForCompany(companyId)) {
+      return this.mockRepository.saveClient(companyId, payload, clientId);
+    }
+
     return this.withFallback(
       () => {
-        const requestBody = mapClientPayloadToBackend(
-          payload,
-          this.resolveRequestCompanyId(payload.empresaId || companyId),
-        );
+        const requestBody = mapClientPayloadToBackend(payload);
 
         if (clientId) {
           return this.resolveClientRequestId(companyId, clientId).pipe(
             switchMap((requestClientId) =>
               this.http
-                .put<BackendClientDto | void>(
+                .patch<BackendClientDto | void>(
                   `${this.withTrailingSlash(this.baseUrl)}${requestClientId}`,
                   requestBody,
                 )
@@ -106,6 +113,10 @@ export class ClientApiRepository implements ClientsRepository {
   }
 
   deleteClient(companyId: string, clientId: string): Observable<ClientMutationResult> {
+    if (!this.canUseBackendForCompany(companyId)) {
+      return this.mockRepository.deleteClient(companyId, clientId);
+    }
+
     return this.withFallback(
       () =>
         this.resolveClientRequestId(companyId, clientId).pipe(
@@ -132,6 +143,10 @@ export class ClientApiRepository implements ClientsRepository {
     clientId: string,
     status: ClientStatus,
   ): Observable<ClientMutationResult> {
+    if (!this.canUseBackendForCompany(companyId)) {
+      return this.mockRepository.updateClientStatus(companyId, clientId, status);
+    }
+
     return this.withFallback(
       () => this.updateStatusThroughApi(companyId, clientId, status),
       () => this.mockRepository.updateClientStatus(companyId, clientId, status),
@@ -151,33 +166,6 @@ export class ClientApiRepository implements ClientsRepository {
           ),
       ),
     );
-  }
-
-  private buildListParams(companyId: string, filters: ClientFilters): HttpParams {
-    const normalizedFilters = this.normalizeFilters(filters, companyId);
-    const requestCompanyId = normalizedFilters.empresaId ?? companyId;
-    let params = new HttpParams()
-      .set('empresa_id', this.resolveRequestCompanyId(requestCompanyId))
-      .set('page', String(normalizedFilters.page + 1))
-      .set('page_size', String(normalizedFilters.pageSize));
-
-    if (normalizedFilters.search) {
-      params = params.set('search', normalizedFilters.search);
-    }
-
-    if (normalizedFilters.estado && normalizedFilters.estado !== 'TODOS') {
-      params = params.set('estado', normalizedFilters.estado.toLowerCase());
-    }
-
-    if (normalizedFilters.ciudadId) {
-      params = params.set('ciudad_id', normalizedFilters.ciudadId);
-    }
-
-    if (normalizedFilters.zona) {
-      params = params.set('zona', normalizedFilters.zona);
-    }
-
-    return params;
   }
 
   private mapListResponse(
@@ -236,12 +224,9 @@ export class ClientApiRepository implements ClientsRepository {
         this.resolveClientRequestId(companyId, clientId).pipe(
           switchMap((requestClientId) =>
             this.http
-              .put<BackendClientDto | void>(
+              .patch<BackendClientDto | void>(
                 `${this.withTrailingSlash(this.baseUrl)}${requestClientId}`,
-                mapClientPayloadToBackend(
-                  this.buildStatusPayload(client, status),
-                  this.resolveRequestCompanyId(companyId),
-                ),
+                mapClientPayloadToBackend(this.buildStatusPayload(client, status)),
               )
               .pipe(
                 switchMap((response) =>
@@ -364,19 +349,19 @@ export class ClientApiRepository implements ClientsRepository {
 
   private resolveClientRequestId(companyId: string, clientId: string): Observable<string> {
     return this.http
-      .get<unknown>(this.withTrailingSlash(this.baseUrl), {
-        params: new HttpParams()
-          .set('empresa_id', this.resolveRequestCompanyId(companyId))
-          .set('page', '1')
-          .set('page_size', '500'),
-      })
+      .get<unknown>(this.withTrailingSlash(this.baseUrl))
       .pipe(
         map((response) => {
           const client = extractArrayPayload<BackendClientDto>(response).find((candidate) =>
             this.matchesClientReference(candidate, clientId),
           );
 
-          return this.resolveNullableText(client?.id, client?.cliente_id) ?? clientId;
+          return this.resolveNullableText(
+            client?.id,
+            client?.cliente_id,
+            client?.id_cli,
+            client?.id_cliente,
+          ) ?? clientId;
         }),
       );
   }
@@ -386,6 +371,7 @@ export class ClientApiRepository implements ClientsRepository {
     const candidates = [
       this.resolveNullableText(client.id),
       this.resolveNullableText(client.cliente_id),
+      this.resolveNullableText(client.id_cli),
       this.resolveNullableText(client.id_cliente),
       this.resolveNullableText(client.customer_code),
     ];
@@ -446,19 +432,13 @@ export class ClientApiRepository implements ClientsRepository {
     );
   }
 
-  private resolveRequestCompanyId(companyId: string): string {
-    const session = this.authSessionService.getSession();
-    const company = session?.companies?.find((candidate) => candidate.id === companyId);
+  private canUseBackendForCompany(companyId: string): boolean {
+    const sessionCompany = this.authSessionService
+      .getSession()
+      ?.companies?.find((candidate) => candidate.id === companyId);
+    const backendCompanyId = sessionCompany?.backendId ?? null;
 
-    if (company?.backendId) {
-      return company.backendId;
-    }
-
-    if (session?.activeCompanyId === companyId && session.activeBackendCompanyId) {
-      return session.activeBackendCompanyId;
-    }
-
-    return companyId;
+    return companyId === 'medussa-retail' || backendCompanyId === 'EMP-002';
   }
 
   private shouldInactivateInstead(error: unknown): boolean {
