@@ -41,7 +41,7 @@ export const INITIAL_VENDORS_STORE: VendorStore = {
     {
       id: 'vendor-hold-001',
       empresaId: 'medussa-holding',
-      empresaNombre: 'Medussa Holding',
+      empresaNombre: 'Industrias Alimenticias El Arbolito',
       idVendedor: 'VEN-H-001',
       nombreVendedor: 'Rosa Montoya Díaz',
       tipoVendedor: 'Institucional',
@@ -63,7 +63,7 @@ export const INITIAL_VENDORS_STORE: VendorStore = {
     {
       id: 'vendor-hold-002',
       empresaId: 'medussa-holding',
-      empresaNombre: 'Medussa Holding',
+      empresaNombre: 'Industrias Alimenticias El Arbolito',
       idVendedor: 'VEN-H-002',
       nombreVendedor: 'Diego Sarmiento López',
       tipoVendedor: 'Ruta',
@@ -85,7 +85,7 @@ export const INITIAL_VENDORS_STORE: VendorStore = {
     {
       id: 'vendor-ret-001',
       empresaId: 'medussa-holding',
-      empresaNombre: 'Medussa Holding',
+      empresaNombre: 'Industrias Alimenticias El Arbolito',
       idVendedor: 'VEN-R-001',
       nombreVendedor: 'Juliana Ríos Torres',
       tipoVendedor: 'Ruta',
@@ -107,7 +107,7 @@ export const INITIAL_VENDORS_STORE: VendorStore = {
     {
       id: 'vendor-ret-002',
       empresaId: 'medussa-holding',
-      empresaNombre: 'Medussa Holding',
+      empresaNombre: 'Industrias Alimenticias El Arbolito',
       idVendedor: 'VEN-R-002',
       nombreVendedor: 'Carlos Quintero Vega',
       tipoVendedor: 'Preventa',
@@ -129,7 +129,7 @@ export const INITIAL_VENDORS_STORE: VendorStore = {
     {
       id: 'vendor-ret-003',
       empresaId: 'medussa-holding',
-      empresaNombre: 'Medussa Holding',
+      empresaNombre: 'Industrias Alimenticias El Arbolito',
       idVendedor: 'VEN-R-003',
       nombreVendedor: 'Sandra Mejía Pardo',
       tipoVendedor: 'Televentas',
@@ -151,7 +151,7 @@ export const INITIAL_VENDORS_STORE: VendorStore = {
     {
       id: 'vendor-ret-004',
       empresaId: 'medussa-holding',
-      empresaNombre: 'Medussa Holding',
+      empresaNombre: 'Industrias Alimenticias El Arbolito',
       idVendedor: 'VEN-R-004',
       nombreVendedor: 'Maria Fernanda Rivas',
       tipoVendedor: 'Ruta',
@@ -173,7 +173,7 @@ export const INITIAL_VENDORS_STORE: VendorStore = {
     {
       id: 'vendor-ret-005',
       empresaId: 'medussa-holding',
-      empresaNombre: 'Medussa Holding',
+      empresaNombre: 'Industrias Alimenticias El Arbolito',
       idVendedor: 'VEN-R-005',
       nombreVendedor: 'Vendedor provisional',
       tipoVendedor: 'Ruta',
@@ -195,7 +195,7 @@ export const INITIAL_VENDORS_STORE: VendorStore = {
     {
       id: 'vendor-ret-006',
       empresaId: 'medussa-holding',
-      empresaNombre: 'Medussa Holding',
+      empresaNombre: 'Industrias Alimenticias El Arbolito',
       idVendedor: 'VEN-R-006',
       nombreVendedor: 'Alvaro Rivas',
       tipoVendedor: 'Ruta',
@@ -217,7 +217,7 @@ export const INITIAL_VENDORS_STORE: VendorStore = {
     {
       id: 'vendor-ret-007',
       empresaId: 'medussa-holding',
-      empresaNombre: 'Medussa Holding',
+      empresaNombre: 'Industrias Alimenticias El Arbolito',
       idVendedor: 'VEN-R-007',
       nombreVendedor: 'Brayan Castro',
       tipoVendedor: 'Ruta',
@@ -239,7 +239,7 @@ export const INITIAL_VENDORS_STORE: VendorStore = {
     {
       id: 'vendor-ret-008',
       empresaId: 'medussa-holding',
-      empresaNombre: 'Medussa Holding',
+      empresaNombre: 'Industrias Alimenticias El Arbolito',
       idVendedor: 'VEN-R-008',
       nombreVendedor: 'Jorge Tellez',
       tipoVendedor: 'Ruta',

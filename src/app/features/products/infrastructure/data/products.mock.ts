@@ -16,7 +16,7 @@ export const INITIAL_PRODUCTS_STORE: ProductStore = {
     {
       id: 'prod-med-hold-001',
       empresaId: 'medussa-holding',
-      empresaNombre: 'Medussa Holding',
+      empresaNombre: 'Industrias Alimenticias El Arbolito',
       nombre: 'Kit corporativo de papeleria',
       descripcion: 'Set institucional para nuevas aperturas administrativas.',
       sku: 'HOLD-PAP-001',
@@ -37,7 +37,7 @@ export const INITIAL_PRODUCTS_STORE: ProductStore = {
     {
       id: 'prod-med-hold-002',
       empresaId: 'medussa-holding',
-      empresaNombre: 'Medussa Holding',
+      empresaNombre: 'Industrias Alimenticias El Arbolito',
       nombre: 'Detergente institucional 5L',
       descripcion: 'Limpieza general de oficinas y zonas comunes.',
       sku: 'HOLD-LIM-005',
@@ -58,7 +58,7 @@ export const INITIAL_PRODUCTS_STORE: ProductStore = {
     {
       id: 'prod-arb-001',
       empresaId: 'medussa-holding',
-      empresaNombre: 'Medussa Holding',
+      empresaNombre: 'Industrias Alimenticias El Arbolito',
       nombre: 'Yogurt bebible fresa 200 ml',
       descripcion: 'Producto terminado listo para despacho TAT con control de lote y vencimiento.',
       sku: 'ARB-YOG-200-FR',
@@ -79,7 +79,7 @@ export const INITIAL_PRODUCTS_STORE: ProductStore = {
     {
       id: 'prod-arb-002',
       empresaId: 'medussa-holding',
-      empresaNombre: 'Medussa Holding',
+      empresaNombre: 'Industrias Alimenticias El Arbolito',
       nombre: 'Queso campesino 500 g',
       descripcion: 'Presentacion refrigerada para canal tradicional y mayorista.',
       sku: 'ARB-QUE-500',
@@ -100,7 +100,7 @@ export const INITIAL_PRODUCTS_STORE: ProductStore = {
     {
       id: 'prod-arb-003',
       empresaId: 'medussa-holding',
-      empresaNombre: 'Medussa Holding',
+      empresaNombre: 'Industrias Alimenticias El Arbolito',
       nombre: 'Leche entera UHT 1L',
       descripcion: 'Referencia base de alta rotacion para pedidos diarios y rutas urbanas.',
       sku: 'ARB-UHT-1L',
@@ -121,7 +121,7 @@ export const INITIAL_PRODUCTS_STORE: ProductStore = {
     {
       id: 'prod-arb-004',
       empresaId: 'medussa-holding',
-      empresaNombre: 'Medussa Holding',
+      empresaNombre: 'Industrias Alimenticias El Arbolito',
       nombre: 'Leche en polvo entera 25 kg',
       descripcion: 'Materia prima critica para respaldo de produccion y balance de demanda.',
       sku: 'ARB-MP-LPE25',
@@ -142,7 +142,7 @@ export const INITIAL_PRODUCTS_STORE: ProductStore = {
     {
       id: 'prod-arb-005',
       empresaId: 'medussa-holding',
-      empresaNombre: 'Medussa Holding',
+      empresaNombre: 'Industrias Alimenticias El Arbolito',
       nombre: 'Bolsa doypack 1L',
       descripcion: 'Empaque flexible para linea de yogurt y bebidas lacteas.',
       sku: 'ARB-EMP-DP1',
@@ -163,7 +163,7 @@ export const INITIAL_PRODUCTS_STORE: ProductStore = {
     {
       id: 'prod-arb-006',
       empresaId: 'medussa-holding',
-      empresaNombre: 'Medussa Holding',
+      empresaNombre: 'Industrias Alimenticias El Arbolito',
       nombre: 'Cultivo lactico mix',
       descripcion: 'Insumo de produccion para fermentacion controlada.',
       sku: 'ARB-MP-CLM',
@@ -184,7 +184,7 @@ export const INITIAL_PRODUCTS_STORE: ProductStore = {
     {
       id: 'prod-arb-007',
       empresaId: 'medussa-holding',
-      empresaNombre: 'Medussa Holding',
+      empresaNombre: 'Industrias Alimenticias El Arbolito',
       nombre: 'Canastilla plastica 24 unidades',
       descripcion: 'Elemento logistico para consolidacion de despacho y devoluciones.',
       sku: 'ARB-LOG-C24',

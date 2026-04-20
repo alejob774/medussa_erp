@@ -145,7 +145,7 @@ export class AuthService {
 
   private buildMockDisplayName(username: string): string {
     const displayNames: Record<string, string> = {
-      admin: 'Administrador local Medussa Holding',
+      admin: 'Administrador local Industrias Alimenticias El Arbolito',
       ventas: 'Coordinacion comercial local',
       produccion: 'Coordinacion de produccion local',
       rrhh: 'Coordinacion de talento local',

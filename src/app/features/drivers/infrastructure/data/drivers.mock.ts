@@ -42,7 +42,7 @@ export const INITIAL_DRIVERS_STORE: DriverStore = {
     {
       id: 'driver-hold-001',
       empresaId: 'medussa-holding',
-      empresaNombre: 'Medussa Holding',
+      empresaNombre: 'Industrias Alimenticias El Arbolito',
       idConductor: 'CON-H-001',
       nombreConductor: 'Andres Velasco Pineda',
       tipoDocumento: 'CC',
@@ -65,7 +65,7 @@ export const INITIAL_DRIVERS_STORE: DriverStore = {
     {
       id: 'driver-hold-002',
       empresaId: 'medussa-holding',
-      empresaNombre: 'Medussa Holding',
+      empresaNombre: 'Industrias Alimenticias El Arbolito',
       idConductor: 'CON-H-002',
       nombreConductor: 'Felipe Cardenas Mejia',
       tipoDocumento: 'CC',
@@ -88,7 +88,7 @@ export const INITIAL_DRIVERS_STORE: DriverStore = {
     {
       id: 'driver-ret-001',
       empresaId: 'medussa-holding',
-      empresaNombre: 'Medussa Holding',
+      empresaNombre: 'Industrias Alimenticias El Arbolito',
       idConductor: 'CON-A-001',
       nombreConductor: 'Maria Camila Ospina',
       tipoDocumento: 'CC',
@@ -111,7 +111,7 @@ export const INITIAL_DRIVERS_STORE: DriverStore = {
     {
       id: 'driver-ret-002',
       empresaId: 'medussa-holding',
-      empresaNombre: 'Medussa Holding',
+      empresaNombre: 'Industrias Alimenticias El Arbolito',
       idConductor: 'CON-A-002',
       nombreConductor: 'Jonathan Mejia Rojas',
       tipoDocumento: 'CC',
@@ -134,7 +134,7 @@ export const INITIAL_DRIVERS_STORE: DriverStore = {
     {
       id: 'driver-ret-003',
       empresaId: 'medussa-holding',
-      empresaNombre: 'Medussa Holding',
+      empresaNombre: 'Industrias Alimenticias El Arbolito',
       idConductor: 'CON-A-003',
       nombreConductor: 'Paula Cifuentes Rojas',
       tipoDocumento: 'CC',
@@ -157,7 +157,7 @@ export const INITIAL_DRIVERS_STORE: DriverStore = {
     {
       id: 'driver-ret-004',
       empresaId: 'medussa-holding',
-      empresaNombre: 'Medussa Holding',
+      empresaNombre: 'Industrias Alimenticias El Arbolito',
       idConductor: 'CON-A-004',
       nombreConductor: 'Diego Ariza Leon',
       tipoDocumento: 'CC',
@@ -180,7 +180,7 @@ export const INITIAL_DRIVERS_STORE: DriverStore = {
     {
       id: 'driver-ret-005',
       empresaId: 'medussa-holding',
-      empresaNombre: 'Medussa Holding',
+      empresaNombre: 'Industrias Alimenticias El Arbolito',
       idConductor: 'CON-A-005',
       nombreConductor: 'Nelson Cardenas Gil',
       tipoDocumento: 'CC',
@@ -203,7 +203,7 @@ export const INITIAL_DRIVERS_STORE: DriverStore = {
     {
       id: 'driver-ret-006',
       empresaId: 'medussa-holding',
-      empresaNombre: 'Medussa Holding',
+      empresaNombre: 'Industrias Alimenticias El Arbolito',
       idConductor: 'CON-A-006',
       nombreConductor: 'Luis Enrique Mendoza',
       tipoDocumento: 'CC',

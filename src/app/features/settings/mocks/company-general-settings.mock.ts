@@ -6,18 +6,6 @@ export const MOCK_COMPANY_GENERAL_SETTINGS: Record<
 > = {
   'medussa-holding': {
     companyId: 'medussa-holding',
-    nombre_empresa: 'Medussa Holding',
-    nit: '901.245.778-1',
-    direccion: 'Av. Principal 123, Torre Corporativa',
-    ciudad: 'Bogota',
-    pais: 'Colombia',
-    moneda: 'COP',
-    zona_horaria: 'America/Bogota',
-    telefono: '+57 601 555 0101',
-    logo: 'assets/login/Logo1.png',
-  },
-  'medussa-retail': {
-    companyId: 'medussa-retail',
     nombre_empresa: 'Industrias Alimenticias El Arbolito',
     nit: '900.482.119-7',
     direccion: 'Parque Industrial La Pradera, bodega 12',
@@ -27,6 +15,18 @@ export const MOCK_COMPANY_GENERAL_SETTINGS: Record<
     zona_horaria: 'America/Bogota',
     telefono: '+57 605 385 1120',
     logo: null,
+  },
+  'medussa-retail': {
+    companyId: 'medussa-retail',
+    nombre_empresa: 'Medussa Holding',
+    nit: '901.245.778-1',
+    direccion: 'Av. Principal 123, Torre Corporativa',
+    ciudad: 'Bogota',
+    pais: 'Colombia',
+    moneda: 'COP',
+    zona_horaria: 'America/Bogota',
+    telefono: '+57 601 555 0101',
+    logo: 'assets/login/Logo1.png',
   },
   'medussa-industrial': {
     companyId: 'medussa-industrial',

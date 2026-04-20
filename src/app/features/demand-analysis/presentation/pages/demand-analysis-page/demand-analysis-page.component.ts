@@ -44,7 +44,7 @@ import { DemandAnalysisAggregate } from '../../../domain/models/demand-analysis.
             <article class="erp-meta-card">
               <p class="erp-meta-card__label">Empresa activa</p>
               <p class="mt-2 text-lg font-semibold text-slate-900">{{ activeCompanyName }}</p>
-              <p class="erp-meta-card__hint">Medussa Holding concentra la base operativa principal del caso.</p>
+              <p class="erp-meta-card__hint">Industrias Alimenticias El Arbolito concentra la base operativa principal del caso.</p>
             </article>
             <article class="erp-meta-card">
               <p class="erp-meta-card__label">Forecast base</p>

@@ -152,7 +152,7 @@ const MOCK_USERS: UserDetailVm[] = [
     assignedCompanies: [
       buildAssignment(
         'medussa-holding',
-        'Medussa Holding',
+        'Industrias Alimenticias El Arbolito',
         'role-holding-admin',
         'Administrador Empresa',
         'profile-holding-001',
@@ -181,7 +181,7 @@ const MOCK_USERS: UserDetailVm[] = [
     assignedCompanies: [
       buildAssignment(
         'medussa-holding',
-        'Medussa Holding',
+        'Industrias Alimenticias El Arbolito',
         'role-holding-area-head',
         'Jefe de Area',
         'profile-holding-001',
@@ -189,7 +189,7 @@ const MOCK_USERS: UserDetailVm[] = [
       ),
       buildAssignment(
         'medussa-retail',
-        'Industrias Alimenticias El Arbolito',
+        'Medussa Holding',
         'role-retail-supervisor',
         'Supervisor Comercial',
         'profile-retail-001',
@@ -210,7 +210,7 @@ const MOCK_USERS: UserDetailVm[] = [
     assignedCompanies: [
       buildAssignment(
         'medussa-holding',
-        'Medussa Holding',
+        'Industrias Alimenticias El Arbolito',
         'role-holding-analyst',
         'Analista de Area',
         'profile-holding-002',
@@ -231,7 +231,7 @@ const MOCK_USERS: UserDetailVm[] = [
     assignedCompanies: [
       buildAssignment(
         'medussa-retail',
-        'Industrias Alimenticias El Arbolito',
+        'Medussa Holding',
         'role-retail-aux',
         'Auxiliar Operativo',
         'profile-retail-001',
@@ -289,7 +289,7 @@ const MOCK_USERS: UserDetailVm[] = [
       ),
       buildAssignment(
         'medussa-holding',
-        'Medussa Holding',
+        'Industrias Alimenticias El Arbolito',
         'role-holding-admin',
         'Administrador Empresa',
         'profile-holding-001',

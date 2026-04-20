@@ -62,8 +62,8 @@ const VENDORS_STORAGE_KEY = 'medussa.erp.mock.vendors';
 const ROUTES_STORAGE_KEY = 'medussa.erp.mock.routes';
 
 const COMPANY_DISPLAY_NAMES: Record<string, string> = {
-  'medussa-holding': 'Medussa Holding',
-  'medussa-retail': 'Industrias Alimenticias El Arbolito',
+  'medussa-holding': 'Industrias Alimenticias El Arbolito',
+  'medussa-retail': 'Medussa Holding',
 };
 const BASE_CATALOGS: DemandBaseCatalogs = {
   channels: [

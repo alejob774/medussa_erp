@@ -488,11 +488,11 @@ function normalizeSupplierStore(store: SupplierStore): SupplierStore {
 
 function resolveCompanyDisplayName(companyId: string, currentName?: string | null): string {
   if (companyId === 'medussa-holding') {
-    return 'Medussa Holding';
+    return 'Industrias Alimenticias El Arbolito';
   }
 
   if (companyId === 'medussa-retail') {
-    return 'Industrias Alimenticias El Arbolito';
+    return 'Medussa Holding';
   }
 
   return currentName?.trim() || 'Empresa activa';

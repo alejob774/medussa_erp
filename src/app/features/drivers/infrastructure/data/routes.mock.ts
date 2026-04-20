@@ -9,8 +9,8 @@ const BASE_ROUTES = [
 ];
 
 export const INITIAL_ROUTE_CATALOG: RouteCatalogItem[] = [
-  ...buildCompanyRoutes('medussa-holding', 'Medussa Holding', 'RTH'),
-  ...buildCompanyRoutes('medussa-retail', 'Industrias Alimenticias El Arbolito', 'RTA'),
+  ...buildCompanyRoutes('medussa-holding', 'Industrias Alimenticias El Arbolito', 'RTH'),
+  ...buildCompanyRoutes('medussa-retail', 'Medussa Holding', 'RTA'),
   ...buildCompanyRoutes('medussa-industrial', 'Medussa Industrial', 'RTI'),
   ...buildCompanyRoutes('medussa-services', 'Medussa Services', 'RTS'),
 ];

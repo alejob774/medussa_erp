@@ -43,8 +43,8 @@ const SUPPLIERS_STORAGE_KEY = 'medussa.erp.mock.suppliers';
 const FORECAST_STORAGE_KEY = 'medussa.erp.mock.demand-forecasts';
 
 const COMPANY_DISPLAY_NAMES: Record<string, string> = {
-  'medussa-holding': 'Medussa Holding',
-  'medussa-retail': 'Industrias Alimenticias El Arbolito',
+  'medussa-holding': 'Industrias Alimenticias El Arbolito',
+  'medussa-retail': 'Medussa Holding',
 };
 const CATEGORIES = ['Lacteos', 'Yogures', 'Quesos', 'Bebidas', 'Postres', 'Innovacion logistica'];
 const TARGET_MARKETS = [

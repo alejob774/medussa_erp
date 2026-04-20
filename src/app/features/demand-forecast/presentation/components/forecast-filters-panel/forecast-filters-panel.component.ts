@@ -130,7 +130,7 @@ import {
 
         <mat-form-field appearance="outline" class="xl:col-span-2">
           <mat-label>Nombre del forecast</mat-label>
-          <input matInput formControlName="nombreForecast" placeholder="Forecast comercial Medussa Holding" />
+          <input matInput formControlName="nombreForecast" placeholder="Forecast comercial Industrias Alimenticias El Arbolito" />
         </mat-form-field>
 
         <div class="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 xl:col-span-2">

@@ -13,19 +13,19 @@ const COMPANY_CATALOG: Record<string, Company> = {
   'medussa-holding': {
     id: 'medussa-holding',
     backendId: 'EMP-001',
-    name: 'Medussa Holding',
-    code: 'HOLD',
-    description: 'Base operativa y corporativa principal para la demo multiempresa.',
-    icon: 'domain',
+    name: 'Industrias Alimenticias El Arbolito',
+    code: 'ARB',
+    description: 'Operacion principal de demo para SCM, maestros y contexto multiempresa.',
+    icon: 'storefront',
     accentColor: '#0f766e',
   },
   'medussa-retail': {
     id: 'medussa-retail',
-    name: 'Industrias Alimenticias El Arbolito',
-    code: 'ARB',
+    name: 'Medussa Holding',
+    code: 'HOLD',
     description:
-      'Unidad comercial secundaria con contexto historico para comparativos y soporte multiempresa.',
-    icon: 'storefront',
+      'Contexto corporativo secundario para comparativos multiempresa y evidencia del grupo.',
+    icon: 'domain',
     accentColor: '#2f855a',
   },
   'medussa-industrial': {

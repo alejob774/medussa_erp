@@ -31,8 +31,8 @@ import { PurchaseAnalysisRepository } from '../../domain/repositories/purchase-a
 const STORAGE_KEY = 'medussa.erp.mock.purchase-analysis';
 const SUPPLIERS_STORAGE_KEY = 'medussa.erp.mock.suppliers';
 const COMPANY_DISPLAY_NAMES: Record<string, string> = {
-  'medussa-holding': 'Medussa Holding',
-  'medussa-retail': 'Industrias Alimenticias El Arbolito',
+  'medussa-holding': 'Industrias Alimenticias El Arbolito',
+  'medussa-retail': 'Medussa Holding',
 };
 const CATEGORIES = ['Materias primas', 'Insumos', 'Repuestos', 'Etiquetas', 'Empaques', 'Embalajes'];
 

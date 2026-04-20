@@ -38,8 +38,8 @@ const FORECAST_STORAGE_KEY = 'medussa.erp.mock.demand-forecasts';
 const PRODUCTS_STORAGE_KEY = 'medussa.erp.mock.products';
 const CLIENTS_STORAGE_KEY = 'medussa.erp.mock.clients';
 const COMPANY_DISPLAY_NAMES: Record<string, string> = {
-  'medussa-holding': 'Medussa Holding',
-  'medussa-retail': 'Industrias Alimenticias El Arbolito',
+  'medussa-holding': 'Industrias Alimenticias El Arbolito',
+  'medussa-retail': 'Medussa Holding',
 };
 
 @Injectable({

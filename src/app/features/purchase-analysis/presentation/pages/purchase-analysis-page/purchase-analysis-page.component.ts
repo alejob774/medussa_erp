@@ -46,7 +46,7 @@ import { PurchaseAnalysisTableComponent } from '../../components/purchase-analys
             <article class="erp-meta-card">
               <p class="erp-meta-card__label">Empresa activa</p>
               <p class="mt-2 text-lg font-semibold text-slate-900">{{ activeCompanyName }}</p>
-              <p class="erp-meta-card__hint">Caso principal sobre Medussa Holding y su abastecimiento realista.</p>
+              <p class="erp-meta-card__hint">Caso principal sobre Industrias Alimenticias El Arbolito y su abastecimiento realista.</p>
             </article>
             <article class="erp-meta-card">
               <p class="erp-meta-card__label">Analisis seleccionado</p>

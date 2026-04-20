@@ -576,8 +576,8 @@ export class SecurityAdministrationMockRepository
       .find((assignment) => assignment.companyId === companyId);
 
     const companyNames: Record<string, string> = {
-      'medussa-holding': 'Medussa Holding',
-      'medussa-retail': 'Industrias Alimenticias El Arbolito',
+      'medussa-holding': 'Industrias Alimenticias El Arbolito',
+      'medussa-retail': 'Medussa Holding',
       'medussa-industrial': 'Medussa Industrial',
       'medussa-services': 'Medussa Services',
     };
