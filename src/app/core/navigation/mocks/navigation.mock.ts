@@ -41,10 +41,26 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
       {
         id: 'produccion',
         label: 'Produccion',
-        route: '/produccion',
         icon: 'precision_manufacturing',
-        requiredPermissions: ['production.view'],
         companyIds: ['medussa-holding', 'medussa-industrial'],
+        children: [
+          {
+            id: 'produccion-centro-operativo',
+            label: 'Centro operativo',
+            route: '/produccion',
+            icon: 'factory',
+            requiredPermissions: ['production.view'],
+            companyIds: ['medussa-holding', 'medussa-industrial'],
+          },
+          {
+            id: 'produccion-bom-formulas',
+            label: 'BOM / Formulas / Recetas',
+            route: '/produccion/bom-formulas',
+            icon: 'menu_book',
+            requiredPermissions: ['bom.formula.view'],
+            companyIds: ['medussa-holding', 'medussa-industrial'],
+          },
+        ],
       },
       {
         id: 'supply-chain-management',

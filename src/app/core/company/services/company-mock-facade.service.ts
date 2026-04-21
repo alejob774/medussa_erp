@@ -56,6 +56,11 @@ const ALL_PERMISSIONS: PermissionKey[] = [
   'purchases.view',
   'finance.view',
   'production.view',
+  'bom.formula.view',
+  'bom.formula.create',
+  'bom.formula.edit',
+  'bom.formula.approve',
+  'bom.formula.version',
   'hr.view',
   'support.view',
   'marketing.view',
@@ -190,11 +195,19 @@ export class CompanyMockFacadeService {
         };
       case 'produccion':
         return {
-          companies: [COMPANY_CATALOG['medussa-industrial']],
+          companies: [
+            COMPANY_CATALOG['medussa-holding'],
+            COMPANY_CATALOG['medussa-industrial'],
+          ],
           roles: ['operations-lead'],
           permissions: [
             'dashboard.view',
             'production.view',
+            'bom.formula.view',
+            'bom.formula.create',
+            'bom.formula.edit',
+            'bom.formula.approve',
+            'bom.formula.version',
             'warehouse.view',
             'inventory.view',
             'products.view',
@@ -251,7 +264,7 @@ export class CompanyMockFacadeService {
             'picking.packing.close',
             'purchases.view',
           ],
-          defaultCompanyId: 'medussa-industrial',
+          defaultCompanyId: 'medussa-holding',
         };
       case 'admin':
       default:

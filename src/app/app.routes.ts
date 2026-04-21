@@ -239,14 +239,30 @@ export const routes: Routes = [
       },
       {
         path: 'produccion',
-        component: ModulePlaceholderPageComponent,
-        canActivate: [permissionGuard],
-        data: {
-          title: 'Producción',
-          description: 'Base para órdenes de producción y capacidad operativa.',
-          hint: 'HU siguiente: programación y seguimiento de planta.',
-          permission: 'production.view',
-        },
+        children: [
+          {
+            path: '',
+            component: ModulePlaceholderPageComponent,
+            canActivate: [permissionGuard],
+            data: {
+              title: 'Producción',
+              description: 'Centro operativo para formulación, procesos y trazabilidad de planta.',
+              hint: 'Desde aquí cuelgan los módulos técnicos del bloque de Producción.',
+              permission: 'production.view',
+            },
+          },
+          {
+            path: 'bom-formulas',
+            loadComponent: () =>
+              import(
+                './features/bom-formula/presentation/pages/bom-formula-page/bom-formula-page.component'
+              ).then((module) => module.BomFormulaPageComponent),
+            canActivate: [permissionGuard],
+            data: {
+              permission: 'bom.formula.view',
+            },
+          },
+        ],
       },
       {
         path: 'rrhh',
