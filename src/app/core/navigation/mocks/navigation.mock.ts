@@ -116,6 +116,14 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
             requiredPermissions: ['storage.layout.view'],
             companyIds: ALL_COMPANIES,
           },
+          {
+            id: 'scm-picking-packing',
+            label: 'Picking y Packing',
+            route: '/supply-chain-management/picking-packing',
+            icon: 'inventory_2',
+            requiredPermissions: ['picking.packing.view'],
+            companyIds: ALL_COMPANIES,
+          },
         ],
       },
       {

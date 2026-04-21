@@ -25,6 +25,7 @@ export const environment = {
   useBudgetManagementMock: true,
   useStorageLayoutMock: true,
   useInventoryCycleMock: true,
+  usePickingPackingMock: true,
   useSecurityAdministrationMock: true,
   enableSecurityAdministrationFallback: true,
   useAuditLogsMock: true,

@@ -213,6 +213,17 @@ export const routes: Routes = [
               permission: 'storage.layout.view',
             },
           },
+          {
+            path: 'picking-packing',
+            loadComponent: () =>
+              import(
+                './features/picking-packing/presentation/pages/picking-packing-page/picking-packing-page.component'
+              ).then((module) => module.PickingPackingPageComponent),
+            canActivate: [permissionGuard],
+            data: {
+              permission: 'picking.packing.view',
+            },
+          },
         ],
       },
       {
