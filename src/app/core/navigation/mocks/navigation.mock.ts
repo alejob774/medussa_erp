@@ -53,6 +53,14 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
             companyIds: ['medussa-holding', 'medussa-industrial'],
           },
           {
+            id: 'produccion-oee',
+            label: 'OEE / Eficiencia real',
+            route: '/produccion/oee',
+            icon: 'speed',
+            requiredPermissions: ['production.view'],
+            companyIds: ['medussa-holding', 'medussa-industrial'],
+          },
+          {
             id: 'produccion-bom-formulas',
             label: 'BOM / Formulas / Recetas',
             route: '/produccion/bom-formulas',

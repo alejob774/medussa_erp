@@ -252,6 +252,17 @@ export const routes: Routes = [
             },
           },
           {
+            path: 'oee',
+            loadComponent: () =>
+              import('./features/oee/presentation/pages/oee-page/oee-page.component').then(
+                (module) => module.OeePageComponent,
+              ),
+            canActivate: [permissionGuard],
+            data: {
+              permission: 'production.view',
+            },
+          },
+          {
             path: 'bom-formulas',
             loadComponent: () =>
               import(

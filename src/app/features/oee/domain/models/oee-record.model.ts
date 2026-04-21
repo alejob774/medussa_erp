@@ -1,0 +1,31 @@
+export interface OeeRecord {
+  id: string;
+  empresaId: string;
+  empresaNombre: string;
+  planta: string;
+  lineaProduccion: string;
+  maquinaId: string;
+  maquinaCodigo: string;
+  maquinaNombre: string;
+  turno: string;
+  fechaOperacion: string;
+  horaInicio: string;
+  horaFin: string;
+  tiempoProgramado: number;
+  tiempoParado: number;
+  causaParo: string | null;
+  unidadesProducidas: number;
+  unidadesObjetivo: number;
+  unidadesRechazadas: number;
+  operario: string;
+  supervisor: string;
+  ordenProduccion: string | null;
+  disponibilidad: number;
+  rendimiento: number;
+  calidad: number;
+  oee: number;
+  tiempoNetoOperativo: number;
+  tiempoPerdido: number;
+  usuarioCrea: string;
+  fechaCreacion: string;
+}
