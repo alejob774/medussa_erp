@@ -295,6 +295,17 @@ export const routes: Routes = [
               permission: 'mps.view',
             },
           },
+          {
+            path: 'tpm',
+            loadComponent: () =>
+              import('./features/tpm/presentation/pages/tpm-page/tpm-page.component').then(
+                (module) => module.TpmPageComponent,
+              ),
+            canActivate: [permissionGuard],
+            data: {
+              permission: 'tpm.view',
+            },
+          },
         ],
       },
       {

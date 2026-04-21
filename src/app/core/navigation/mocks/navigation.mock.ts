@@ -84,6 +84,14 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
             requiredPermissions: ['mps.view'],
             companyIds: ['medussa-holding', 'medussa-industrial'],
           },
+          {
+            id: 'produccion-tpm',
+            label: 'TPM / Mantenimiento',
+            route: '/produccion/tpm',
+            icon: 'build_circle',
+            requiredPermissions: ['tpm.view'],
+            companyIds: ['medussa-holding', 'medussa-industrial'],
+          },
         ],
       },
       {
