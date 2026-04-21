@@ -22,6 +22,7 @@ export const environment = {
   useDemandAnalysisMock: true,
   useProductDevelopmentMock: true,
   useBomFormulaMock: true,
+  useQualityControlMock: true,
   usePurchaseAnalysisMock: true,
   useBudgetManagementMock: true,
   useStorageLayoutMock: true,

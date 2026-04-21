@@ -60,6 +60,14 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
             requiredPermissions: ['bom.formula.view'],
             companyIds: ['medussa-holding', 'medussa-industrial'],
           },
+          {
+            id: 'produccion-control-calidad',
+            label: 'Control de Calidad',
+            route: '/produccion/control-calidad',
+            icon: 'health_and_safety',
+            requiredPermissions: ['quality.control.view'],
+            companyIds: ['medussa-holding', 'medussa-industrial'],
+          },
         ],
       },
       {

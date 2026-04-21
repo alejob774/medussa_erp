@@ -262,6 +262,17 @@ export const routes: Routes = [
               permission: 'bom.formula.view',
             },
           },
+          {
+            path: 'control-calidad',
+            loadComponent: () =>
+              import(
+                './features/quality-control/presentation/pages/quality-control-page/quality-control-page.component'
+              ).then((module) => module.QualityControlPageComponent),
+            canActivate: [permissionGuard],
+            data: {
+              permission: 'quality.control.view',
+            },
+          },
         ],
       },
       {
