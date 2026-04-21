@@ -273,6 +273,17 @@ export const routes: Routes = [
               permission: 'quality.control.view',
             },
           },
+          {
+            path: 'mps',
+            loadComponent: () =>
+              import('./features/mps/presentation/pages/mps-page/mps-page.component').then(
+                (module) => module.MpsPageComponent,
+              ),
+            canActivate: [permissionGuard],
+            data: {
+              permission: 'mps.view',
+            },
+          },
         ],
       },
       {

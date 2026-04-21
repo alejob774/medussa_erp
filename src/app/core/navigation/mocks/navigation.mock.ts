@@ -68,6 +68,14 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
             requiredPermissions: ['quality.control.view'],
             companyIds: ['medussa-holding', 'medussa-industrial'],
           },
+          {
+            id: 'produccion-mps',
+            label: 'MPS / Plan Maestro',
+            route: '/produccion/mps',
+            icon: 'calendar_view_week',
+            requiredPermissions: ['mps.view'],
+            companyIds: ['medussa-holding', 'medussa-industrial'],
+          },
         ],
       },
       {
