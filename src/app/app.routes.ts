@@ -191,6 +191,28 @@ export const routes: Routes = [
               permission: 'budget.management.view',
             },
           },
+          {
+            path: 'ciclo-inventarios',
+            loadComponent: () =>
+              import(
+                './features/inventory-cycle/presentation/pages/inventory-cycle-page/inventory-cycle-page.component'
+              ).then((module) => module.InventoryCyclePageComponent),
+            canActivate: [permissionGuard],
+            data: {
+              permission: 'inventory.cycle.view',
+            },
+          },
+          {
+            path: 'layout-almacenamiento',
+            loadComponent: () =>
+              import(
+                './features/storage-layout/presentation/pages/storage-layout-page/storage-layout-page.component'
+              ).then((module) => module.StorageLayoutPageComponent),
+            canActivate: [permissionGuard],
+            data: {
+              permission: 'storage.layout.view',
+            },
+          },
         ],
       },
       {

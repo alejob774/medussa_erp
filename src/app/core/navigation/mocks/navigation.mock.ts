@@ -100,6 +100,22 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
             requiredPermissions: ['budget.management.view'],
             companyIds: ALL_COMPANIES,
           },
+          {
+            id: 'scm-ciclo-inventarios',
+            label: 'Ciclo de Inventarios',
+            route: '/supply-chain-management/ciclo-inventarios',
+            icon: 'inventory',
+            requiredPermissions: ['inventory.cycle.view'],
+            companyIds: ALL_COMPANIES,
+          },
+          {
+            id: 'scm-layout-almacenamiento',
+            label: 'Layout y Almacenamiento',
+            route: '/supply-chain-management/layout-almacenamiento',
+            icon: 'grid_view',
+            requiredPermissions: ['storage.layout.view'],
+            companyIds: ALL_COMPANIES,
+          },
         ],
       },
       {
