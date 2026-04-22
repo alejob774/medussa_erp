@@ -27,3 +27,19 @@ async def actualizar_equipo(request: Request, equipo_id: int, equipo_in: EquipoU
         raise HTTPException(status_code=404, detail="Equipo no encontrado")
     await registrar_log(db, request, modulo="EQUIPOS", accion="ACTUALIZAR", objeto_id=equipo_id)
     return equipo
+
+# En equipos.py
+@router.get("/{equipo_id}")
+def obtener_equipo(equipo_id: int, db: Session = Depends(get_db)):
+    return db.query(Equipo).filter(Equipo.id == equipo_id).first()
+
+@router.delete("/{equipo_id}")
+def eliminar_equipo(equipo_id: int, db: Session = Depends(get_db)):
+    db.query(Equipo).filter(Equipo.id == equipo_id).delete()
+    db.commit()
+    return {"status": "Equipo eliminado"}
+
+# En proveedores.py
+@router.get("/{proveedor_id}")
+def obtener_proveedor(proveedor_id: int, db: Session = Depends(get_db)):
+    return db.query(Proveedor).filter(Proveedor.id == proveedor_id).first()
