@@ -61,7 +61,14 @@ async def actualizar_vendedor(
         payload_despues=jsonable_encoder(actualizado)
     )
     return actualizado
-    
+
+@router.get("/{id}")
+def obtener_vendedor(id: int, db: Session = Depends(get_db)):
+    vendedor = db.query(Vendedor).filter(Vendedor.id == id).first()
+    if not vendedor:
+        raise HTTPException(status_code=404, detail="Vendedor no encontrado")
+    return vendedor
+
 @router.delete("/{id}")
 async def eliminar_vendedor(
     id: int,

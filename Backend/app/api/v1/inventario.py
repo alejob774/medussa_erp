@@ -79,3 +79,8 @@ async def eliminar_producto(
         descripcion=f"Producto {producto.producto_sku} marcado como Inactivo"
     )
     return {"status": "success", "message": "Producto desactivado"}
+
+@router.post("/")
+def crear_producto(payload: dict, db: Session = Depends(get_db)):
+    # Aquí va tu lógica de inserción actual
+    return {"mensaje": "Producto creado exitosamente"}

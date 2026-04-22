@@ -55,3 +55,17 @@ async def actualizar_conductor(
         payload_despues=jsonable_encoder(actualizado)
     )
     return actualizado
+
+@router.get("/")
+def listar_conductores(db: Session = Depends(get_db)):
+    return db.query(Conductor).all()
+
+@router.get("/{id}")
+def obtener_conductor(id: int, db: Session = Depends(get_db)):
+    return db.query(Conductor).filter(Conductor.id == id).first()
+
+@router.delete("/{id}")
+def eliminar_conductor(id: int, db: Session = Depends(get_db)):
+    db.query(Conductor).filter(Conductor.id == id).delete()
+    db.commit()
+    return {"status": "Conductor eliminado"}
