@@ -1,25 +1,26 @@
 from sqlalchemy.orm import Session
 from app.models.inventario import Producto
 from app.schemas.producto import ProductoCreate, ProductoUpdate
+from app.core.context import get_company_context
+from fastapi import HTTPException
 
-async def crear_producto(db: Session, obj_in: ProductoCreate):
-    db_obj = Producto(**obj_in.model_dump())
-    db.add(db_obj)
-    db.commit()
-    db.refresh(db_obj)
-    return db_obj
 
-# ESTA ES LA FUNCIÓN QUE FALTABA O TENÍA OTRO NOMBRE
-async def obtener_productos(db: Session, empresa_id: str, skip: int = 0, limit: int = 100):
+async def obtener_productos_contextual(db: Session, skip: int = 0, limit: int = 100):
+    empresa_id = get_company_context()
     return db.query(Producto).filter(
         Producto.empresa_id == empresa_id
     ).offset(skip).limit(limit).all()
 
 async def obtener_producto_por_id(db: Session, producto_id: int):
-    return db.query(Producto).filter(Producto.id == producto_id).first()
+    empresa_id = get_company_context()
+    return db.query(Producto).filter(
+        Producto.id == producto_id,
+        Producto.empresa_id == empresa_id
+    ).first()
 
 async def actualizar_producto(db: Session, producto_id: int, obj_in: ProductoUpdate):
-    db_obj = db.query(Producto).filter(Producto.id == producto_id).first()
+    # Usamos obtener_producto_por_id que ya filtra por empresa_id
+    db_obj = await obtener_producto_por_id(db, producto_id)
     if not db_obj:
         return None
     
@@ -31,8 +32,30 @@ async def actualizar_producto(db: Session, producto_id: int, obj_in: ProductoUpd
     db.refresh(db_obj)
     return db_obj
 
+async def crear_producto(db: Session, obj_in: ProductoCreate):
+    # Obtener el ID de la empresa del contexto de la sesión
+    empresa_id = get_company_context()
+    if not empresa_id:
+        raise HTTPException(status_code=400, detail="No se identificó una empresa válida en la sesión")
+
+    # Crear el objeto asegurando la persistencia en el esquema 'inventario'
+    db_obj = Producto(
+        **obj_in.model_dump(),
+        empresa_id=empresa_id
+    )
+    db.add(db_obj)
+    db.commit()
+    db.refresh(db_obj)
+    return db_obj
+
 async def eliminar_producto(db: Session, producto_id: int):
-    db_obj = db.query(Producto).filter(Producto.id == producto_id).first()
+    # Soft Delete: Cambiar estado a Inactivo en lugar de borrar
+    empresa_id = get_company_context()
+    db_obj = db.query(Producto).filter(
+        Producto.id == producto_id, 
+        Producto.empresa_id == empresa_id
+    ).first()
+    
     if db_obj:
         db_obj.producto_status = "Inactivo"
         db.commit()

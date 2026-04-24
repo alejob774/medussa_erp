@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
+from app.core.middleware import MultiCompanyMiddleware
 
 # Importación de la Base para creación de tablas (Development Mode)
 from app.db.session import engine, Base
@@ -20,6 +21,8 @@ app = FastAPI(
     description="Sistema Integral de Gestión - SCM, Producción e Inventarios Multiempresa",
     version="1.5.0"
 )
+
+app.add_middleware(MultiCompanyMiddleware)
 
 # 1. Configuración de CORS
 origins = [

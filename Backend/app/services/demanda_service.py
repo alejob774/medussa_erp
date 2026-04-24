@@ -3,7 +3,7 @@ from app.models.demanda import Forecast, ForecastDetalle
 from app.schemas.demanda import ForecastCreate
 
 def generar_pronostico_sugerido(db: Session, empresa_id: str, producto_id: int):
-    # Lógica analítica: Aquí podrías consultar ventas pasadas
+    # LÃ³gica analÃ­tica: AquÃ­ podrÃ­as consultar ventas pasadas
     # Por ahora devolvemos un valor base para la HU
     return 100.0 
 

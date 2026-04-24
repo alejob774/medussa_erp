@@ -2,10 +2,12 @@ from pydantic import BaseModel, EmailStr, ConfigDict
 from typing import List, Optional
 
 # Esquema para la relación multiempresa (HU-011-BE)
-class EmpresaAsignada(BaseModel):
+class MembresiaOut(BaseModel):
     empresa_id: str
     rol_id: int
-    perfil_id: Optional[int] = None 
+    rol_nombre: Optional[str] = None
+    perfil_id: Optional[int] = None
+    perfil_nombre: Optional[str] = None
     
     model_config = ConfigDict(from_attributes=True)
 
@@ -18,7 +20,7 @@ class UsuarioCreate(BaseModel):
     cargo: str
     celular: str
     telefono_fijo: Optional[str] = None
-    empresas: List[EmpresaAsignada] 
+    membresias: List[MembresiaOut] 
 
 class UsuarioUpdate(BaseModel):
     nombre: Optional[str] = None
@@ -31,15 +33,16 @@ class UsuarioUpdate(BaseModel):
 class UsuarioResponse(BaseModel):
     id: int
     nombre: str
+    apellido: str
     username: str
     email: EmailStr
-    apellido: Optional[str] = None 
-    cargo: Optional[str] = None
-    celular: Optional[str] = None
+    cargo: str
+    celular: str
     estado: bool
+    membresias: List[MembresiaOut] = []
     
     model_config = ConfigDict(from_attributes=True)
-
-# Corregido: El nombre del campo debe ser 'empresas' para coincidir con el router
 class UsuarioDetalleResponse(UsuarioResponse):
-    empresas: List[EmpresaAsignada] = []
+    # Aquí puedes agregar campos adicionales si son necesarios
+    # o simplemente usarlo para diferenciar respuestas simples de detalladas
+    pass
