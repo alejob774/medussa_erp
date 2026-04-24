@@ -387,11 +387,21 @@ export class SecurityAdministrationApiRepository
             map((profiles) => profiles.map((profile) => this.mapProfileRow(profile, companyId))),
           ),
         }).pipe(
-          map(({ users, roles, profiles }) =>
-            users
-              .map((user) => this.mapUserRow(user, companyId, roles, profiles))
-              .filter((user) => !!user.activeAssignment),
-          ),
+          switchMap(({ users, roles, profiles }) => {
+            if (!users.length) {
+              return of([]);
+            }
+
+            return forkJoin(
+              users.map((user) =>
+                this.fetchUserDetail(this.resolveId(user.id, 'usuario')).pipe(
+                  map((detail) => this.mapUserRow(detail, companyId, roles, profiles)),
+                  catchError(() => of(this.mapUserRow(user, companyId, roles, profiles))),
+                ),
+              ),
+            );
+          }),
+          map((users) => users.filter((user) => !!user.activeAssignment)),
         ),
       () => this.mockRepository.listUsers(companyId, { search: '', status: 'all' }),
       'usuario',

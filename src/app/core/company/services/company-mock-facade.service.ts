@@ -21,6 +21,7 @@ const COMPANY_CATALOG: Record<string, Company> = {
   },
   'medussa-retail': {
     id: 'medussa-retail',
+    backendId: 'EMP-002',
     name: 'Medussa Holding',
     code: 'HOLD',
     description:

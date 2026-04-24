@@ -36,7 +36,7 @@ export class ProductApiRepository implements ProductsRepository {
   private readonly http = inject(HttpClient);
   private readonly authSessionService = inject(AuthSessionService);
   private readonly mockRepository = inject(ProductMockRepository);
-  private readonly baseUrl = `${environment.apiUrl}/productos`;
+  private readonly baseUrl = `${environment.apiUrl}/inventario`;
   private readonly shadowStorageKey = 'medussa.erp.products.api-shadow';
 
   getCatalogs(companyId: string): Observable<ProductCatalogs> {

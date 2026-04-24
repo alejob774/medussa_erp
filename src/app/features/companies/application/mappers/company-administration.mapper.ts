@@ -50,6 +50,7 @@ export interface EmpresaBackendResponse {
   updated_at?: string | null;
   fecha_inicio_operacion?: string | null;
   operation_start_date?: string | null;
+  moneda?: string | null;
   moneda_base?: string | null;
   currency?: string | null;
   zona_horaria?: string | null;
@@ -58,8 +59,8 @@ export interface EmpresaBackendResponse {
   language?: string | null;
   impuestos?: string | null;
   tax_configuration?: string | null;
-  configuraciones_iniciales?: string | null;
-  initial_configuration?: string | null;
+  configuraciones_iniciales?: Record<string, unknown> | string | null;
+  initial_configuration?: Record<string, unknown> | string | null;
   usuarios_asociados?: BackendCompanyUserDto[] | null;
   associated_users?: BackendCompanyUserDto[] | null;
   usuarios_count?: number | null;
@@ -79,22 +80,21 @@ export interface BackendCompanyCatalogsDto {
 }
 
 interface EmpresaBackendRequestBase {
+  empresa_id: string;
   nombre_empresa: string;
   nit: string;
-  sector: string;
   direccion: string;
   ciudad: string;
   pais: string;
+  moneda: string;
+  zona_horaria: string;
   telefono: string | null;
   email: string | null;
-  estado: boolean;
-  fecha_inicio_operacion: string | null;
-  moneda_base: string;
-  zona_horaria: string;
-  idioma: string;
-  impuestos: string;
-  configuraciones_iniciales: string;
   logo: string | null;
+  sector?: string | null;
+  estado?: boolean;
+  fecha_inicio_operacion?: string | null;
+  configuraciones_iniciales?: Record<string, unknown> | null;
 }
 
 export interface EmpresaCreateBackendRequest extends EmpresaBackendRequestBase {}
@@ -112,6 +112,9 @@ export function mapBackendCompanyToDetail(dto: EmpresaBackendResponse): CompanyD
   );
   const dbId = resolveNullableText(dto.id, dto.backend_id);
   const backendCompanyId = resolveNullableText(dto.empresa_id, dto.backend_id);
+  const initialConfiguration = parseInitialConfiguration(
+    dto.configuraciones_iniciales ?? dto.initial_configuration,
+  );
 
   return {
     id: resolveId(dbId, backendCompanyId, companyName),
@@ -137,15 +140,21 @@ export function mapBackendCompanyToDetail(dto: EmpresaBackendResponse): CompanyD
       dto.fecha_inicio_operacion,
       dto.operation_start_date,
     ),
-    baseCurrency: resolveText(dto.moneda_base, dto.currency, 'COP'),
+    baseCurrency: resolveText(dto.moneda, dto.moneda_base, dto.currency, 'COP'),
     timezone: resolveText(dto.zona_horaria, dto.timezone, 'America/Bogota'),
-    language: resolveText(dto.idioma, dto.language, 'es-CO'),
-    taxConfiguration: resolveText(dto.impuestos, dto.tax_configuration, ''),
-    initialConfiguration: resolveText(
-      dto.configuraciones_iniciales,
-      dto.initial_configuration,
+    language: resolveText(
+      dto.idioma,
+      dto.language,
+      resolveUnknownText(initialConfiguration['idioma']),
+      'es-CO',
+    ),
+    taxConfiguration: resolveText(
+      dto.impuestos,
+      dto.tax_configuration,
+      resolveUnknownText(initialConfiguration['impuestos']),
       '',
     ),
+    initialConfiguration: stringifyInitialConfiguration(initialConfiguration),
   };
 }
 
@@ -158,8 +167,13 @@ export function mapCompanyDetailToRow(company: CompanyDetailVm): CompanyRowVm {
 }
 
 export function mapCompanyDetailToContextCompany(company: CompanyDetailVm): Company {
+  const frontendCompanyId = resolveFrontendCompanyId(
+    company.backendId ?? company.id,
+    company.companyName,
+  );
+
   return {
-    id: company.backendId ?? company.id,
+    id: frontendCompanyId,
     dbId: company.dbId ?? company.id,
     backendId: company.backendId ?? company.id,
     name: company.companyName,
@@ -172,22 +186,25 @@ export function mapCompanyPayloadToBackend(
   payload: SaveCompanyPayload,
 ): EmpresaCreateBackendRequest {
   return {
+    empresa_id: buildBackendCompanyId(payload.companyName),
     nombre_empresa: payload.companyName.trim(),
     nit: payload.nit.trim(),
-    sector: payload.sector.trim(),
     direccion: payload.address.trim(),
     ciudad: payload.city.trim(),
     pais: payload.country.trim(),
+    moneda: payload.baseCurrency,
+    zona_horaria: payload.timezone,
     telefono: payload.phone.trim() || null,
     email: payload.email.trim() || null,
+    logo: payload.logoUrl,
+    sector: payload.sector.trim() || null,
     estado: payload.status === 'active',
     fecha_inicio_operacion: payload.operationStartDate,
-    moneda_base: payload.baseCurrency,
-    zona_horaria: payload.timezone,
-    idioma: payload.language,
-    impuestos: payload.taxConfiguration.trim(),
-    configuraciones_iniciales: payload.initialConfiguration.trim(),
-    logo: payload.logoUrl,
+    configuraciones_iniciales: {
+      idioma: payload.language,
+      impuestos: payload.taxConfiguration.trim(),
+      configuracion_inicial: payload.initialConfiguration.trim() || null,
+    },
   };
 }
 
@@ -279,4 +296,75 @@ function buildCompanyCode(companyName: string): string {
     .slice(0, 4)
     .map((token) => token.charAt(0).toUpperCase())
     .join('');
+}
+
+function resolveFrontendCompanyId(
+  backendCompanyId?: string | null,
+  companyName?: string | null,
+): string {
+  const normalizedBackendCompanyId = backendCompanyId?.trim().toUpperCase();
+  const normalizedCompanyName = normalizeComparableText(companyName);
+
+  if (normalizedBackendCompanyId === 'EMP-001' || normalizedCompanyName.includes('arbolito')) {
+    return 'medussa-holding';
+  }
+
+  if (normalizedBackendCompanyId === 'EMP-002' || normalizedCompanyName.includes('medussa holding')) {
+    return 'medussa-retail';
+  }
+
+  return backendCompanyId?.trim() || buildCompanyCode(companyName ?? 'empresa').toLowerCase();
+}
+
+function buildBackendCompanyId(companyName: string): string {
+  const normalizedName = normalizeComparableText(companyName)
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 24)
+    .toUpperCase();
+
+  return normalizedName ? `EMP-${normalizedName}` : `EMP-${Date.now()}`;
+}
+
+function normalizeComparableText(value?: string | null): string {
+  return (value ?? '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function parseInitialConfiguration(
+  value: Record<string, unknown> | string | null | undefined,
+): Record<string, unknown> {
+  if (!value) {
+    return {};
+  }
+
+  if (typeof value === 'string') {
+    try {
+      const parsedValue = JSON.parse(value) as Record<string, unknown>;
+      return parsedValue && typeof parsedValue === 'object' ? parsedValue : {};
+    } catch {
+      return {};
+    }
+  }
+
+  return value;
+}
+
+function stringifyInitialConfiguration(value: Record<string, unknown>): string {
+  return Object.keys(value).length ? JSON.stringify(value) : '';
+}
+
+function resolveUnknownText(value: unknown): string | null {
+  if (typeof value === 'number') {
+    return String(value);
+  }
+
+  if (typeof value === 'string' && value.trim()) {
+    return value.trim();
+  }
+
+  return null;
 }
