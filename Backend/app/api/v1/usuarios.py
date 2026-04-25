@@ -104,39 +104,45 @@ async def crear_usuario(request: Request, user_in: UsuarioCreate, db: Session = 
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
 ### --- UPDATE (PUT) - HU-011 ---
+
 @router.put("/{id}", response_model=UsuarioResponse)
-async def actualizar_usuario(id: int, request: Request, user_in: UsuarioUpdate, db: Session = Depends(get_db)):
-    usuario = db.query(Usuario).filter(Usuario.id == id).first()
-    
+async def editar_usuario(id: int, obj_in: UsuarioUpdate, request: Request, db: Session = Depends(get_db)):
+    usuario = db.query(Usuario).options(joinedload(Usuario.membresias_rel)).filter(Usuario.id == id).first()
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
-    # Actualización dinámica de campos según HU-011
-    update_data = user_in.model_dump(exclude_unset=True)
+    update_data = obj_in.model_dump(exclude_unset=True)
+    
+    # Lógica de Membresías (HU-011)
+    if "membresias" in update_data:
+        nuevas = update_data.pop("membresias")
+        actuales = {m.empresa_id: m for m in usuario.membresias_rel}
+        ids_nuevos = {m["empresa_id"] for m in nuevas}
+
+        # 1. Eliminar las que ya no vienen
+        for emp_id, obj_db in actuales.items():
+            if emp_id not in ids_nuevos:
+                db.delete(obj_db)
+
+        # 2. Agregar o Actualizar
+        for m_in in nuevas:
+            emp_id = m_in["empresa_id"]
+            if emp_id in actuales:
+                actuales[emp_id].rol_id = m_in["rol_id"]
+                actuales[emp_id].perfil_id = m_in.get("perfil_id")
+            else:
+                db.add(UsuarioEmpresaConfig(
+                    usuario_id=id, empresa_id=emp_id, 
+                    rol_id=m_in["rol_id"], perfil_id=m_in.get("perfil_id")
+                ))
+
+    # Actualizar datos básicos
     for key, value in update_data.items():
         setattr(usuario, key, value)
 
-    try:
-        db.commit()
-        db.refresh(usuario)
-        
-        await registrar_log(db, request, id, usuario.nombre, "ADMIN", "USUARIOS", "UPDATE")
-        
-        # Hidratar membresías para la respuesta
-        usuario.membresias = [
-            MembresiaOut(
-                empresa_id=m.empresa_id,
-                rol_id=m.rol_id,
-                rol_nombre=db.query(Rol).filter(Rol.id == m.rol_id).first().nombre if m.rol_id else None,
-                perfil_id=m.perfil_id,
-                perfil_nombre=db.query(Perfil).filter(Perfil.id == m.perfil_id).first().nombre if m.perfil_id else None
-            ) for m in usuario.membresias_rel
-        ]
-        
-        return usuario
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=f"Error al actualizar: {str(e)}")
+    db.commit()
+    db.refresh(usuario)
+    return usuario
 
 ### --- ELIMINAR (SOFT DELETE) ---
 @router.delete("/{id}")

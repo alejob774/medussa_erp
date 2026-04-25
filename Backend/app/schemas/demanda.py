@@ -1,28 +1,30 @@
 from pydantic import BaseModel
-from typing import List, Optional
-from datetime import date, datetime
+from typing import Optional, List
+from datetime import datetime
 
-class ForecastDetalleBase(BaseModel):
-    producto_id: int
-    periodo: date
-    demanda_historica: float
-    forecast_sistema: float
-    ajuste_manual: float
-    stock_seguridad: float
+# Esquema base para compartir campos
+class ForecastBase(BaseModel):
+    version: Optional[str] = None
+    horizonte: Optional[str] = None
+    estado: Optional[str] = "Borrador"
 
-class ForecastCreate(BaseModel):
-    empresa_id: str
-    version: str
+# Para la creación (POST)
+class ForecastCreate(ForecastBase):
+    version: str  # Obligatorio al crear
     horizonte: str
-    fecha_inicio: date
-    fecha_fin: date
-    detalles: List[ForecastDetalleBase]
 
-class ForecastResponse(BaseModel):
+# --- AQUÍ ESTÁ EL QUE FALTA ---
+class ForecastUpdate(BaseModel):
+    version: Optional[str] = None
+    horizonte: Optional[str] = None
+    estado: Optional[str] = None
+    es_activo: Optional[bool] = None
+
+# Para la respuesta (Response)
+class ForecastResponse(ForecastBase):
     id: int
-    version: str
-    estado: str
-    fecha_creacion: datetime
+    empresa_id: str
+    fecha_crea: datetime
 
     class Config:
         from_attributes = True

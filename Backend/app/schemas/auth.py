@@ -14,6 +14,9 @@ class UserMeResponse(BaseModel):
     apellido: Optional[str] = None
     username: str
     email: EmailStr
+    # --- NUEVO CAMPO ---
+    active_company_id: Optional[str] = None 
+    # -------------------
     empresas: List[EmpresaMe]
 
     class Config:

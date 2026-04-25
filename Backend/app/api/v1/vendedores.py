@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 from fastapi.encoders import jsonable_encoder
@@ -10,7 +10,7 @@ from app.utils.auditoria import registrar_log
 
 router = APIRouter()
 
-@router.post("/", response_model=VendedorResponse)
+@router.post("/", response_model=VendedorResponse, status_code=status.HTTP_201_CREATED)
 async def crear_vendedor(
     request: Request,
     obj_in: VendedorCreate,
@@ -18,21 +18,22 @@ async def crear_vendedor(
     current_user = Depends(get_current_user)
 ):
     vendedor = await crud.crear_vendedor(db, obj_in)
-    
-    # Ajustamos 'despues' por 'payload_despues' para que coincida con tu auditoria.py
     await registrar_log(
-        db, request, 
-        user_id=current_user.id, 
-        user_name=current_user.username,
-        modulo="VENDEDORES", 
-        accion="CREAR",
-        payload_despues=jsonable_encoder(vendedor) 
+        db, request, user_id=current_user.id, user_name=current_user.username,
+        modulo="VENDEDORES", accion="CREAR",
+        empresa_id=vendedor.empresa_id,
+        payload_despues=jsonable_encoder(vendedor)
     )
     return vendedor
 
 @router.get("/", response_model=List[VendedorResponse])
-async def listar_vendedores(db: Session = Depends(get_db)):
+async def listar_vendedores(db: Session = Depends(get_db), current_user = Depends(get_current_user)):
     return await crud.obtener_vendedores(db)
+
+@router.get("/{id}", response_model=VendedorResponse)
+async def obtener_detalle_vendedor(id: int, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+    # El service ya lanza el 404 si no existe
+    return await crud.obtener_vendedor_por_id(db, id)
 
 @router.patch("/{id}", response_model=VendedorResponse)
 async def actualizar_vendedor(
@@ -42,32 +43,19 @@ async def actualizar_vendedor(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    # Obtenemos el estado previo
     vendedor_antes = await crud.obtener_vendedor_por_id(db, id)
     antes_dict = jsonable_encoder(vendedor_antes)
     
-    # Realizamos la actualización
     actualizado = await crud.actualizar_vendedor(db, id, obj_in)
     
-    # CORRECCIÓN AQUÍ: Cambiamos 'antes' por 'payload_antes' 
-    # y 'despues' por 'payload_despues'
     await registrar_log(
-        db, request, 
-        user_id=current_user.id, 
-        user_name=current_user.username,
-        modulo="VENDEDORES", 
-        accion="ACTUALIZAR",
-        payload_antes=antes_dict, 
+        db, request, user_id=current_user.id, user_name=current_user.username,
+        modulo="VENDEDORES", accion="ACTUALIZAR",
+        empresa_id=actualizado.empresa_id,
+        payload_antes=antes_dict,
         payload_despues=jsonable_encoder(actualizado)
     )
     return actualizado
-
-@router.get("/{id}")
-def obtener_vendedor(id: int, db: Session = Depends(get_db)):
-    vendedor = db.query(Vendedor).filter(Vendedor.id == id).first()
-    if not vendedor:
-        raise HTTPException(status_code=404, detail="Vendedor no encontrado")
-    return vendedor
 
 @router.delete("/{id}")
 async def eliminar_vendedor(
@@ -79,7 +67,8 @@ async def eliminar_vendedor(
     vendedor = await crud.eliminar_vendedor_logico(db, id)
     await registrar_log(
         db, request, user_id=current_user.id, user_name=current_user.username,
-        modulo="VENDEDORES", accion="ELIMINAR_LOGICO",
-        descripcion=f"Vendedor {vendedor.id_ven} desactivado"
+        modulo="VENDEDORES", accion="DELETE_LOGICO",
+        empresa_id=vendedor.empresa_id,
+        payload_despues={"id": id, "estado": False}
     )
     return {"message": "Vendedor desactivado correctamente"}

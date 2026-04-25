@@ -46,23 +46,26 @@ def get_current_company(
 ) -> str:
     """
     Valida que el contexto de la empresa esté establecido y que el usuario
-    tenga acceso a dicha empresa.
+    tenga acceso a dicha empresa revisando sus membresías.
     """
     empresa_id = get_company_context()
     
     if not empresa_id:
-        # El middleware debería haberlo capturado, pero esto es una doble validación
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, 
             detail="El header X-Company-ID es obligatorio para esta operación."
         )
 
-    # Lógica de seguridad: Validamos que el usuario pertenezca a la empresa
-    # Esto asume que tu modelo Usuario tiene una relación o campo empresa_id
-    if current_user.empresa_id != empresa_id and not current_user.is_superuser:
+    # 1. Validar acceso iterando sobre las empresas a las que pertenece el usuario
+    tiene_acceso = any(membresia.empresa_id == empresa_id for membresia in current_user.membresias_rel)
+    
+    # 2. Manejo seguro del flag de superusuario por si no existe en el modelo actual
+    es_admin = getattr(current_user, 'is_superuser', False)
+
+    if not tiene_acceso and not es_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="No tienes permisos para acceder a los datos de esta empresa."
+            detail=f"El usuario no tiene acceso a la empresa {empresa_id}."
         )
-    
+
     return empresa_id
