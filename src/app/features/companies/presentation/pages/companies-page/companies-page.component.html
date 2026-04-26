@@ -94,11 +94,11 @@
         <div class="erp-date-range grid-cols-2">
           <div class="space-y-2">
             <label class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Desde</label>
-            <input class="companies-date-input" type="date" formControlName="dateFrom" />
+            <input class="erp-date-input" type="date" formControlName="dateFrom" />
           </div>
           <div class="space-y-2">
             <label class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Hasta</label>
-            <input class="companies-date-input" type="date" formControlName="dateTo" />
+            <input class="erp-date-input" type="date" formControlName="dateTo" />
           </div>
         </div>
 
@@ -233,7 +233,7 @@
 
                       <button
                         type="button"
-                        class="inline-flex min-h-9 w-[120px] items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition hover:bg-slate-100"
+                        class="erp-row-action"
                         [class.border-amber-200]="company.status === 'active'"
                         [class.text-amber-700]="company.status === 'active'"
                         [class.bg-amber-50]="company.status === 'active'"

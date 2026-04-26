@@ -3,7 +3,7 @@ import { Component, inject } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { finalize, map } from 'rxjs';
+import { finalize } from 'rxjs';
 import { AuthLogoutService } from '../../../../features/auth/services/auth-logout.service';
 import { AuthSessionService } from '../../../../features/auth/services/auth-session.service';
 import { CompanyContextService } from '../../../company/services/company-context.service';
@@ -22,7 +22,7 @@ import { NavigationFacadeService } from '../../../navigation/services/navigation
     RouterOutlet,
   ],
   template: `
-    @let navItems = (navigationItems$ | async) ?? [];
+    @let sections = (sections$ | async) ?? [];
     @let companies = (companies$ | async) ?? [];
     @let activeCompany = (activeCompany$ | async);
     @let session = (session$ | async);
@@ -36,64 +36,73 @@ import { NavigationFacadeService } from '../../../navigation/services/navigation
 
           <nav class="erp-shell-nav" aria-label="Navegacion principal">
             <div class="erp-nav-list">
-              @for (item of navItems; track item.id) {
-                @if (item.children?.length) {
-                  <div
-                    class="erp-nav-group"
-                    [class.erp-nav-group--open]="isGroupExpanded(item)"
-                    [class.erp-nav-group--active]="groupHasActiveChild(item)"
-                  >
-                    <button
-                      type="button"
-                      class="erp-nav-group__button"
-                      (click)="toggleGroup(item.id)"
-                      [attr.aria-expanded]="isGroupExpanded(item)"
-                    >
-                      <span class="erp-nav-group__title">
-                        <mat-icon>{{ item.icon }}</mat-icon>
-                        <span class="erp-nav-group__text">
-                          <span>{{ item.label }}</span>
-                        </span>
-                      </span>
+              @for (section of sections; track section.id) {
+                <section class="erp-nav-section" [attr.aria-labelledby]="'erp-nav-section-' + section.id">
+                  <p class="erp-nav-section__label" [id]="'erp-nav-section-' + section.id">
+                    <mat-icon>{{ section.icon }}</mat-icon>
+                    <span>{{ section.label }}</span>
+                  </p>
 
-                      <mat-icon class="erp-nav-group__chevron">
-                        {{ isGroupExpanded(item) ? 'expand_less' : 'expand_more' }}
-                      </mat-icon>
-                    </button>
+                  @for (item of section.items; track item.id) {
+                    @if (item.children?.length) {
+                      <div
+                        class="erp-nav-group"
+                        [class.erp-nav-group--open]="isGroupExpanded(item)"
+                        [class.erp-nav-group--active]="groupHasActiveChild(item)"
+                      >
+                        <button
+                          type="button"
+                          class="erp-nav-group__button"
+                          (click)="toggleGroup(item.id)"
+                          [attr.aria-expanded]="isGroupExpanded(item)"
+                        >
+                          <span class="erp-nav-group__title">
+                            <mat-icon>{{ item.icon }}</mat-icon>
+                            <span class="erp-nav-group__text">
+                              <span>{{ item.label }}</span>
+                            </span>
+                          </span>
 
-                    @if (isGroupExpanded(item)) {
-                      <div class="erp-nav-sublist">
-                        @for (child of item.children; track child.id) {
-                          @if (child.route) {
-                            <a
-                              class="erp-nav-sublink"
-                              [routerLink]="child.route"
-                              routerLinkActive="active"
-                              [routerLinkActiveOptions]="{ exact: true }"
-                            >
-                              <mat-icon>{{ child.icon }}</mat-icon>
-                              <span>{{ child.label }}</span>
-                            </a>
-                          } @else {
-                            <p class="px-3 pt-3 text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-slate-400">
-                              {{ child.label }}
-                            </p>
-                          }
+                          <mat-icon class="erp-nav-group__chevron">
+                            {{ isGroupExpanded(item) ? 'expand_less' : 'expand_more' }}
+                          </mat-icon>
+                        </button>
+
+                        @if (isGroupExpanded(item)) {
+                          <div class="erp-nav-sublist">
+                            @for (child of item.children; track child.id) {
+                              @if (child.route) {
+                                <a
+                                  class="erp-nav-sublink"
+                                  [routerLink]="child.route"
+                                  routerLinkActive="active"
+                                  [routerLinkActiveOptions]="{ exact: true }"
+                                >
+                                  <mat-icon>{{ child.icon }}</mat-icon>
+                                  <span>{{ child.label }}</span>
+                                </a>
+                              } @else {
+                                <p class="erp-nav-section-label">
+                                  {{ child.label }}
+                                </p>
+                              }
+                            }
+                          </div>
                         }
                       </div>
+                    } @else {
+                      <a
+                        class="erp-nav-link"
+                        [routerLink]="item.route ?? '/dashboard'"
+                        routerLinkActive="active"
+                        [routerLinkActiveOptions]="{ exact: true }"
+                      >
+                        <mat-icon>{{ item.icon }}</mat-icon>
+                        <span>{{ item.label }}</span>
+                      </a>
                     }
-                  </div>
-                } @else {
-                  <a
-                    class="erp-nav-link"
-                    [routerLink]="item.route ?? '/dashboard'"
-                    routerLinkActive="active"
-                    [routerLinkActiveOptions]="{ exact: true }"
-                  >
-                    <mat-icon>{{ item.icon }}</mat-icon>
-                    <span>{{ item.label }}</span>
-                  </a>
-                }
+                  }
+                </section>
               }
             </div>
           </nav>
@@ -104,9 +113,9 @@ import { NavigationFacadeService } from '../../../navigation/services/navigation
         <header class="erp-topbar">
           <div class="erp-topbar__intro">
             <p class="erp-topbar__eyebrow">Medussa ERP</p>
-            <h1 class="erp-topbar__title">Operacion multiempresa centralizada</h1>
+            <h1 class="erp-topbar__title">Operacion corporativa multiempresa</h1>
             <p class="erp-topbar__subtitle">
-              Medussa Holding concentra el contexto corporativo principal de la demo, manteniendo la operacion multiempresa disponible para maestros, seguridad y SCM.
+              Contexto activo, permisos y navegacion reunidos para trabajar con menos friccion.
             </p>
           </div>
 
@@ -218,9 +227,6 @@ export class ErpShellComponent {
   private readonly router = inject(Router);
 
   readonly sections$ = this.navigationFacade.sections$;
-  readonly navigationItems$ = this.sections$.pipe(
-    map((sections) => sections.flatMap((section) => section.items)),
-  );
   readonly medussaLogo = 'assets/branding/logo-medussa-vertical-white.png';
   readonly companies$ = this.companyContextService.companies$;
   readonly activeCompany$ = this.companyContextService.activeCompany$;

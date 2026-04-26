@@ -3,9 +3,7 @@
 }
 
 .auth-layout {
-  background:
-    radial-gradient(circle at top right, rgba(98, 147, 197, 0.18), transparent 24%),
-    linear-gradient(180deg, #f8faff 0%, #edf4ff 100%);
+  background: linear-gradient(180deg, #f8fbff 0%, #eef3f9 100%);
 }
 
 .auth-card {
@@ -15,7 +13,7 @@
 .branding-panel {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(180deg, #0f3460 0%, #0052cc 100%);
+  background: linear-gradient(180deg, #123a67 0%, #0f2c4c 100%);
 }
 
 .branding-panel__logo-wrap {
@@ -39,7 +37,7 @@
   margin-right: -2.5rem;
   margin-bottom: -1.5rem;
   margin-left: -2.5rem;
-  border-radius: 32px 32px 0 0;
+  border-radius: 0.75rem 0.75rem 0 0;
   overflow: hidden;
   opacity: 0.96;
 }

@@ -192,7 +192,7 @@ import { DriverListResponse, EMPTY_DRIVER_LIST_RESPONSE } from '../../../domain/
 
                         <button
                           type="button"
-                          class="inline-flex min-h-9 w-[120px] items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition hover:bg-slate-100"
+                          class="erp-row-action"
                           [class.border-amber-200]="driver.estado === 'ACTIVO'"
                           [class.text-amber-700]="driver.estado === 'ACTIVO'"
                           [class.bg-amber-50]="driver.estado === 'ACTIVO'"

@@ -218,7 +218,7 @@ import {
 
                         <button
                           type="button"
-                          class="inline-flex min-h-9 w-[120px] items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition hover:bg-slate-100"
+                          class="erp-row-action"
                           [class.border-amber-200]="product.estado === 'ACTIVO'"
                           [class.text-amber-700]="product.estado === 'ACTIVO'"
                           [class.bg-amber-50]="product.estado === 'ACTIVO'"

@@ -81,6 +81,14 @@ import { CompanySettingsFacadeService } from '../../services/company-settings.fa
 
           <div class="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
             <section class="erp-panel">
+              <div class="mb-5">
+                <p class="erp-section-eyebrow">Datos de empresa</p>
+                <h2 class="erp-section-title">Identificacion y contacto</h2>
+                <p class="erp-section-description">
+                  Mantiene consistentes los datos principales usados por el ERP para la empresa activa.
+                </p>
+              </div>
+
               <div class="grid gap-4 md:grid-cols-2">
                 <mat-form-field appearance="outline">
                   <mat-label>Nombre empresa</mat-label>
@@ -159,8 +167,9 @@ import { CompanySettingsFacadeService } from '../../services/company-settings.fa
 
             <aside class="space-y-4">
               <section class="erp-panel">
-                <h2 class="text-lg font-semibold text-slate-900">Logo y branding</h2>
-                <p class="mt-1 text-sm text-slate-500">
+                <p class="erp-section-eyebrow">Identidad</p>
+                <h2 class="erp-section-title">Logo y branding</h2>
+                <p class="erp-section-description">
                   Placeholder preparado para preview local mientras se define el contrato de upload.
                 </p>
 
@@ -174,7 +183,8 @@ import { CompanySettingsFacadeService } from '../../services/company-settings.fa
               </section>
 
               <section class="erp-panel">
-                <h2 class="text-lg font-semibold text-slate-900">Estado</h2>
+                <p class="erp-section-eyebrow">Estado</p>
+                <h2 class="erp-section-title">Contexto del registro</h2>
                 <dl class="mt-4 space-y-3 text-sm text-slate-600">
                   <div class="flex items-center justify-between gap-3">
                     <dt>Empresa activa</dt>

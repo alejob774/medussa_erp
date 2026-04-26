@@ -1,11 +1,16 @@
 <section class="space-y-6">
   <header class="erp-page-header">
-    <div class="erp-page-header__content">
+    <div class="erp-page-header__content flex items-start gap-4">
+      <div class="erp-page-icon">
+        <mat-icon>fact_check</mat-icon>
+      </div>
+      <div>
       <p class="erp-page-eyebrow">Configuración</p>
       <h1 class="erp-page-title">Auditoría y trazabilidad</h1>
       <p class="erp-page-description">
         Registro operativo unificado con filtros, exportación y detalle lateral alineados al nuevo sistema visual del ERP.
       </p>
+      </div>
     </div>
   </header>
 
@@ -90,11 +95,11 @@
         <div class="erp-date-range grid-cols-2">
           <div class="space-y-2">
             <label class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Desde</label>
-            <input class="audit-date-input" type="date" formControlName="dateFrom" />
+            <input class="erp-date-input" type="date" formControlName="dateFrom" />
           </div>
           <div class="space-y-2">
             <label class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Hasta</label>
-            <input class="audit-date-input" type="date" formControlName="dateTo" />
+            <input class="erp-date-input" type="date" formControlName="dateTo" />
           </div>
         </div>
 
@@ -154,7 +159,7 @@
                   <td>{{ log.ipAddress }}</td>
                   <td>{{ formatDate(log.eventDateTime) }}</td>
                   <td class="text-center">
-                    <button type="button" class="audit-detail-button" (click)="openDetail(log)">
+                    <button type="button" class="erp-row-action erp-row-action--primary" (click)="openDetail(log)">
                       Detalles
                     </button>
                   </td>

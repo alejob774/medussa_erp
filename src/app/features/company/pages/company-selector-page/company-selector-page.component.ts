@@ -2,8 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { Router } from '@angular/router';
-import { AuthSessionService } from '../../../auth/services/auth-session.service';
 import { CompanyContextService } from '../../../../core/company/services/company-context.service';
+import { AuthSessionService } from '../../../auth/services/auth-session.service';
 
 @Component({
   selector: 'app-company-selector-page',
@@ -30,8 +30,8 @@ import { CompanyContextService } from '../../../../core/company/services/company
               </div>
             </div>
 
-            <div class="rounded-3xl border border-white/10 bg-white/10 p-5 backdrop-blur-sm">
-              <p class="text-xs font-semibold uppercase tracking-[0.28em] text-white/60">Usuario</p>
+            <div class="erp-form-section border-white/10 bg-white/10 backdrop-blur-sm">
+              <p class="erp-section-eyebrow text-white/70">Usuario</p>
               <p class="mt-3 text-lg font-semibold text-white">{{ session?.user?.username ?? 'usuario' }}</p>
               <p class="mt-1 text-sm text-white/72">{{ session?.user?.email ?? 'sin correo mock' }}</p>
             </div>
@@ -42,9 +42,9 @@ import { CompanyContextService } from '../../../../core/company/services/company
           <header class="erp-page-header">
             <div class="erp-page-header__content">
               <p class="erp-page-eyebrow">Selecciona empresa</p>
-              <h2 class="erp-page-title">¿Con cuál empresa quieres entrar?</h2>
+              <h2 class="erp-page-title">Con cual empresa quieres entrar?</h2>
               <p class="erp-page-description">
-                Deja una sola decisión visible y clara: elige la empresa y entra al entorno corporativo de trabajo.
+                Elige el contexto de trabajo antes de entrar al entorno corporativo.
               </p>
             </div>
           </header>
@@ -52,16 +52,10 @@ import { CompanyContextService } from '../../../../core/company/services/company
           <section class="erp-panel">
             <div class="grid gap-4 md:grid-cols-2">
               @for (company of companies; track company.id) {
-                <button
-                  type="button"
-                  class="rounded-[1.5rem] border border-slate-200 bg-white p-5 text-left shadow-sm transition duration-150 hover:-translate-y-0.5 hover:border-[#6293C5] hover:shadow-xl"
-                  (click)="selectCompany(company.id)"
-                >
+                <button type="button" class="erp-company-card" (click)="selectCompany(company.id)">
                   <div class="flex items-start justify-between gap-3">
                     <div>
-                      <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">
-                        {{ company.code }}
-                      </p>
+                      <p class="erp-section-eyebrow">{{ company.code }}</p>
                       <h3 class="mt-2 text-xl font-semibold text-slate-900">{{ company.name }}</h3>
                     </div>
 

@@ -56,7 +56,7 @@ import {
       <header class="sticky top-0 z-10 border-b border-slate-200 bg-white px-6 py-5">
         <div class="flex items-start justify-between gap-4">
           <div>
-            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-teal-600">
+            <p class="erp-section-eyebrow">
               Administración global
             </p>
             <h2 class="mt-2 text-2xl font-bold text-slate-900">
@@ -103,7 +103,7 @@ import {
           <div class="flex-1 overflow-auto px-6 py-6">
             <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
               <div class="space-y-6">
-                <section class="rounded-3xl border border-slate-200 bg-white p-5">
+                <section class="erp-form-section">
                   <div class="mb-4">
                     <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
                       Identificación
@@ -153,7 +153,7 @@ import {
                   </div>
                 </section>
 
-                <section class="rounded-3xl border border-slate-200 bg-white p-5">
+                <section class="erp-form-section">
                   <div class="mb-4">
                     <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
                       Contacto
@@ -193,7 +193,7 @@ import {
                   </div>
                 </section>
 
-                <section class="rounded-3xl border border-slate-200 bg-white p-5">
+                <section class="erp-form-section">
                   <div class="mb-4">
                     <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
                       Operación y configuración
@@ -206,7 +206,7 @@ import {
                       <label class="text-sm font-medium text-slate-700">Fecha inicio operación</label>
                       <input
                         type="date"
-                        class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-teal-500"
+                        class="erp-date-input"
                         formControlName="operationStartDate"
                       />
                     </div>
@@ -273,7 +273,7 @@ import {
               </div>
 
               <div class="space-y-6">
-                <section class="rounded-3xl border border-slate-200 bg-white p-5">
+                <section class="erp-form-section">
                   <div class="mb-4">
                     <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
                       Identidad visual
@@ -291,7 +291,7 @@ import {
                   ></app-company-logo-upload>
                 </section>
 
-                <section class="rounded-3xl border border-slate-200 bg-white p-5">
+                <section class="erp-form-section">
                   <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
                     Resumen operativo
                   </p>

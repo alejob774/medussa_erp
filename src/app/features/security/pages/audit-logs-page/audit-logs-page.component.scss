@@ -6,20 +6,6 @@
   min-width: 280px;
 }
 
-.audit-date-input {
-  width: 100%;
-  border: 1px solid var(--erp-border-strong);
-  border-radius: 0.95rem;
-  background: var(--medussa-white);
-  padding: 0.72rem 0.85rem;
-  color: var(--erp-text);
-}
-
-.audit-date-input:focus {
-  outline: 2px solid rgba(0, 82, 204, 0.12);
-  outline-offset: 2px;
-}
-
 .audit-table {
   border-collapse: collapse;
 }
@@ -34,26 +20,6 @@
 
 .audit-chip {
   white-space: nowrap;
-}
-
-.audit-detail-button {
-  display: inline-flex;
-  min-height: 2.35rem;
-  min-width: 6rem;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(0, 82, 204, 0.12);
-  border-radius: 0.85rem;
-  background: #0052cc;
-  padding: 0.5rem 0.9rem;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #ffffff;
-  transition: background 120ms ease;
-}
-
-.audit-detail-button:hover {
-  background: #0f3460;
 }
 
 mat-paginator {
