@@ -17,7 +17,7 @@ export interface MpsSimulationRequest {
   standalone: true,
   imports: [CommonModule, FormsModule, MatButtonModule],
   template: `
-    <section class="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+    <section class="grid items-start gap-6 xl:grid-cols-[0.9fr_1.1fr]">
       <article class="erp-panel space-y-5">
         <div>
           <p class="erp-section-eyebrow">Simulacion simple</p>
@@ -40,7 +40,7 @@ export interface MpsSimulationRequest {
             </label>
           </div>
 
-          <label class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+          <label class="erp-detail-card text-sm text-slate-700">
             <div class="flex items-start gap-3">
               <input class="mt-1 h-4 w-4 rounded border-slate-300" type="checkbox" [(ngModel)]="draft.considerarFEFO" />
               <div>
@@ -61,16 +61,16 @@ export interface MpsSimulationRequest {
             ></textarea>
           </label>
 
-          <div class="flex flex-wrap gap-3">
+          <div class="erp-action-strip">
             <button type="button" mat-flat-button color="primary" (click)="simulate.emit(buildPayload())">
               Simular escenario
             </button>
-            <span class="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs text-slate-500">
+            <span class="erp-chip erp-chip--neutral">
               Preparado para futura conversion a ordenes, sin mover inventario en esta HU.
             </span>
           </div>
         } @else {
-          <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+          <div class="erp-detail-card text-sm leading-6 text-slate-600">
             El plan oficial esta bloqueado para simulaciones. Genera un nuevo escenario o trabaja sobre un borrador.
           </div>
         }
@@ -87,7 +87,7 @@ export interface MpsSimulationRequest {
           </div>
 
           @if (plan) {
-            <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm text-slate-600">
+            <span class="erp-chip erp-chip--info">
               Estado: {{ plan.estado }}
             </span>
           }
@@ -96,7 +96,7 @@ export interface MpsSimulationRequest {
         @if (logs.length) {
           <div class="mt-5 space-y-4">
             @for (item of logs; track item.id) {
-              <article class="rounded-2xl border border-slate-200 bg-white p-4">
+              <article class="erp-detail-card">
                 <div class="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p class="text-sm font-semibold text-slate-900">{{ item.tipoEvento }}</p>
@@ -108,11 +108,11 @@ export interface MpsSimulationRequest {
 
                 @if (item.valorNuevo || item.valorAnterior) {
                   <div class="mt-3 grid gap-3 md:grid-cols-2">
-                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <div class="erp-subpanel">
                       <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Antes</p>
                       <pre class="mt-2 whitespace-pre-wrap text-xs text-slate-600">{{ prettyPrint(item.valorAnterior) }}</pre>
                     </div>
-                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <div class="erp-subpanel">
                       <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Despues</p>
                       <pre class="mt-2 whitespace-pre-wrap text-xs text-slate-600">{{ prettyPrint(item.valorNuevo) }}</pre>
                     </div>

@@ -8,7 +8,7 @@ import { QualityInspectionAggregate } from '../../../domain/models/quality-inspe
   standalone: true,
   imports: [CommonModule],
   template: `
-    <section class="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+    <section class="grid items-start gap-6 xl:grid-cols-[0.9fr_1.1fr]">
       <article class="erp-panel">
         <p class="erp-section-eyebrow">Historial de lote</p>
         <h3 class="erp-section-title">Inspecciones relacionadas</h3>
@@ -19,7 +19,7 @@ import { QualityInspectionAggregate } from '../../../domain/models/quality-inspe
         @if (relatedInspections.length) {
           <div class="mt-5 space-y-3">
             @for (item of relatedInspections; track item.inspection.id) {
-              <article class="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-4">
+              <article class="erp-detail-card">
                 <div class="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p class="text-sm font-semibold text-slate-900">
@@ -58,7 +58,7 @@ import { QualityInspectionAggregate } from '../../../domain/models/quality-inspe
         @if (histories.length) {
           <div class="mt-5 space-y-3">
             @for (item of histories; track item.id) {
-              <article class="rounded-3xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+              <article class="erp-detail-card">
                 <div class="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p class="text-sm font-semibold text-slate-900">{{ item.evento }}</p>

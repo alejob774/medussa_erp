@@ -100,7 +100,7 @@ import { BomFormulaListComponent } from '../../components/bom-formula-list/bom-f
         </article>
       </section>
 
-      <div class="flex flex-wrap gap-3">
+      <div class="erp-action-strip">
         <button type="button" mat-flat-button color="primary" (click)="createFormula()">
           Nueva formula
         </button>

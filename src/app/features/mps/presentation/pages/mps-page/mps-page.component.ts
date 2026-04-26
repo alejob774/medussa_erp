@@ -85,7 +85,7 @@ import { MpsSummaryCardsComponent } from '../../components/mps-summary-cards/mps
       @if (selectedPlan) {
         <app-mps-summary-cards [summary]="selectedPlan.plan.resumenKpis" [plan]="selectedPlan.plan" />
 
-        <div class="flex flex-wrap gap-3">
+        <div class="erp-action-strip">
           @if (canApprove(selectedPlan)) {
             <button type="button" mat-flat-button color="primary" [disabled]="working" (click)="approvePlan()">
               Aprobar plan
@@ -94,12 +94,12 @@ import { MpsSummaryCardsComponent } from '../../components/mps-summary-cards/mps
           <button type="button" mat-stroked-button [disabled]="working" (click)="generatePlan(filters)">
             Regenerar con filtros actuales
           </button>
-          <span class="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs text-slate-500">
+          <span class="erp-chip erp-chip--neutral">
             {{ dashboard.plans.length }} planes guardados en localStorage para esta empresa.
           </span>
         </div>
 
-        <section class="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+        <section class="grid items-start gap-6 xl:grid-cols-[1.2fr_0.8fr]">
           <app-mps-grid
             [details]="selectedPlan.details"
             [planStatus]="selectedPlan.plan.estado"
@@ -110,7 +110,7 @@ import { MpsSummaryCardsComponent } from '../../components/mps-summary-cards/mps
           <app-mps-alerts [alerts]="selectedPlan.alerts" />
         </section>
 
-        <section class="grid gap-6 xl:grid-cols-[0.86fr_1.14fr]">
+        <section class="grid items-start gap-6 xl:grid-cols-[0.86fr_1.14fr]">
           <app-mps-capacity-summary [summary]="selectedPlan.capacitySummary" />
 
           <article class="erp-panel">
@@ -123,7 +123,7 @@ import { MpsSummaryCardsComponent } from '../../components/mps-summary-cards/mps
             </div>
 
             <div class="mt-5 grid gap-4 md:grid-cols-2">
-              <article class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <article class="erp-detail-card">
                 <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Periodo</p>
                 <p class="mt-2 text-base font-semibold text-slate-900">
                   {{ selectedPlan.plan.fechaInicio | date: 'yyyy-MM-dd' }} a
@@ -132,7 +132,7 @@ import { MpsSummaryCardsComponent } from '../../components/mps-summary-cards/mps
                 <p class="mt-2 text-sm text-slate-600">{{ selectedPlan.plan.planta }}</p>
               </article>
 
-              <article class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <article class="erp-detail-card">
                 <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Cobertura</p>
                 <p class="mt-2 text-base font-semibold text-slate-900">
                   Familia {{ selectedPlan.plan.familia || 'Consolidada' }}
@@ -143,7 +143,7 @@ import { MpsSummaryCardsComponent } from '../../components/mps-summary-cards/mps
                 </p>
               </article>
 
-              <article class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <article class="erp-detail-card">
                 <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Creado por</p>
                 <p class="mt-2 text-base font-semibold text-slate-900">{{ selectedPlan.plan.usuarioCrea }}</p>
                 <p class="mt-2 text-sm text-slate-600">
@@ -151,7 +151,7 @@ import { MpsSummaryCardsComponent } from '../../components/mps-summary-cards/mps
                 </p>
               </article>
 
-              <article class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <article class="erp-detail-card">
                 <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Aprobacion</p>
                 <p class="mt-2 text-base font-semibold text-slate-900">
                   {{ selectedPlan.plan.usuarioAprueba || 'Pendiente' }}
@@ -162,7 +162,7 @@ import { MpsSummaryCardsComponent } from '../../components/mps-summary-cards/mps
               </article>
             </div>
 
-            <div class="mt-5 rounded-2xl border border-slate-200 bg-white p-4">
+            <div class="erp-subpanel mt-5">
               <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Observaciones</p>
               <p class="mt-3 text-sm leading-6 text-slate-600">
                 {{ selectedPlan.plan.observaciones || 'Sin observaciones registradas para este escenario.' }}

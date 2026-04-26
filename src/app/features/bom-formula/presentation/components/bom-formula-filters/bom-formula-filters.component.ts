@@ -10,7 +10,7 @@ import { BomFormulaDashboard } from '../../../domain/models/bom-formula-response
   standalone: true,
   imports: [CommonModule, FormsModule, MatButtonModule],
   template: `
-    <section class="erp-panel">
+    <section class="erp-filter-panel">
       <div>
         <p class="erp-section-eyebrow">Consulta tecnica</p>
         <h3 class="erp-section-title">Filtros de formulas</h3>

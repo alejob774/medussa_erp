@@ -1,4 +1,3 @@
-// src/app/features/auth/components/login-form/login-form.component.ts
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';

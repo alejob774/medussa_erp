@@ -87,7 +87,7 @@ type TpmPanelMode = 'asset' | 'plan' | 'work-order' | null;
 
       <app-tpm-summary-cards [kpis]="dashboard.kpis" />
 
-      <div class="flex flex-wrap gap-3">
+      <div class="erp-action-strip">
         @if (selectedAsset) {
           <button type="button" mat-flat-button color="primary" (click)="openAssetForm()">Editar hoja de vida</button>
           <button type="button" mat-stroked-button (click)="openPlanForm()">Nuevo plan</button>
@@ -102,7 +102,7 @@ type TpmPanelMode = 'asset' | 'plan' | 'work-order' | null;
 
       <app-tpm-filters [filters]="filters" [catalogs]="dashboard.catalogs" (apply)="handleFilters($event)" (reset)="resetFilters()" />
 
-      <section class="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
+      <section class="grid items-start gap-6 xl:grid-cols-[1.08fr_0.92fr]">
         <app-tpm-assets-list
           [assets]="dashboard.assets"
           [selectedAssetId]="selectedAsset?.asset?.id ?? null"

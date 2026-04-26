@@ -107,7 +107,7 @@ import { QualityNonConformityPanelComponent } from '../../components/quality-non
         </article>
       </section>
 
-      <div class="flex flex-wrap gap-3">
+      <div class="erp-action-strip">
         <button type="button" mat-flat-button color="primary" (click)="createInspection()">
           Nueva inspeccion
         </button>

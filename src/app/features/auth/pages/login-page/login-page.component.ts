@@ -29,7 +29,7 @@ export class LoginPageComponent {
 
   loading = false;
   errorMessage = '';
-  infoMessage = this.readNavigationInfoMessage();
+  infoMessage = '';
 
   onLoginSubmit(value: LoginFormValue): void {
     this.loading = true;
@@ -47,8 +47,7 @@ export class LoginPageComponent {
             throw error;
           }
 
-          this.infoMessage =
-            'Backend no disponible. Ingresaste en modo local de demostracion.';
+          this.infoMessage = '';
 
           return of(this.authService.createMockLoginSession(value.username));
         }),
@@ -82,9 +81,7 @@ export class LoginPageComponent {
       )
       .subscribe({
         next: (nextRoute) => {
-          void this.router.navigate([nextRoute], {
-            state: this.infoMessage ? { loginInfoMessage: this.infoMessage } : undefined,
-          });
+          void this.router.navigate([nextRoute]);
         },
         error: (error) => {
           this.authSessionService.clearSession();
@@ -101,7 +98,7 @@ export class LoginPageComponent {
     };
 
     if (httpError?.status === 0) {
-      return 'No fue posible conectarse con el backend. Revisa URL, puerto y CORS.';
+      return 'No fue posible iniciar sesion en este momento.';
     }
 
     if (httpError?.status === 401) {
@@ -117,15 +114,5 @@ export class LoginPageComponent {
     }
 
     return httpError?.error?.detail || 'No fue posible iniciar sesion.';
-  }
-
-  private readNavigationInfoMessage(): string {
-    const navigationState = this.router.getCurrentNavigation()?.extras.state;
-    const historyState =
-      typeof window !== 'undefined' ? (window.history.state as { logoutMessage?: unknown }) : null;
-    const logoutMessage =
-      navigationState?.['logoutMessage'] ?? historyState?.logoutMessage ?? '';
-
-    return typeof logoutMessage === 'string' ? logoutMessage : '';
   }
 }

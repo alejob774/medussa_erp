@@ -10,7 +10,7 @@ import { PickingPackingDashboard } from '../../../domain/models/picking-packing-
   standalone: true,
   imports: [CommonModule, FormsModule, MatButtonModule],
   template: `
-    <section class="erp-panel">
+    <section class="erp-filter-panel">
       <div class="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p class="erp-section-eyebrow">Planeacion operativa</p>

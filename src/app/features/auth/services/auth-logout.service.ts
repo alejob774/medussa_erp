@@ -38,7 +38,6 @@ export class AuthLogoutService {
 
     const hasSession = this.authSessionService.isAuthenticated();
     const logoutRequest$ = hasSession ? this.authService.logout() : of(void 0);
-    let backendLogoutFailed = false;
 
     return logoutRequest$.pipe(
       take(1),
@@ -47,8 +46,6 @@ export class AuthLogoutService {
         backendLogoutFailed: false,
       })),
       catchError(() => {
-        backendLogoutFailed = hasSession;
-
         return of({
           backendLogoutAttempted: hasSession,
           backendLogoutFailed: hasSession,
@@ -58,12 +55,6 @@ export class AuthLogoutService {
         this.clearFrontendSessionArtifacts();
         void this.router.navigate(['/login'], {
           replaceUrl: true,
-          state: backendLogoutFailed
-            ? {
-                logoutMessage:
-                  'El backend no confirmo el cierre de sesion, pero la sesion local se cerro correctamente.',
-              }
-            : undefined,
         });
         this.logoutInProgress = false;
       }),

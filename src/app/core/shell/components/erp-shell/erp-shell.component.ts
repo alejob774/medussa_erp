@@ -37,12 +37,7 @@ import { NavigationFacadeService } from '../../../navigation/services/navigation
           <nav class="erp-shell-nav" aria-label="Navegacion principal">
             <div class="erp-nav-list">
               @for (section of sections; track section.id) {
-                <section class="erp-nav-section" [attr.aria-labelledby]="'erp-nav-section-' + section.id">
-                  <p class="erp-nav-section__label" [id]="'erp-nav-section-' + section.id">
-                    <mat-icon>{{ section.icon }}</mat-icon>
-                    <span>{{ section.label }}</span>
-                  </p>
-
+                <section class="erp-nav-section">
                   @for (item of section.items; track item.id) {
                     @if (item.children?.length) {
                       <div
@@ -64,7 +59,7 @@ import { NavigationFacadeService } from '../../../navigation/services/navigation
                           </span>
 
                           <mat-icon class="erp-nav-group__chevron">
-                            {{ isGroupExpanded(item) ? 'expand_less' : 'expand_more' }}
+                            expand_more
                           </mat-icon>
                         </button>
 
@@ -145,14 +140,30 @@ import { NavigationFacadeService } from '../../../navigation/services/navigation
               </button>
             </div>
 
-            <mat-menu #companyMenu="matMenu" xPosition="before">
+            <mat-menu #companyMenu="matMenu" xPosition="before" class="erp-dropdown-menu">
+              <div class="erp-dropdown-menu__header">
+                <p class="erp-dropdown-menu__eyebrow">Contexto de trabajo</p>
+                <p class="erp-dropdown-menu__title">Cambiar empresa</p>
+              </div>
               @for (company of companies; track company.id) {
-                <button type="button" mat-menu-item (click)="switchCompany(company.id)">
+                <button
+                  type="button"
+                  mat-menu-item
+                  class="erp-dropdown-menu__item"
+                  [class.erp-dropdown-menu__item--active]="company.id === activeCompany?.id"
+                  (click)="switchCompany(company.id)"
+                >
                   <span
                     class="erp-company-menu__swatch"
                     [style.background]="company.accentColor ?? '#0052cc'"
                   ></span>
-                  <span>{{ company.name }}</span>
+                  <span class="erp-dropdown-menu__text">
+                    <span class="erp-dropdown-menu__primary">{{ company.name }}</span>
+                    <span class="erp-dropdown-menu__secondary">{{ company.code }}</span>
+                  </span>
+                  @if (company.id === activeCompany?.id) {
+                    <mat-icon class="erp-dropdown-menu__check">check_circle</mat-icon>
+                  }
                 </button>
               }
             </mat-menu>
@@ -184,33 +195,29 @@ import { NavigationFacadeService } from '../../../navigation/services/navigation
               </div>
             </div>
 
-            <mat-menu #sessionMenu="matMenu" xPosition="before">
-              <button type="button" mat-menu-item disabled>
-                <mat-icon>person</mat-icon>
-                <span>{{ session?.user?.username ?? 'usuario' }}</span>
-              </button>
-              <button type="button" mat-menu-item (click)="logout()" [disabled]="logoutLoading">
+            <mat-menu #sessionMenu="matMenu" xPosition="before" class="erp-dropdown-menu">
+              <div class="erp-dropdown-menu__profile">
+                <div class="erp-user-badge__avatar erp-user-badge__avatar--menu">
+                  {{ userInitials(session?.user?.username) }}
+                </div>
+                <div>
+                  <p class="erp-dropdown-menu__title">{{ session?.user?.username ?? 'usuario' }}</p>
+                  <p class="erp-dropdown-menu__secondary">{{ session?.user?.roles?.[0] ?? 'operador' }}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                mat-menu-item
+                class="erp-dropdown-menu__item erp-dropdown-menu__item--danger"
+                (click)="logout()"
+                [disabled]="logoutLoading"
+              >
                 <mat-icon>{{ logoutLoading ? 'hourglass_top' : 'logout' }}</mat-icon>
                 <span>{{ logoutLoading ? 'Cerrando sesion...' : 'Cerrar sesion' }}</span>
               </button>
             </mat-menu>
           </div>
         </header>
-
-        @if (feedbackMessage) {
-          <div class="px-6 pt-4">
-            <div class="erp-alert erp-alert--warning flex items-center justify-between gap-3">
-              <span>{{ feedbackMessage }}</span>
-              <button
-                type="button"
-                class="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700"
-                (click)="dismissFeedbackMessage()"
-              >
-                Cerrar
-              </button>
-            </div>
-          </div>
-        }
 
         <main class="erp-shell-main">
           <router-outlet />
@@ -233,7 +240,6 @@ export class ErpShellComponent {
   readonly session$ = this.authSessionService.session$;
   readonly expandedGroupIds = new Set<string>();
   logoutLoading = false;
-  feedbackMessage = this.readNavigationFeedbackMessage();
 
   switchCompany(companyId: string): void {
     this.companyContextService.setActiveCompany(companyId);
@@ -273,10 +279,6 @@ export class ErpShellComponent {
       .subscribe();
   }
 
-  dismissFeedbackMessage(): void {
-    this.feedbackMessage = '';
-  }
-
   private isRouteActive(route?: string): boolean {
     return !!route && this.router.url === route;
   }
@@ -288,15 +290,5 @@ export class ErpShellComponent {
       .slice(0, 2)
       .map((value) => value[0]?.toUpperCase() ?? '')
       .join('');
-  }
-
-  private readNavigationFeedbackMessage(): string {
-    const navigationState = this.router.getCurrentNavigation()?.extras.state;
-    const historyState =
-      typeof window !== 'undefined' ? (window.history.state as { loginInfoMessage?: unknown }) : null;
-    const loginInfoMessage =
-      navigationState?.['loginInfoMessage'] ?? historyState?.loginInfoMessage ?? '';
-
-    return typeof loginInfoMessage === 'string' ? loginInfoMessage : '';
   }
 }

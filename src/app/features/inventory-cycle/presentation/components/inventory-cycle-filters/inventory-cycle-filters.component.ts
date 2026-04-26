@@ -23,7 +23,7 @@ import { InventoryCycleCatalogs } from '../../../domain/models/inventory-cycle-r
     MatSelectModule,
   ],
   template: `
-    <section class="erp-panel">
+    <section class="erp-filter-panel">
       <div class="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p class="erp-section-eyebrow">Filtros de conteo</p>

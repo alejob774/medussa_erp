@@ -21,7 +21,7 @@ import { StorageLayoutCatalogs } from '../../../domain/models/storage-layout-res
     MatSelectModule,
   ],
   template: `
-    <section class="erp-panel">
+    <section class="erp-filter-panel">
       <div class="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p class="erp-section-eyebrow">Filtros operativos</p>

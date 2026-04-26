@@ -11,7 +11,7 @@ import { SaveQualityNonConformityPayload } from '../../../domain/repositories/qu
   standalone: true,
   imports: [CommonModule, FormsModule, MatButtonModule],
   template: `
-    <section class="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+    <section class="grid items-start gap-6 xl:grid-cols-[0.95fr_1.05fr]">
       <article class="erp-panel">
         <p class="erp-section-eyebrow">No conformidades</p>
         <h3 class="erp-section-title">Registro basico</h3>
@@ -26,7 +26,7 @@ import { SaveQualityNonConformityPayload } from '../../../domain/repositories/qu
             </div>
           </div>
         } @else {
-          <div class="mt-5 grid gap-4">
+          <div class="erp-subpanel mt-5 grid gap-4">
             <label class="erp-field">
               <span class="erp-field__label">Motivo</span>
               <textarea class="erp-field__control min-h-28" [(ngModel)]="draft.motivo"></textarea>
@@ -66,7 +66,7 @@ import { SaveQualityNonConformityPayload } from '../../../domain/repositories/qu
         @if (items.length) {
           <div class="mt-5 space-y-3">
             @for (item of items; track item.id) {
-              <article class="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-4">
+              <article class="erp-detail-card">
                 <div class="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p class="text-sm font-semibold text-slate-900">{{ item.estado }}</p>

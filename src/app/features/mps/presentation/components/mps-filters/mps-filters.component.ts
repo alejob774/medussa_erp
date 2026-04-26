@@ -10,7 +10,7 @@ import { MpsCatalogs } from '../../../domain/models/mps-response.model';
   standalone: true,
   imports: [CommonModule, FormsModule, MatButtonModule],
   template: `
-    <section class="erp-panel">
+    <section class="erp-filter-panel">
       <div class="flex flex-wrap items-start justify-between gap-4">
         <div class="max-w-3xl">
           <p class="erp-section-eyebrow">Generacion operativa</p>
@@ -70,7 +70,7 @@ import { MpsCatalogs } from '../../../domain/models/mps-response.model';
           </select>
         </label>
 
-        <label class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+        <label class="erp-detail-card text-sm text-slate-700">
           <div class="flex items-start gap-3">
             <input class="mt-1 h-4 w-4 rounded border-slate-300" type="checkbox" [(ngModel)]="draft.considerarFEFO" />
             <div>
@@ -80,7 +80,7 @@ import { MpsCatalogs } from '../../../domain/models/mps-response.model';
           </div>
         </label>
 
-        <label class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+        <label class="erp-detail-card text-sm text-slate-700">
           <div class="flex items-start gap-3">
             <input
               class="mt-1 h-4 w-4 rounded border-slate-300"

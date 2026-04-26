@@ -72,7 +72,7 @@ import { OeeSummaryCardsComponent } from '../../components/oee-summary-cards/oee
 
       <app-oee-summary-cards [kpis]="dashboard.kpis" />
 
-      <div class="flex flex-wrap gap-3">
+      <div class="erp-action-strip">
         <button type="button" mat-flat-button color="primary" (click)="createRecord()">Nuevo registro OEE</button>
 
         @if (selectedRecord) {
