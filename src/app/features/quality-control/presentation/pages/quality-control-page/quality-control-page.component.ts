@@ -169,18 +169,20 @@ import { QualityNonConformityPanelComponent } from '../../components/quality-non
         />
       }
 
-      <app-quality-control-history
-        [relatedInspections]="relatedInspections"
-        [histories]="relatedHistories"
-      />
+      <section class="erp-quality-lower-grid">
+        <app-quality-control-history
+          [relatedInspections]="relatedInspections"
+          [histories]="relatedHistories"
+        />
 
-      <app-quality-nonconformity-panel
-        [selectedInspection]="selectedInspection"
-        [items]="relatedNonConformities"
-        [responsibleOptions]="responsibleOptions"
-        (createNc)="registerNonConformity($event)"
-        (closeNc)="closeNonConformity($event)"
-      />
+        <app-quality-nonconformity-panel
+          [selectedInspection]="selectedInspection"
+          [items]="relatedNonConformities"
+          [responsibleOptions]="responsibleOptions"
+          (createNc)="registerNonConformity($event)"
+          (closeNc)="closeNonConformity($event)"
+        />
+      </section>
     </div>
   `,
 })

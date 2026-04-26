@@ -7,7 +7,7 @@ import { PickingTask } from '../../../domain/models/picking-task.model';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <section class="erp-panel">
+    <section class="erp-panel h-full">
       <div>
         <p class="erp-section-eyebrow">Picking floor</p>
         <h3 class="erp-section-title">Bandeja de pedidos por alistar</h3>

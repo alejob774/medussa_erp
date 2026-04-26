@@ -10,8 +10,9 @@ import { SaveQualityNonConformityPayload } from '../../../domain/repositories/qu
   selector: 'app-quality-nonconformity-panel',
   standalone: true,
   imports: [CommonModule, FormsModule, MatButtonModule],
+  host: { class: 'erp-grid-contents' },
   template: `
-    <section class="grid items-start gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+    <ng-container>
       <article class="erp-panel">
         <p class="erp-section-eyebrow">No conformidades</p>
         <h3 class="erp-section-title">Registro basico</h3>
@@ -102,7 +103,7 @@ import { SaveQualityNonConformityPayload } from '../../../domain/repositories/qu
           </div>
         }
       </article>
-    </section>
+    </ng-container>
   `,
 })
 export class QualityNonConformityPanelComponent {

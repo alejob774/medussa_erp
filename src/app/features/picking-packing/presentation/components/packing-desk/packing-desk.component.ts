@@ -18,7 +18,7 @@ export interface ClosePackingEvent {
   standalone: true,
   imports: [CommonModule, FormsModule, MatButtonModule],
   template: `
-    <section class="erp-panel">
+    <section class="erp-panel h-full">
       <div>
         <p class="erp-section-eyebrow">Packing desk</p>
         <h3 class="erp-section-title">Cierre de empaque y packing list</h3>
@@ -28,7 +28,7 @@ export interface ClosePackingEvent {
       </div>
 
       <div class="mt-5 space-y-4">
-        <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+        <div class="erp-subpanel">
           <p class="text-sm font-semibold text-slate-900">Cola lista para packing</p>
           <div class="mt-3 flex flex-wrap gap-2">
             @for (task of readyTasks; track task.id) {
@@ -48,7 +48,7 @@ export interface ClosePackingEvent {
 
         @if (selectedTask) {
           <div class="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
-            <article class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <article class="erp-detail-card">
               <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Pedido seleccionado</p>
               <h4 class="mt-2 text-xl font-semibold text-slate-900">{{ selectedTask.pedidoId }}</h4>
               <p class="mt-2 text-sm text-slate-600">{{ selectedTask.clienteNombre }} · {{ selectedTask.rutaNombre }}</p>
@@ -65,7 +65,7 @@ export interface ClosePackingEvent {
               </div>
 
               @if (packing?.packingListResumen?.length) {
-                <div class="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                <div class="erp-subpanel mt-4 border-emerald-200 bg-emerald-50">
                   <p class="text-sm font-semibold text-slate-900">Packing list mock</p>
                   <div class="mt-2 space-y-2">
                     @for (line of packing?.packingListResumen ?? []; track line) {
@@ -76,7 +76,7 @@ export interface ClosePackingEvent {
               }
             </article>
 
-            <article class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <article class="erp-detail-card">
               <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Cierre de packing</p>
 
               @if (isPackingClosedOrReady()) {

@@ -19,11 +19,8 @@ import { ProductDevelopmentProjectAggregate } from '../../../domain/models/produ
         @for (item of projects; track item.project.id) {
           <button
             type="button"
-            class="rounded-3xl border p-4 text-left transition"
-            [class.border-sky-300]="selectedProjectId === item.project.id"
-            [class.bg-sky-50]="selectedProjectId === item.project.id"
-            [class.border-slate-200]="selectedProjectId !== item.project.id"
-            [class.bg-white]="selectedProjectId !== item.project.id"
+            class="erp-selectable-card"
+            [class.erp-selectable-card--active]="selectedProjectId === item.project.id"
             (click)="select.emit(item.project.id)"
           >
             <div class="flex flex-wrap items-center gap-2">

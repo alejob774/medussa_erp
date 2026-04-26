@@ -14,13 +14,13 @@ import { ProductDevelopmentProjectAggregate } from '../../../domain/models/produ
       </div>
       @if (project) {
         <div class="mt-4 grid gap-4 md:grid-cols-2">
-          <article class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <article class="erp-detail-card">
             <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Viabilidad</p>
             <p class="mt-2 text-lg font-semibold text-slate-900">{{ project.project.viabilidadGeneral || 'Pendiente' }}</p>
             <p class="mt-2 text-sm text-slate-600">Costo estimado: {{ project.project.costoEstimado || 0 | number: '1.0-0' }}</p>
             <p class="mt-1 text-sm text-slate-600">Margen estimado: {{ project.project.margenEstimado ?? 0 }}%</p>
           </article>
-          <article class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <article class="erp-detail-card">
             <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Riesgos</p>
             <div class="mt-3 flex flex-wrap gap-2">
               <span class="erp-chip" [ngClass]="riskClass(project.project.riesgoAbastecimiento)">{{ project.project.riesgoAbastecimiento || 'Pendiente' }} abastecimiento</span>
@@ -28,7 +28,7 @@ import { ProductDevelopmentProjectAggregate } from '../../../domain/models/produ
               <span class="erp-chip" [ngClass]="riskClass(project.project.riesgoLogistico)">{{ project.project.riesgoLogistico || 'Pendiente' }} logistico</span>
             </div>
           </article>
-          <article class="rounded-2xl border border-slate-200 bg-white p-4 md:col-span-2">
+          <article class="erp-detail-card md:col-span-2">
             <div class="flex flex-wrap gap-2">
               <span class="erp-chip" [ngClass]="project.risks.bomIncompleta ? 'erp-chip--warning' : 'erp-chip--success'">BOM {{ project.risks.bomIncompleta ? 'incompleta' : 'lista' }}</span>
               <span class="erp-chip" [ngClass]="project.risks.skuDuplicado ? 'erp-chip--warning' : 'erp-chip--success'">SKU {{ project.risks.skuDuplicado ? 'duplicado' : 'disponible' }}</span>

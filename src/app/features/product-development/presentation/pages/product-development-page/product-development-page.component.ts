@@ -64,7 +64,7 @@ import { ProductDevelopmentRisksComponent } from '../../components/product-devel
       @if (errorMessage) { <div class="erp-alert erp-alert--error">{{ errorMessage }}</div> }
       @if (successMessage) { <div class="erp-alert erp-alert--success">{{ successMessage }}</div> }
 
-      <div class="flex flex-wrap gap-3">
+      <div class="erp-action-strip">
         <button type="button" mat-flat-button color="primary" (click)="createMode()">Nuevo proyecto</button>
         @if (selectedProject) {
           <button type="button" mat-stroked-button (click)="evaluateSelected()">Evaluar viabilidad</button>
@@ -77,12 +77,12 @@ import { ProductDevelopmentRisksComponent } from '../../components/product-devel
       <app-product-development-filters [catalogs]="dashboard.catalogs" [filters]="filters" (apply)="handleFilters($event)" (reset)="resetFilters()" />
       <app-product-development-kpis [kpis]="dashboard.kpis" />
 
-      <section class="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+      <section class="erp-balanced-grid erp-balanced-grid--main">
         <app-product-development-board [projects]="dashboard.projects" [selectedProjectId]="selectedProject?.project?.id ?? null" (select)="selectProject($event)" />
         <app-product-development-risks [project]="selectedProject" />
       </section>
 
-      <section class="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+      <section class="erp-balanced-grid erp-balanced-grid--split">
         <app-product-development-form [project]="formProject" [catalogs]="dashboard.catalogs" (submit)="saveProject($event)" />
         <app-product-development-bom [projectId]="selectedProject?.project?.id ?? null" [bom]="selectedProject?.bom ?? []" [catalogs]="dashboard.catalogs" (save)="saveBomItem($event)" (remove)="removeBomItem($event)" />
       </section>

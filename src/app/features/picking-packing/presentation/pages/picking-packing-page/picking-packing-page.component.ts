@@ -80,7 +80,7 @@ import { PickingProductivityComponent } from '../../components/picking-productiv
 
       <app-picking-kpis [kpis]="dashboard.kpis" />
 
-      <section class="grid items-start gap-6 2xl:grid-cols-[1.02fr_0.98fr]">
+      <section class="erp-balanced-grid erp-balanced-grid--main">
         <app-picking-bandeja
           [tasks]="dashboard.tasks"
           [selectedTaskId]="selectedTask?.id ?? null"
@@ -97,7 +97,7 @@ import { PickingProductivityComponent } from '../../components/picking-productiv
         />
       </section>
 
-      <section class="grid items-start gap-6 2xl:grid-cols-[1fr_1fr]">
+      <section class="erp-balanced-grid erp-balanced-grid--split">
         <app-picking-alerts
           [alerts]="dashboard.alerts"
           [shortageDetails]="dashboard.details.filter(hasShortage)"

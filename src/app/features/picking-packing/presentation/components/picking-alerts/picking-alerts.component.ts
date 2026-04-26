@@ -8,7 +8,7 @@ import { PickingDetail } from '../../../domain/models/picking-detail.model';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <section class="erp-panel">
+    <section class="erp-panel h-full">
       <div>
         <p class="erp-section-eyebrow">Control de riesgo</p>
         <h3 class="erp-section-title">Alertas y faltantes</h3>
@@ -21,7 +21,7 @@ import { PickingDetail } from '../../../domain/models/picking-detail.model';
         <div class="space-y-3">
           @if (alerts.length) {
             @for (alert of alerts.slice(0, 8); track alert.id) {
-              <article class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <article class="erp-detail-card">
                 <div class="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p class="text-sm font-semibold text-slate-900">{{ alert.tipo }}</p>
@@ -42,14 +42,14 @@ import { PickingDetail } from '../../../domain/models/picking-detail.model';
           }
         </div>
 
-        <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div class="erp-subpanel">
           <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Panel de faltantes</p>
           <h4 class="mt-2 text-lg font-semibold text-slate-900">Lineas con novedad</h4>
 
           <div class="mt-4 space-y-3">
             @if (shortageDetails.length) {
               @for (detail of shortageDetails.slice(0, 6); track detail.id) {
-                <article class="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                <article class="erp-detail-card border-amber-200 bg-amber-50">
                   <p class="font-semibold text-slate-900">{{ detail.sku }} · {{ detail.productoNombre }}</p>
                   <p class="mt-1 text-sm text-slate-600">
                     {{ detail.ubicacionCodigo }} · {{ detail.lote }} ·

@@ -16,7 +16,7 @@ export interface PickingLineSubmitEvent {
   standalone: true,
   imports: [CommonModule, FormsModule, MatButtonModule],
   template: `
-    <section class="erp-panel">
+    <section class="erp-panel h-full">
       <div class="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p class="erp-section-eyebrow">Picking guiado</p>
@@ -29,7 +29,7 @@ export interface PickingLineSubmitEvent {
 
       @if (task) {
         <div class="mt-5 space-y-4">
-          <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+          <div class="erp-subpanel">
             <div class="grid gap-4 md:grid-cols-2">
               <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Pedido</p>
@@ -60,9 +60,9 @@ export interface PickingLineSubmitEvent {
             </div>
           </div>
 
-          <div class="flex flex-wrap gap-3">
+          <div class="erp-action-strip">
             @if (task.estado === 'PENDIENTE') {
-              <div class="flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+              <div class="erp-subpanel flex flex-wrap items-end gap-3">
                 <label class="erp-field min-w-56">
                   <span class="erp-field__label">Operario</span>
                   <select class="erp-field__control" [(ngModel)]="operatorDraft">
@@ -86,7 +86,7 @@ export interface PickingLineSubmitEvent {
 
           <div class="space-y-4">
             @for (detail of details; track detail.id) {
-              <article class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+              <article class="erp-detail-card">
                 <div class="flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <p class="text-base font-semibold text-slate-900">{{ detail.sku }} · {{ detail.productoNombre }}</p>

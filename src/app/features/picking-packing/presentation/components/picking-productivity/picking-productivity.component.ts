@@ -19,7 +19,7 @@ import { PickingProductivity } from '../../../domain/models/picking-productivity
       @if (productivity.length) {
         <div class="mt-5 grid gap-4 xl:grid-cols-3">
           @for (item of productivity; track item.id) {
-            <article class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <article class="erp-detail-card">
               <div class="flex items-start justify-between gap-3">
                 <div>
                   <p class="text-lg font-semibold text-slate-900">{{ item.operario }}</p>

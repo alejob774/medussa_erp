@@ -232,17 +232,35 @@ select {
 
 .erp-page-header--dark .erp-meta-card,
 .erp-page-header--dark .erp-form-section {
-  border-color: rgba(188, 215, 255, 0.24);
+  border-color: rgba(204, 226, 255, 0.36);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.08)),
-    rgba(255, 255, 255, 0.08);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.12)),
+    rgba(255, 255, 255, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 12px 26px rgba(2, 18, 42, 0.12);
+}
+
+.erp-page-header--dark .erp-meta-card {
+  position: relative;
+  min-height: 7rem;
+  overflow: hidden;
+  padding: 1.05rem 1.1rem;
+}
+
+.erp-page-header--dark .erp-meta-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: rgba(255, 255, 255, 0.58);
+  pointer-events: none;
 }
 
 .erp-page-header--dark .erp-meta-card__label,
 .erp-page-header--dark .erp-kpi-card__label,
 .erp-page-header--dark .erp-section-eyebrow {
-  color: rgba(226, 238, 255, 0.78);
+  color: rgba(236, 245, 255, 0.9);
 }
 
 .erp-page-header--dark .erp-meta-card__value,
@@ -250,12 +268,18 @@ select {
   color: var(--medussa-white);
 }
 
+.erp-page-header--dark .erp-meta-card__hint {
+  color: rgba(232, 242, 255, 0.78);
+}
+
 .erp-page-header--dark .erp-meta-card :where(.text-slate-900, .text-slate-800, .text-slate-700) {
   color: var(--medussa-white) !important;
+  font-weight: 760;
+  line-height: 1.22;
 }
 
 .erp-page-header--dark .erp-meta-card :where(.text-slate-600, .text-slate-500) {
-  color: rgba(226, 238, 255, 0.72) !important;
+  color: rgba(232, 242, 255, 0.78) !important;
 }
 
 .erp-meta-card__label,
@@ -297,7 +321,7 @@ select {
 .erp-panel,
 .erp-filter-panel,
 .erp-action-bar {
-  padding: 1.25rem;
+  padding: 1.35rem;
 }
 
 .erp-panel {
@@ -691,6 +715,87 @@ textarea.erp-field__control {
   box-shadow: var(--erp-shadow-xs);
 }
 
+.erp-shell-main > :not(router-outlet) > .space-y-6 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(1.85rem * calc(1 - var(--tw-space-y-reverse))) !important;
+  margin-bottom: calc(1.85rem * var(--tw-space-y-reverse)) !important;
+}
+
+.erp-grid-contents {
+  display: contents;
+}
+
+.erp-balanced-grid,
+.erp-quality-lower-grid {
+  display: grid;
+  align-items: stretch;
+  gap: 1.75rem;
+}
+
+.erp-balanced-grid > *,
+.erp-quality-lower-grid .erp-panel {
+  min-width: 0;
+}
+
+.erp-balanced-grid .erp-panel,
+.erp-quality-lower-grid .erp-panel {
+  height: 100%;
+}
+
+@media (min-width: 1280px) {
+  .erp-quality-lower-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .erp-balanced-grid--main {
+    grid-template-columns: minmax(0, 1.12fr) minmax(24rem, 0.88fr);
+  }
+
+  .erp-balanced-grid--split {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.erp-selectable-card {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--erp-border);
+  border-radius: var(--erp-card-radius);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 250, 254, 0.98)),
+    var(--erp-surface);
+  padding: 1rem;
+  color: inherit;
+  text-align: left;
+  box-shadow: var(--erp-shadow-xs);
+  transition:
+    border-color var(--erp-transition-med),
+    background-color var(--erp-transition-med),
+    box-shadow var(--erp-transition-med),
+    transform var(--erp-transition-med);
+}
+
+.erp-selectable-card:hover {
+  border-color: rgba(0, 82, 204, 0.24);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(242, 247, 255, 0.98)),
+    var(--erp-surface);
+  box-shadow: var(--erp-shadow-sm);
+  transform: translateY(-1px);
+}
+
+.erp-selectable-card:active {
+  transform: translateY(0) scale(0.995);
+}
+
+.erp-selectable-card--active {
+  border-color: rgba(0, 82, 204, 0.42);
+  background:
+    linear-gradient(180deg, rgba(237, 245, 255, 1), rgba(247, 251, 255, 1)),
+    var(--erp-info-bg);
+  box-shadow: inset 3px 0 0 var(--medussa-blue), var(--erp-shadow-sm);
+}
+
 .erp-ghost-link,
 .erp-row-action,
 .audit-detail-button,
@@ -868,14 +973,15 @@ textarea.erp-field__control {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 8rem;
-  padding: 0.4rem 0 0.95rem;
+  min-height: 8.8rem;
+  padding: 0.55rem 0 1.05rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .erp-shell-brand__logo {
-  width: 10.4rem;
+  width: 11.75rem;
   max-width: 100%;
+  max-height: 6.4rem;
   flex: none;
   filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.24));
 }

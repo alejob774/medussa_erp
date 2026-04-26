@@ -7,8 +7,9 @@ import { QualityInspectionAggregate } from '../../../domain/models/quality-inspe
   selector: 'app-quality-control-history',
   standalone: true,
   imports: [CommonModule],
+  host: { class: 'erp-grid-contents' },
   template: `
-    <section class="grid items-start gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+    <ng-container>
       <article class="erp-panel">
         <p class="erp-section-eyebrow">Historial de lote</p>
         <h3 class="erp-section-title">Inspecciones relacionadas</h3>
@@ -78,7 +79,7 @@ import { QualityInspectionAggregate } from '../../../domain/models/quality-inspe
           </div>
         }
       </article>
-    </section>
+    </ng-container>
   `,
 })
 export class QualityControlHistoryComponent {
