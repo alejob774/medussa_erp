@@ -276,7 +276,13 @@ export class InventoryCycleMockRepository implements InventoryCycleRepository {
       estado: 'AJUSTADO',
     };
 
-    updateStorageLayoutLotStock(companyId, count.loteId, count.conteoFisico);
+    updateStorageLayoutLotStock(companyId, count.loteId, count.conteoFisico, {
+      tipoMovimiento: nextAdjustment.tipoAjuste === 'ENTRADA' ? 'AJUSTE_POS' : 'AJUSTE_NEG',
+      documentoOrigen: nextAdjustment.id,
+      moduloOrigen: 'HU-030_INVENTORY_CYCLE',
+      usuarioId: payload.aprobadoPor,
+      observacion: payload.observacion?.trim() || payload.motivo.trim(),
+    });
 
     const nextStore: InventoryCycleStore = {
       ...store,

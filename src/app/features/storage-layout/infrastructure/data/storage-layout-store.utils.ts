@@ -32,6 +32,10 @@ import {
   StorageType,
 } from '../../domain/models/storage-location.model';
 import { Warehouse } from '../../domain/models/warehouse.model';
+import {
+  registerInventoryMovementFromStorageLayout,
+  StorageLayoutStockMovementContext,
+} from '../../../inventory-core/infrastructure/repositories/inventory-core-store.utils';
 
 export const STORAGE_LAYOUT_STORAGE_KEY = 'medussa.erp.mock.storage-layout';
 const PRODUCTS_STORAGE_KEY = 'medussa.erp.mock.products';
@@ -214,15 +218,18 @@ export function updateStorageLayoutLotStock(
   companyId: string,
   lotId: string,
   nextStock: number,
+  context?: StorageLayoutStockMovementContext,
 ): StorageLayoutStore {
   const store = ensureStorageLayoutBaseline(companyId);
+  const currentLot = store.lots.find((lot) => lot.empresaId === companyId && lot.id === lotId) ?? null;
+  const normalizedNextStock = Math.max(0, Math.round(nextStock));
   const updatedStore: StorageLayoutStore = {
     ...store,
     lots: store.lots.map((lot) =>
       lot.empresaId === companyId && lot.id === lotId
         ? {
             ...lot,
-            stockSistema: Math.max(0, Math.round(nextStock)),
+            stockSistema: normalizedNextStock,
             estado: resolveLotStatus(lot.fechaVencimiento),
           }
         : { ...lot },
@@ -231,6 +238,21 @@ export function updateStorageLayoutLotStock(
 
   const recalculated = recalculateStorageLayoutCompany(updatedStore, companyId);
   writeStorageLayoutStore(recalculated);
+
+  if (currentLot) {
+    registerInventoryMovementFromStorageLayout({
+      companyId,
+      lot: {
+        ...currentLot,
+        stockSistema: normalizedNextStock,
+        estado: resolveLotStatus(currentLot.fechaVencimiento),
+      },
+      previousStock: currentLot.stockSistema,
+      nextStock: normalizedNextStock,
+      context,
+    });
+  }
+
   return recalculated;
 }
 

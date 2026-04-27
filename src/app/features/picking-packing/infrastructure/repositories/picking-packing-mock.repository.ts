@@ -430,7 +430,13 @@ export class PickingPackingMockRepository implements PickingPackingRepository {
       const lot = lotsById.get(lotId);
 
       if (lot) {
-        updateStorageLayoutLotStock(companyId, lotId, Math.max(0, lot.stockSistema - quantity));
+        updateStorageLayoutLotStock(companyId, lotId, Math.max(0, lot.stockSistema - quantity), {
+          tipoMovimiento: 'DESPACHO_VENTA',
+          documentoOrigen: currentTask.pedidoId,
+          moduloOrigen: 'HU-032_PICKING_PACKING',
+          usuarioId: payload.usuarioCierre.trim(),
+          observacion: `Salida por cierre de packing ${currentTask.pedidoId}.`,
+        });
       }
     });
 
