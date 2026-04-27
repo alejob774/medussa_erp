@@ -266,15 +266,34 @@ export class InventoryCoreMockRepository implements InventoryCoreRepository {
       return throwError(() => new Error('Stock insuficiente para transferir.'));
     }
 
+    const requested = Math.round(payload.cantidad);
+    const reservedByOthers = this.sumActiveReserved(companyId, balance);
+
+    if (requested > balance.cantidadDisponible - reservedByOthers) {
+      return throwError(() => new Error('Stock insuficiente o reservado por otro origen.'));
+    }
+
+    const destinationBalance = this.findTechnicalBalance(companyId, {
+      productoId: payload.productoId,
+      sku: payload.sku,
+      bodegaId: payload.destinoBodegaId,
+      ubicacionId: payload.destinoUbicacionId,
+      loteId: payload.destinoLoteId ?? payload.loteId,
+    });
+    const destinationAvailable = Math.max(0, Math.round(destinationBalance?.cantidadDisponible ?? 0));
     const transferOut = recordInventoryCoreMovement({
       ...this.toMovementDraft(companyId, payload, 'TRANSFER_OUT', -1),
-      saldoResultante: balance.cantidadDisponible - Math.round(payload.cantidad),
+      cantidad: requested,
+      saldoResultante: balance.cantidadDisponible - requested,
     });
     const transferIn = recordInventoryCoreMovement({
       ...this.toMovementDraft(companyId, payload, 'TRANSFER_IN', 1),
       bodegaId: payload.destinoBodegaId,
       ubicacionId: payload.destinoUbicacionId,
-      saldoResultante: Math.round(payload.cantidad),
+      loteId: payload.destinoLoteId ?? payload.loteId,
+      lote: payload.destinoLote ?? payload.lote,
+      cantidad: requested,
+      saldoResultante: destinationAvailable + requested,
     });
 
     return of([transferOut, transferIn]).pipe(delay(180));

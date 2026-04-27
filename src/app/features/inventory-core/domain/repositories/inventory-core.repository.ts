@@ -71,6 +71,8 @@ export interface InventoryLotCommandPayload {
 export interface InventoryTransferPayload extends InventoryStockCommandPayload {
   destinoBodegaId: string;
   destinoUbicacionId: string;
+  destinoLoteId?: string | null;
+  destinoLote?: string | null;
 }
 
 export abstract class InventoryCoreRepository {

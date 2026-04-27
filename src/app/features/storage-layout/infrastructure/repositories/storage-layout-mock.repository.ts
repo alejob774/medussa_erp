@@ -1,14 +1,16 @@
-import { Injectable } from '@angular/core';
-import { delay, Observable, of, throwError } from 'rxjs';
+import { Injectable, inject } from '@angular/core';
+import { delay, map, Observable, of, throwError } from 'rxjs';
 import {
   SaveStorageAssignmentPayload,
   SaveStorageLocationPayload,
   SaveWarehousePayload,
   StorageLayoutRepository,
+  TransferStorageLayoutStockPayload,
 } from '../../domain/repositories/storage-layout.repository';
 import { DEFAULT_STORAGE_LAYOUT_FILTERS, StorageLayoutFilters } from '../../domain/models/storage-layout-filters.model';
 import {
   StorageLayoutDashboard,
+  StorageLayoutLot,
   StorageLayoutMutationResult,
   StorageLayoutStore,
 } from '../../domain/models/storage-layout-response.model';
@@ -20,11 +22,14 @@ import {
   recalculateStorageLayoutCompany,
   writeStorageLayoutStore,
 } from '../data/storage-layout-store.utils';
+import { InventoryCoreMockRepository } from '../../../inventory-core/infrastructure/repositories/inventory-core-mock.repository';
 
 @Injectable({
   providedIn: 'root',
 })
 export class StorageLayoutMockRepository implements StorageLayoutRepository {
+  private readonly inventoryCore = inject(InventoryCoreMockRepository);
+
   getDashboard(
     companyId: string,
     filters: StorageLayoutFilters,
@@ -331,6 +336,180 @@ export class StorageLayoutMockRepository implements StorageLayoutRepository {
       message: 'Ocupacion y alertas recalculadas correctamente.',
       auditDraft,
     }).pipe(delay(200));
+  }
+
+  transferStock(
+    companyId: string,
+    payload: TransferStorageLayoutStockPayload,
+  ): Observable<StorageLayoutMutationResult> {
+    const store = ensureStorageLayoutBaseline(companyId);
+    const sourceLot = store.lots.find((item) => item.empresaId === companyId && item.id === payload.loteId) ?? null;
+    const destinationLocation = store.locations.find(
+      (item) =>
+        item.empresaId === companyId &&
+        item.id === payload.destinoUbicacionId &&
+        item.bodegaId === payload.destinoBodegaId,
+    ) ?? null;
+
+    if (!sourceLot) {
+      return throwError(() => new Error('El lote origen no existe en el layout operativo.'));
+    }
+
+    if (!destinationLocation) {
+      return throwError(() => new Error('La ubicacion destino no existe en la bodega seleccionada.'));
+    }
+
+    if (payload.cantidad <= 0) {
+      return throwError(() => new Error('La cantidad a transferir debe ser mayor a cero.'));
+    }
+
+    const quantity = Math.round(payload.cantidad);
+
+    if (quantity > sourceLot.stockSistema) {
+      return throwError(() => new Error('Stock insuficiente para reubicar desde layout.'));
+    }
+
+    const sourceLocation = store.locations.find((item) => item.id === sourceLot.ubicacionId) ?? null;
+    const destinationLot =
+      store.lots.find(
+        (item) =>
+          item.empresaId === companyId &&
+          item.ubicacionId === payload.destinoUbicacionId &&
+          item.skuId === sourceLot.skuId &&
+          item.lote === sourceLot.lote,
+      ) ?? null;
+    const isFullMove = quantity >= sourceLot.stockSistema;
+    const destinationLotId = destinationLot?.id ?? (isFullMove ? sourceLot.id : `${sourceLot.id}-split-${slugify(payload.destinoUbicacionId)}`);
+    const documentId = `relocation-${sourceLocation?.codigo ?? sourceLot.ubicacionId}-${destinationLocation.codigo}`;
+
+    return this.inventoryCore.transferStock(companyId, {
+      productoId: sourceLot.skuId,
+      sku: sourceLot.sku,
+      productoNombre: sourceLot.productoNombre,
+      bodegaId: sourceLot.bodegaId,
+      ubicacionId: sourceLot.ubicacionId,
+      loteId: sourceLot.id,
+      lote: sourceLot.lote,
+      destinoBodegaId: payload.destinoBodegaId,
+      destinoUbicacionId: payload.destinoUbicacionId,
+      destinoLoteId: destinationLotId,
+      destinoLote: sourceLot.lote,
+      cantidad: quantity,
+      costoUnitario: 0,
+      documentoOrigen: documentId,
+      moduloOrigen: 'STORAGE_LAYOUT',
+      usuarioId: payload.usuario,
+      observacion:
+        payload.observacion?.trim() ||
+        `Reubicacion desde ${sourceLocation?.codigo ?? sourceLot.ubicacionId} hacia ${destinationLocation.codigo}.`,
+    }).pipe(
+      map(() => {
+        const updated = this.applyProjectedTransfer(companyId, sourceLot, destinationLocation.id, destinationLotId, quantity);
+        const auditDraft = buildStorageLayoutAuditDraft(
+          'stock-transfer',
+          companyId,
+          destinationLotId,
+          sourceLot.lote,
+          `Lote ${sourceLot.lote} reubicado hacia ${destinationLocation.codigo}.`,
+          {
+            loteId: sourceLot.id,
+            ubicacionId: sourceLot.ubicacionId,
+            stockSistema: sourceLot.stockSistema,
+          },
+          {
+            loteId: destinationLotId,
+            ubicacionId: destinationLocation.id,
+            cantidad: quantity,
+          },
+        );
+        const recalculated = recalculateStorageLayoutCompany(updated, companyId);
+
+        writeStorageLayoutStore({
+          ...recalculated,
+          auditTrail: [auditDraft, ...recalculated.auditTrail],
+        });
+
+        return {
+          action: 'stock-transferred',
+          warehouse: null,
+          location: { ...destinationLocation },
+          assignment: null,
+          message: 'Transferencia de stock registrada en Inventory Core y proyectada en layout.',
+          auditDraft,
+        } satisfies StorageLayoutMutationResult;
+      }),
+      delay(220),
+    );
+  }
+
+  private applyProjectedTransfer(
+    companyId: string,
+    sourceLot: StorageLayoutLot,
+    destinationLocationId: string,
+    destinationLotId: string,
+    quantity: number,
+  ): StorageLayoutStore {
+    const store = ensureStorageLayoutBaseline(companyId);
+    const destinationLot =
+      store.lots.find(
+        (item) =>
+          item.empresaId === companyId &&
+          item.id === destinationLotId,
+      ) ?? null;
+    const destinationLocation = store.locations.find((item) => item.id === destinationLocationId) ?? null;
+    const isSameLotMove = destinationLotId === sourceLot.id;
+    const nextLots = store.lots
+      .map((lot) => {
+        if (lot.empresaId !== companyId) {
+          return { ...lot };
+        }
+
+        if (isSameLotMove && lot.id === sourceLot.id) {
+          return {
+            ...lot,
+            bodegaId: destinationLocation?.bodegaId ?? sourceLot.bodegaId,
+            ubicacionId: destinationLocationId,
+            stockSistema: quantity,
+          };
+        }
+
+        if (lot.id === sourceLot.id) {
+          const nextSourceStock = Math.max(0, lot.stockSistema - quantity);
+
+          return nextSourceStock > 0
+            ? {
+                ...lot,
+                stockSistema: nextSourceStock,
+              }
+            : null;
+        }
+
+        if (destinationLot && lot.id === destinationLot.id) {
+          return {
+            ...lot,
+            stockSistema: lot.stockSistema + quantity,
+          };
+        }
+
+        return { ...lot };
+      })
+      .filter((item): item is StorageLayoutLot => !!item);
+
+    if (!destinationLot && !isSameLotMove) {
+      nextLots.push({
+        ...sourceLot,
+        id: destinationLotId,
+        ubicacionId: destinationLocationId,
+        bodegaId: destinationLocation?.bodegaId ?? sourceLot.bodegaId,
+        stockSistema: quantity,
+        fechaIngreso: new Date().toISOString().slice(0, 10),
+      });
+    }
+
+    return {
+      ...store,
+      lots: nextLots,
+    };
   }
 }
 

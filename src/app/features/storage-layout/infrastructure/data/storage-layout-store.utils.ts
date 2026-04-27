@@ -33,7 +33,9 @@ import {
 } from '../../domain/models/storage-location.model';
 import { Warehouse } from '../../domain/models/warehouse.model';
 import {
+  projectStorageLayoutLotWithInventoryCore,
   registerInventoryMovementFromStorageLayout,
+  resolveInventoryProjectedStockForLayoutLot,
   StorageLayoutStockMovementContext,
 } from '../../../inventory-core/infrastructure/repositories/inventory-core-store.utils';
 
@@ -179,7 +181,9 @@ export function recalculateStorageLayoutCompany(
   const nextStore = cloneStore(store);
   const companyLocations = nextStore.locations.filter((item) => item.empresaId === companyId);
   const companyAssignments = nextStore.assignments.filter((item) => item.empresaId === companyId);
-  const companyLots = nextStore.lots.filter((item) => item.empresaId === companyId);
+  const companyLots = nextStore.lots
+    .filter((item) => item.empresaId === companyId)
+    .map((item) => projectStorageLayoutLotWithInventoryCore(item));
   const products = readCompanyProducts(companyId);
 
   const occupancies = companyLocations.map((location) =>
@@ -200,6 +204,10 @@ export function recalculateStorageLayoutCompany(
   nextStore.occupancies = [
     ...nextStore.occupancies.filter((item) => item.empresaId !== companyId),
     ...occupancies,
+  ];
+  nextStore.lots = [
+    ...nextStore.lots.filter((item) => item.empresaId !== companyId),
+    ...companyLots,
   ];
   nextStore.alerts = [
     ...nextStore.alerts.filter((item) => item.empresaId !== companyId),
@@ -223,6 +231,21 @@ export function updateStorageLayoutLotStock(
   const store = ensureStorageLayoutBaseline(companyId);
   const currentLot = store.lots.find((lot) => lot.empresaId === companyId && lot.id === lotId) ?? null;
   const normalizedNextStock = Math.max(0, Math.round(nextStock));
+
+  if (currentLot) {
+    registerInventoryMovementFromStorageLayout({
+      companyId,
+      lot: {
+        ...currentLot,
+        stockSistema: normalizedNextStock,
+        estado: resolveLotStatus(currentLot.fechaVencimiento),
+      },
+      previousStock: currentLot.stockSistema,
+      nextStock: normalizedNextStock,
+      context,
+    });
+  }
+
   const updatedStore: StorageLayoutStore = {
     ...store,
     lots: store.lots.map((lot) =>
@@ -238,20 +261,6 @@ export function updateStorageLayoutLotStock(
 
   const recalculated = recalculateStorageLayoutCompany(updatedStore, companyId);
   writeStorageLayoutStore(recalculated);
-
-  if (currentLot) {
-    registerInventoryMovementFromStorageLayout({
-      companyId,
-      lot: {
-        ...currentLot,
-        stockSistema: normalizedNextStock,
-        estado: resolveLotStatus(currentLot.fechaVencimiento),
-      },
-      previousStock: currentLot.stockSistema,
-      nextStock: normalizedNextStock,
-      context,
-    });
-  }
 
   return recalculated;
 }
@@ -277,7 +286,7 @@ export function buildStorageLayoutDashboard(
     .sort((left, right) => compareSeverity(right.severidad, left.severidad));
   const lots = store.lots
     .filter((item) => item.empresaId === companyId && visibleLocationIds.has(item.ubicacionId))
-    .map((item) => ({ ...item }));
+    .map((item) => projectStorageLayoutLotWithInventoryCore(item));
   const assignmentsByLocation = new Map<string, StorageLocationAssignment[]>();
 
   assignments.forEach((assignment) => {
@@ -953,7 +962,8 @@ function buildOccupancy(
     Math.round(
       lots.reduce((sum, lot) => {
         const product = productsById.get(lot.skuId);
-        return sum + resolveSpaceUsage(product, lot.stockSistema);
+        const projected = resolveInventoryProjectedStockForLayoutLot(lot);
+        return sum + resolveSpaceUsage(product, projected.stockSistema);
       }, 0),
     ),
   );

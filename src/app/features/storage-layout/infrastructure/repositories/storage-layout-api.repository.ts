@@ -7,6 +7,7 @@ import {
   SaveStorageLocationPayload,
   SaveWarehousePayload,
   StorageLayoutRepository,
+  TransferStorageLayoutStockPayload,
 } from '../../domain/repositories/storage-layout.repository';
 import { StorageLayoutFilters } from '../../domain/models/storage-layout-filters.model';
 import {
@@ -75,5 +76,12 @@ export class StorageLayoutApiRepository implements StorageLayoutRepository {
     return this.http.post<StorageLayoutMutationResult>(`${this.baseUrl}/${companyId}/recalculate`, {
       usuario,
     });
+  }
+
+  transferStock(
+    companyId: string,
+    payload: TransferStorageLayoutStockPayload,
+  ): Observable<StorageLayoutMutationResult> {
+    return this.http.post<StorageLayoutMutationResult>(`${this.baseUrl}/${companyId}/transfer-stock`, payload);
   }
 }

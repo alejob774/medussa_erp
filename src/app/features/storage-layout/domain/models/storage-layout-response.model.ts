@@ -107,7 +107,8 @@ export type StorageLayoutMutationAction =
   | 'location-updated'
   | 'assignment-created'
   | 'assignment-updated'
-  | 'occupancy-recalculated';
+  | 'occupancy-recalculated'
+  | 'stock-transferred';
 
 export interface StorageLayoutAuditDraft {
   module: 'layout-almacenamiento';
@@ -119,7 +120,8 @@ export interface StorageLayoutAuditDraft {
     | 'location-edit'
     | 'assignment-create'
     | 'assignment-edit'
-    | 'recalculate';
+    | 'recalculate'
+    | 'stock-transfer';
   companyId: string;
   companyName: string;
   entityId: string;

@@ -18,6 +18,17 @@ export interface StorageLayoutStockMovementContext {
   observacion?: string | null;
   costoUnitario?: number | null;
   registrarMovimiento?: boolean;
+  skipInventoryMovement?: boolean;
+  sourceAlreadyRecorded?: boolean;
+  projectionOnly?: boolean;
+}
+
+export interface InventoryProjectedLayoutStock {
+  stockSistema: number;
+  cantidadDisponible: number;
+  cantidadReservada: number;
+  cantidadTransito: number;
+  hasCentralBalance: boolean;
 }
 
 export interface RegisterStorageLayoutMovementInput {
@@ -87,7 +98,12 @@ export function writeInventoryCoreStore(store: InventoryCoreStore): void {
 export function registerInventoryMovementFromStorageLayout(
   input: RegisterStorageLayoutMovementInput,
 ): InventoryMovement | null {
-  if (input.context?.registrarMovimiento === false) {
+  if (
+    input.context?.registrarMovimiento === false ||
+    input.context?.skipInventoryMovement ||
+    input.context?.sourceAlreadyRecorded ||
+    input.context?.projectionOnly
+  ) {
     return null;
   }
 
@@ -185,6 +201,41 @@ export function projectStorageLayoutLotsToBalances(
 
     return (left.lote ?? '').localeCompare(right.lote ?? '', 'es-CO');
   });
+}
+
+export function resolveInventoryProjectedStockForLayoutLot(
+  lot: StorageLayoutLot,
+): InventoryProjectedLayoutStock {
+  const balance = findBalanceForLayoutLot(lot);
+
+  if (!balance) {
+    const fallbackStock = normalizeStock(lot.stockSistema);
+
+    return {
+      stockSistema: fallbackStock,
+      cantidadDisponible: fallbackStock,
+      cantidadReservada: 0,
+      cantidadTransito: 0,
+      hasCentralBalance: false,
+    };
+  }
+
+  return {
+    stockSistema: normalizeStock(balance.cantidadDisponible),
+    cantidadDisponible: normalizeStock(balance.cantidadDisponible),
+    cantidadReservada: normalizeStock(balance.cantidadReservada),
+    cantidadTransito: normalizeStock(balance.cantidadTransito),
+    hasCentralBalance: true,
+  };
+}
+
+export function projectStorageLayoutLotWithInventoryCore(lot: StorageLayoutLot): StorageLayoutLot {
+  const projected = resolveInventoryProjectedStockForLayoutLot(lot);
+
+  return {
+    ...lot,
+    stockSistema: projected.stockSistema,
+  };
 }
 
 function buildMovement(draft: InventoryMovementDraft): InventoryMovement {
@@ -309,6 +360,12 @@ function projectStorageLayoutLot(
 
 function buildBalanceId(movement: InventoryMovement): string {
   return `${movement.empresaId}|${movement.productoId}|${movement.bodegaId}|${movement.ubicacionId}|${movement.loteId ?? 'SIN_LOTE'}`;
+}
+
+function findBalanceForLayoutLot(lot: StorageLayoutLot): InventoryBalance | null {
+  const balanceId = `${lot.empresaId}|${lot.skuId}|${lot.bodegaId}|${lot.ubicacionId}|${lot.id}`;
+
+  return readInventoryCoreStore().balances.find((item) => item.id === balanceId) ?? null;
 }
 
 function mapStorageLotStatus(status: StorageLayoutLot['estado']): InventoryLotStatus {

@@ -8,6 +8,7 @@ import {
   SaveStorageLocationPayload,
   SaveWarehousePayload,
   StorageLayoutRepository,
+  TransferStorageLayoutStockPayload,
 } from '../../domain/repositories/storage-layout.repository';
 import {
   StorageLayoutDashboard,
@@ -53,6 +54,10 @@ export class StorageLayoutFacadeService {
 
   recalculateOccupancy(usuario: string): Observable<StorageLayoutMutationResult> {
     return this.withActiveCompany((companyId) => this.repository.recalculateOccupancy(companyId, usuario));
+  }
+
+  transferStock(payload: TransferStorageLayoutStockPayload): Observable<StorageLayoutMutationResult> {
+    return this.withActiveCompany((companyId) => this.repository.transferStock(companyId, payload));
   }
 
   getActiveCompanyName(): string {

@@ -49,6 +49,15 @@ export interface SaveStorageAssignmentPayload {
   usuario: string;
 }
 
+export interface TransferStorageLayoutStockPayload {
+  loteId: string;
+  destinoBodegaId: string;
+  destinoUbicacionId: string;
+  cantidad: number;
+  usuario: string;
+  observacion?: string | null;
+}
+
 export abstract class StorageLayoutRepository {
   abstract getDashboard(
     companyId: string,
@@ -76,5 +85,10 @@ export abstract class StorageLayoutRepository {
   abstract recalculateOccupancy(
     companyId: string,
     usuario: string,
+  ): Observable<StorageLayoutMutationResult>;
+
+  abstract transferStock(
+    companyId: string,
+    payload: TransferStorageLayoutStockPayload,
   ): Observable<StorageLayoutMutationResult>;
 }
