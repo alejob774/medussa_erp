@@ -7,6 +7,7 @@ import {
   InventoryMovementType,
 } from '../../domain/models/inventory-movement.model';
 import { StorageLayoutLot } from '../../../storage-layout/domain/models/storage-layout-response.model';
+import { registerCostFromInventoryMovement } from '../../../costs-core/infrastructure/repositories/costs-core-store.utils';
 
 export const INVENTORY_CORE_STORAGE_KEY = 'medussa.erp.mock.inventory-core';
 
@@ -144,6 +145,7 @@ export function registerInventoryMovementFromStorageLayout(
   );
 
   writeInventoryCoreStore(nextStore);
+  registerCostFromInventoryMovement(movement);
   return movement;
 }
 
@@ -159,6 +161,7 @@ export function recordInventoryCoreMovement(draft: InventoryMovementDraft): Inve
   );
 
   writeInventoryCoreStore(nextStore);
+  registerCostFromInventoryMovement(movement);
   return movement;
 }
 

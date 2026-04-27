@@ -1,7 +1,10 @@
 export type InventoryMovementType =
+  | 'COMPRA_RECEPCION'
   | 'AJUSTE_POS'
   | 'AJUSTE_NEG'
   | 'DESPACHO_VENTA'
+  | 'CONSUMO_MP'
+  | 'INGRESO_PT'
   | 'BLOQUEO_CALIDAD'
   | 'LIBERACION_CALIDAD'
   | 'RECHAZO_CALIDAD'
@@ -10,7 +13,8 @@ export type InventoryMovementType =
   | 'TRANSFER_IN'
   | 'RESERVA_STOCK'
   | 'LIBERACION_RESERVA'
-  | 'CONSUMO_REPUESTO_TPM';
+  | 'CONSUMO_REPUESTO_TPM'
+  | 'DEVOLUCION';
 
 export type InventoryMovementSign = 1 | -1 | 0;
 
