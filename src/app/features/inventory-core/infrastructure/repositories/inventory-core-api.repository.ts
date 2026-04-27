@@ -93,6 +93,13 @@ export class InventoryCoreApiRepository implements InventoryCoreRepository {
     return this.http.post<InventoryMovement>(`${this.baseUrl}/${companyId}/lots/${payload.loteId}/reject`, payload);
   }
 
+  qualityWaste(
+    companyId: string,
+    payload: InventoryStockCommandPayload,
+  ): Observable<InventoryMovement> {
+    return this.http.post<InventoryMovement>(`${this.baseUrl}/${companyId}/quality/waste`, payload);
+  }
+
   transferStock(
     companyId: string,
     payload: InventoryTransferPayload,

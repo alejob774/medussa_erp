@@ -1,10 +1,11 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { delay, Observable, of, throwError } from 'rxjs';
 import { Equipment } from '../../../equipments/domain/models/equipment.model';
 import { EquipmentStore } from '../../../equipments/domain/models/equipment-response.model';
 import { INITIAL_EQUIPMENTS_STORE } from '../../../equipments/infrastructure/data/equipments.mock';
 import { OeeRecord } from '../../../oee/domain/models/oee-record.model';
 import { OeeStore } from '../../../oee/domain/models/oee-response.model';
+import { InventoryCoreMockRepository } from '../../../inventory-core/infrastructure/repositories/inventory-core-mock.repository';
 import { TpmAlert, TpmAlertSeverity, TpmAlertType } from '../../domain/models/tpm-alert.model';
 import { TpmAsset, TpmEquipmentState } from '../../domain/models/tpm-asset.model';
 import { DEFAULT_TPM_FILTERS, TpmFilters } from '../../domain/models/tpm-filters.model';
@@ -47,6 +48,8 @@ const COMPANY_NAMES: Record<string, string> = {
   providedIn: 'root',
 })
 export class TpmMockRepository implements TpmRepository {
+  private readonly inventoryCore = inject(InventoryCoreMockRepository);
+
   getDashboard(companyId: string, filters: TpmFilters): Observable<TpmDashboard> {
     const normalizedFilters = this.normalizeFilters(filters);
     const store = this.prepareStore(companyId);
@@ -244,6 +247,7 @@ export class TpmMockRepository implements TpmRepository {
       return throwError(() => new Error(validation));
     }
 
+    const previousWorkOrders = store.workOrders.map((item) => cloneWorkOrder(item));
     const repuestos = this.buildSpareParts(current?.id ?? `tpm-wo-${Date.now()}`, payload.repuestosUsados);
     const nextWorkOrder: TpmWorkOrder = {
       id: current?.id ?? `tpm-wo-${payload.equipoId}-${Date.now()}`,
@@ -295,6 +299,14 @@ export class TpmMockRepository implements TpmRepository {
       ...store,
       auditTrail: [auditDraft, ...store.auditTrail.map((item) => ({ ...item }))],
     });
+    this.syncInventoryCoreSpareConsumption(
+      companyId,
+      current?.repuestosUsados ?? [],
+      nextWorkOrder,
+      payload.usuario.trim(),
+      previousWorkOrders,
+      nextWorkOrder.estado === 'EN_PROCESO' || nextWorkOrder.tipo === 'CORRECTIVO',
+    );
 
     const prepared = this.prepareStore(companyId);
     return of<TpmMutationResult>({
@@ -322,7 +334,14 @@ export class TpmMockRepository implements TpmRepository {
       return throwError(() => new Error('La OT seleccionada ya no se puede editar libremente.'));
     }
 
+    const spareValidation = this.validateSpareParts(payload.repuestosUsados);
+
+    if (spareValidation) {
+      return throwError(() => new Error(spareValidation));
+    }
+
     const asset = this.findAssetByEquipment(store, companyId, current.equipoId);
+    const previousWorkOrders = store.workOrders.map((item) => cloneWorkOrder(item));
     const repuestos = this.buildSpareParts(current.id, payload.repuestosUsados);
     const nextWorkOrder: TpmWorkOrder = {
       ...current,
@@ -386,9 +405,17 @@ export class TpmMockRepository implements TpmRepository {
       payload.fechaCierre,
       `OT ${current.tipo} cerrada con estado tecnico ${payload.estadoEquipoPosterior}.`,
     );
+    const spareWarnings = this.buildSpareStockWarningHistories(
+      companyId,
+      current,
+      repuestos,
+      previousWorkOrders,
+      payload.usuario.trim(),
+      payload.fechaCierre,
+    );
     store = {
       ...store,
-      histories: [historyEntry, ...store.histories.map((item) => ({ ...item }))],
+      histories: [historyEntry, ...spareWarnings, ...store.histories.map((item) => ({ ...item }))],
     };
     const auditDraft = this.buildAuditDraft(
       'work-order-close',
@@ -403,6 +430,14 @@ export class TpmMockRepository implements TpmRepository {
       ...store,
       auditTrail: [auditDraft, ...store.auditTrail.map((item) => ({ ...item }))],
     });
+    this.syncInventoryCoreSpareConsumption(
+      companyId,
+      current.repuestosUsados,
+      nextWorkOrder,
+      payload.usuario.trim(),
+      previousWorkOrders,
+      true,
+    );
 
     const prepared = this.prepareStore(companyId);
     return of<TpmMutationResult>({
@@ -989,6 +1024,115 @@ export class TpmMockRepository implements TpmRepository {
     });
   }
 
+  private syncInventoryCoreSpareConsumption(
+    companyId: string,
+    previousSpares: TpmSparePart[],
+    workOrder: TpmWorkOrder,
+    usuario: string,
+    previousWorkOrders: TpmWorkOrder[],
+    shouldConsume: boolean,
+  ): void {
+    if (!shouldConsume) {
+      return;
+    }
+
+    this.resolveSpareConsumptionDeltas(previousSpares, workOrder.repuestosUsados).forEach((spare) => {
+      const part = TPM_SPARE_PARTS.find((item) => item.codigo === spare.codigoRepuesto) ?? null;
+      const remaining = this.resolveSpareRemaining(previousWorkOrders, spare.codigoRepuesto);
+      const shortage = spare.cantidad > remaining;
+
+      this.inventoryCore.consumeSparePart(companyId, {
+        productoId: `tpm-spare-${companyId}-${spare.codigoRepuesto}`,
+        sku: spare.codigoRepuesto,
+        productoNombre: spare.descripcion || part?.descripcion || spare.codigoRepuesto,
+        bodegaId: `${companyId}-tpm-spares`,
+        ubicacionId: `${companyId}-tpm-spares-virtual`,
+        loteId: null,
+        lote: null,
+        cantidad: spare.cantidad,
+        costoUnitario: spare.costoUnitario || part?.costoUnitario || 0,
+        saldoDisponibleMock: remaining,
+        documentoOrigen: workOrder.id,
+        moduloOrigen: 'TPM',
+        usuarioId: usuario,
+        observacion: [
+          `Consumo de repuesto por OT ${workOrder.id}.`,
+          shortage ? `Stock TPM derivado insuficiente: disponible ${remaining}, consumo ${spare.cantidad}.` : null,
+        ].filter(Boolean).join(' '),
+      }).subscribe({ error: () => undefined });
+    });
+  }
+
+  private buildSpareStockWarningHistories(
+    companyId: string,
+    workOrder: TpmWorkOrder,
+    nextSpares: TpmSparePart[],
+    previousWorkOrders: TpmWorkOrder[],
+    usuario: string,
+    fecha: string,
+  ): TpmHistory[] {
+    return this.resolveSpareConsumptionDeltas(workOrder.repuestosUsados, nextSpares)
+      .filter((spare) => spare.cantidad > this.resolveSpareRemaining(previousWorkOrders, spare.codigoRepuesto))
+      .map((spare) => {
+        const remaining = this.resolveSpareRemaining(previousWorkOrders, spare.codigoRepuesto);
+        const history = this.buildHistory(
+          workOrder.equipoId,
+          'ALERTA_REPUESTO',
+          usuario,
+          fecha,
+          `Consumo de ${spare.codigoRepuesto} excede stock TPM derivado: disponible ${remaining}, consumo ${spare.cantidad}.`,
+        );
+
+        return {
+          ...history,
+          id: `${workOrder.id}-spare-warning-${spare.codigoRepuesto}-${Date.parse(fecha)}`,
+        };
+      });
+  }
+
+  private resolveSpareConsumptionDeltas(
+    previousSpares: TpmSparePart[],
+    nextSpares: TpmSparePart[],
+  ): TpmSparePart[] {
+    const previousByCode = this.groupSpareQuantities(previousSpares);
+
+    return Array.from(this.groupSpareQuantities(nextSpares).entries())
+      .map(([code, next]) => ({
+        ...next.source,
+        cantidad: Math.max(0, round(next.quantity - (previousByCode.get(code)?.quantity ?? 0))),
+        costoTotal: round(Math.max(0, next.quantity - (previousByCode.get(code)?.quantity ?? 0)) * next.source.costoUnitario),
+      }))
+      .filter((item) => item.cantidad > 0);
+  }
+
+  private groupSpareQuantities(spares: TpmSparePart[]): Map<string, { quantity: number; source: TpmSparePart }> {
+    return spares.reduce((map, spare) => {
+      const current = map.get(spare.codigoRepuesto);
+      map.set(spare.codigoRepuesto, {
+        quantity: (current?.quantity ?? 0) + Math.max(0, spare.cantidad),
+        source: {
+          ...(current?.source ?? spare),
+          descripcion: spare.descripcion || current?.source.descripcion || spare.codigoRepuesto,
+          costoUnitario: spare.costoUnitario || current?.source.costoUnitario || 0,
+        },
+      });
+      return map;
+    }, new Map<string, { quantity: number; source: TpmSparePart }>());
+  }
+
+  private resolveSpareRemaining(workOrders: TpmWorkOrder[], spareCode: string): number {
+    const part = TPM_SPARE_PARTS.find((item) => item.codigo === spareCode) ?? null;
+    const initialStock = part?.stockDisponible ?? 0;
+    const consumed = workOrders.reduce((sum, order) => {
+      const orderConsumed = order.repuestosUsados
+        .filter((item) => item.codigoRepuesto === spareCode)
+        .reduce((partSum, item) => partSum + Math.max(0, item.cantidad), 0);
+      return sum + orderConsumed;
+    }, 0);
+
+    return Math.max(0, initialStock - consumed);
+  }
+
   private resolveAssetState(
     asset: TpmAsset,
     equipment: Equipment | null,
@@ -1116,6 +1260,29 @@ export class TpmMockRepository implements TpmRepository {
 
     if (!Number.isFinite(payload.costo) || payload.costo < 0) {
       return 'El costo debe ser mayor o igual a cero.';
+    }
+
+    const spareValidation = this.validateSpareParts(payload.repuestosUsados);
+
+    if (spareValidation) {
+      return spareValidation;
+    }
+
+    return null;
+  }
+
+  private validateSpareParts(spares: SaveTpmSparePartPayload[]): string | null {
+    const invalidSpare = spares.find(
+      (item) =>
+        !item.codigoRepuesto.trim() ||
+        !Number.isFinite(item.cantidad) ||
+        item.cantidad < 0 ||
+        !Number.isFinite(item.costoUnitario) ||
+        item.costoUnitario < 0,
+    );
+
+    if (invalidSpare) {
+      return 'Los repuestos deben tener codigo, cantidad no negativa y costo no negativo.';
     }
 
     return null;

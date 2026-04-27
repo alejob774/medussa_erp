@@ -28,6 +28,7 @@ export interface InventoryStockCommandPayload {
   lote: string | null;
   cantidad: number;
   costoUnitario?: number | null;
+  saldoDisponibleMock?: number | null;
   documentoOrigen?: string | null;
   moduloOrigen: string;
   usuarioId: string;
@@ -111,6 +112,11 @@ export abstract class InventoryCoreRepository {
   abstract rejectLot(
     companyId: string,
     payload: InventoryLotCommandPayload,
+  ): Observable<InventoryMovement>;
+
+  abstract qualityWaste(
+    companyId: string,
+    payload: InventoryStockCommandPayload,
   ): Observable<InventoryMovement>;
 
   abstract transferStock(

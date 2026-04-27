@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { delay, Observable, of, throwError } from 'rxjs';
 import { Product } from '../../../products/domain/models/product.model';
 import { ProductStore } from '../../../products/domain/models/product-response.model';
@@ -11,6 +11,8 @@ import {
   StorageLayoutStore,
 } from '../../../storage-layout/domain/models/storage-layout-response.model';
 import { ensureStorageLayoutBaseline } from '../../../storage-layout/infrastructure/data/storage-layout-store.utils';
+import { InventoryLotCommandPayload } from '../../../inventory-core/domain/repositories/inventory-core.repository';
+import { InventoryCoreMockRepository } from '../../../inventory-core/infrastructure/repositories/inventory-core-mock.repository';
 import {
   EMPTY_QUALITY_EVALUATION,
   QualityControlAuditDraft,
@@ -228,6 +230,8 @@ const QUALITY_PARAMETER_TEMPLATES: QualityParameterTemplate[] = [
   providedIn: 'root',
 })
 export class QualityControlMockRepository implements QualityControlRepository {
+  private readonly inventoryCore = inject(InventoryCoreMockRepository);
+
   getDashboard(companyId: string, filters: QualityInspectionFilters): Observable<QualityControlDashboard> {
     const normalizedFilters = this.normalizeFilters(filters);
     const layoutStore = ensureStorageLayoutBaseline(companyId);
@@ -400,6 +404,20 @@ export class QualityControlMockRepository implements QualityControlRepository {
       auditTrail: [auditDraft, ...nextStore.auditTrail],
     });
 
+    if (nextInspection.estadoLote === 'CUARENTENA' || nextInspection.estadoLote === 'RECHAZADO') {
+      this.syncInventoryCoreLotDecision(
+        companyId,
+        current?.inspection.estadoLote ?? 'PENDIENTE',
+        nextInspection,
+        {
+          accion: nextInspection.estadoLote === 'RECHAZADO' ? 'RECHAZAR' : 'CUARENTENA',
+          usuario: payload.usuarioCrea,
+          observacion: this.describeEvaluation(evaluation),
+        },
+        layoutStore,
+      );
+    }
+
     return of<QualityControlMutationResult>({
       action: current ? 'inspection-updated' : 'inspection-created',
       inspection: this.cloneAggregate(aggregate),
@@ -486,6 +504,13 @@ export class QualityControlMockRepository implements QualityControlRepository {
       ...nextStore,
       auditTrail: [auditDraft, ...nextStore.auditTrail],
     });
+    this.syncInventoryCoreLotDecision(
+      companyId,
+      current.inspection.estadoLote,
+      nextInspection,
+      payload,
+      layoutStore,
+    );
 
     return of<QualityControlMutationResult>({
       action: this.resolveDecisionMutation(payload.accion),
@@ -654,6 +679,54 @@ export class QualityControlMockRepository implements QualityControlRepository {
       message: 'No conformidad cerrada correctamente.',
       auditDraft,
     }).pipe(delay(220));
+  }
+
+  private syncInventoryCoreLotDecision(
+    companyId: string,
+    previousStatus: QualityLotStatus,
+    inspection: QualityInspection,
+    payload: QualityLotDecisionPayload,
+    layoutStore: StorageLayoutStore,
+  ): void {
+    if (previousStatus === inspection.estadoLote) {
+      return;
+    }
+
+    const command = this.buildInventoryLotCommand(companyId, inspection, payload, layoutStore);
+    const result =
+      payload.accion === 'APROBAR'
+        ? this.inventoryCore.releaseLot(companyId, command)
+        : payload.accion === 'RECHAZAR'
+          ? this.inventoryCore.rejectLot(companyId, command)
+          : this.inventoryCore.blockLot(companyId, {
+              ...command,
+              estado: 'CUARENTENA',
+            });
+
+    result.subscribe({ error: () => undefined });
+  }
+
+  private buildInventoryLotCommand(
+    companyId: string,
+    inspection: QualityInspection,
+    payload: QualityLotDecisionPayload,
+    layoutStore: StorageLayoutStore,
+  ): InventoryLotCommandPayload {
+    const context = this.resolveLotContext(companyId, inspection.loteId, layoutStore);
+
+    return {
+      productoId: inspection.productoId,
+      sku: inspection.productoCodigo,
+      productoNombre: inspection.productoNombre,
+      bodegaId: context?.lot.bodegaId ?? `${companyId}-quality-warehouse`,
+      ubicacionId: context?.lot.ubicacionId ?? `${companyId}-quality-location`,
+      loteId: inspection.loteId,
+      lote: inspection.loteCodigo,
+      documentoOrigen: inspection.id,
+      moduloOrigen: 'QUALITY_CONTROL',
+      usuarioId: payload.usuario.trim(),
+      observacion: payload.observacion?.trim() || this.resolveDecisionMessage(payload.accion),
+    };
   }
 
   private readStore(): QualityControlStore {

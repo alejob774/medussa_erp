@@ -83,6 +83,10 @@ export class InventoryCoreMockRepository implements InventoryCoreRepository {
 
     const balance = this.findBalance(companyId, payload);
 
+    if (!this.canDispatchLot(companyId, payload.loteId)) {
+      return throwError(() => new Error('El lote esta bloqueado, retenido, en cuarentena o rechazado.'));
+    }
+
     if (!balance || payload.cantidad > balance.cantidadDisponible - balance.cantidadReservada) {
       return throwError(() => new Error('Stock insuficiente para reservar.'));
     }
@@ -196,13 +200,17 @@ export class InventoryCoreMockRepository implements InventoryCoreRepository {
     companyId: string,
     payload: InventoryLotCommandPayload,
   ): Observable<InventoryMovement> {
-    return of(this.recordLotState(companyId, payload, 'BLOQUEADO', 'BLOQUEO_CALIDAD')).pipe(delay(160));
+    return of(this.recordLotState(companyId, payload, payload.estado ?? 'BLOQUEADO', 'BLOQUEO_CALIDAD')).pipe(delay(160));
   }
 
   releaseLot(
     companyId: string,
     payload: InventoryLotCommandPayload,
   ): Observable<InventoryMovement> {
+    if (this.resolveInventoryLotStatus(payload.loteId) === 'RECHAZADO') {
+      return throwError(() => new Error('Un lote rechazado no puede liberarse.'));
+    }
+
     return of(this.recordLotState(companyId, payload, 'LIBERADO', 'LIBERACION_CALIDAD')).pipe(delay(160));
   }
 
@@ -211,6 +219,20 @@ export class InventoryCoreMockRepository implements InventoryCoreRepository {
     payload: InventoryLotCommandPayload,
   ): Observable<InventoryMovement> {
     return of(this.recordLotState(companyId, payload, 'RECHAZADO', 'RECHAZO_CALIDAD')).pipe(delay(160));
+  }
+
+  qualityWaste(
+    companyId: string,
+    payload: InventoryStockCommandPayload,
+  ): Observable<InventoryMovement> {
+    if (payload.cantidad <= 0) {
+      return throwError(() => new Error('La merma de calidad debe ser mayor a cero.'));
+    }
+
+    return this.updateLayoutBackedStock(companyId, payload, -Math.abs(payload.cantidad), {
+      positiveType: 'AJUSTE_POS',
+      negativeType: 'MERMA_CALIDAD',
+    });
   }
 
   transferStock(
@@ -222,6 +244,10 @@ export class InventoryCoreMockRepository implements InventoryCoreRepository {
     }
 
     const balance = this.findBalance(companyId, payload);
+
+    if (!this.canDispatchLot(companyId, payload.loteId)) {
+      return throwError(() => new Error('El lote esta bloqueado, retenido, en cuarentena o rechazado.'));
+    }
 
     if (!balance || payload.cantidad > balance.cantidadDisponible) {
       return throwError(() => new Error('Stock insuficiente para transferir.'));
@@ -245,6 +271,10 @@ export class InventoryCoreMockRepository implements InventoryCoreRepository {
     companyId: string,
     payload: InventoryStockCommandPayload,
   ): Observable<InventoryMovement> {
+    if (!payload.loteId) {
+      return this.recordTechnicalStockOut(companyId, payload, 'CONSUMO_REPUESTO_TPM');
+    }
+
     return this.updateLayoutBackedStock(companyId, payload, -Math.abs(payload.cantidad), {
       positiveType: 'AJUSTE_POS',
       negativeType: 'CONSUMO_REPUESTO_TPM',
@@ -274,8 +304,18 @@ export class InventoryCoreMockRepository implements InventoryCoreRepository {
       return throwError(() => new Error('La politica mock no permite stock negativo.'));
     }
 
+    const movementType = delta >= 0 ? types.positiveType : types.negativeType;
+
+    if (
+      delta < 0 &&
+      (movementType === 'DESPACHO_VENTA' || movementType === 'TRANSFER_OUT') &&
+      !this.canDispatchLot(companyId, lot.id)
+    ) {
+      return throwError(() => new Error('El lote esta bloqueado, retenido, en cuarentena o rechazado.'));
+    }
+
     updateStorageLayoutLotStock(companyId, lot.id, nextStock, {
-      tipoMovimiento: delta >= 0 ? types.positiveType : types.negativeType,
+      tipoMovimiento: movementType,
       documentoOrigen: payload.documentoOrigen ?? null,
       moduloOrigen: payload.moduloOrigen,
       usuarioId: payload.usuarioId,
@@ -290,6 +330,45 @@ export class InventoryCoreMockRepository implements InventoryCoreRepository {
     if (!movement) {
       return throwError(() => new Error('No fue posible registrar el movimiento de inventario.'));
     }
+
+    return of({ ...movement }).pipe(delay(160));
+  }
+
+  private recordTechnicalStockOut(
+    companyId: string,
+    payload: InventoryStockCommandPayload,
+    tipoMovimiento: InventoryMovement['tipoMovimiento'],
+  ): Observable<InventoryMovement> {
+    if (payload.cantidad <= 0) {
+      return throwError(() => new Error('La cantidad consumida debe ser mayor a cero.'));
+    }
+
+    const amount = Math.abs(Math.round(payload.cantidad));
+    const balance = this.findTechnicalBalance(companyId, payload);
+    const available = Math.max(0, Math.round(balance?.cantidadDisponible ?? payload.saldoDisponibleMock ?? 0));
+    const shortage = amount > available;
+    const movement = recordInventoryCoreMovement({
+      empresaId: companyId,
+      tipoMovimiento,
+      documentoOrigen: payload.documentoOrigen ?? null,
+      moduloOrigen: payload.moduloOrigen,
+      productoId: payload.productoId,
+      sku: payload.sku,
+      productoNombre: payload.productoNombre,
+      bodegaId: payload.bodegaId,
+      ubicacionId: payload.ubicacionId,
+      loteId: payload.loteId,
+      lote: payload.lote,
+      cantidad: amount,
+      signo: -1,
+      costoUnitario: payload.costoUnitario ?? balance?.costoUnitario ?? 0,
+      saldoResultante: Math.max(0, available - amount),
+      usuarioId: payload.usuarioId,
+      observacion: [
+        payload.observacion?.trim() || null,
+        shortage ? `Consumo mock excede saldo tecnico disponible (${available}).` : null,
+      ].filter(Boolean).join(' | ') || null,
+    });
 
     return of({ ...movement }).pipe(delay(160));
   }
@@ -356,6 +435,38 @@ export class InventoryCoreMockRepository implements InventoryCoreRepository {
           item.loteId === payload.loteId,
       ) ?? null
     );
+  }
+
+  private findTechnicalBalance(
+    companyId: string,
+    payload: Pick<InventoryStockCommandPayload, 'productoId' | 'sku' | 'bodegaId' | 'ubicacionId' | 'loteId'>,
+  ): InventoryBalance | null {
+    const balanceId = `${companyId}|${payload.productoId}|${payload.bodegaId}|${payload.ubicacionId}|${payload.loteId ?? 'SIN_LOTE'}`;
+
+    return readInventoryCoreStore().balances.find((item) => item.id === balanceId) ?? null;
+  }
+
+  private canDispatchLot(companyId: string, lotId: string | null): boolean {
+    if (!lotId) {
+      return true;
+    }
+
+    const status = this.resolveInventoryLotStatus(lotId);
+
+    if (status) {
+      return status === 'LIBERADO';
+    }
+
+    const layoutLot = ensureStorageLayoutBaseline(companyId).lots.find((item) => item.id === lotId) ?? null;
+    return layoutLot?.estado === 'ACTIVO' || layoutLot?.estado === 'PROXIMO_VENCER';
+  }
+
+  private resolveInventoryLotStatus(lotId: string | null): InventoryLot['estado'] | null {
+    if (!lotId) {
+      return null;
+    }
+
+    return readInventoryCoreStore().lots.find((item) => item.id === lotId)?.estado ?? null;
   }
 
   private toMovementDraft(

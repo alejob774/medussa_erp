@@ -62,6 +62,10 @@ export class InventoryCoreFacadeService {
     return this.withActiveCompany((companyId) => this.repository.rejectLot(companyId, payload));
   }
 
+  qualityWaste(payload: InventoryStockCommandPayload): Observable<InventoryMovement> {
+    return this.withActiveCompany((companyId) => this.repository.qualityWaste(companyId, payload));
+  }
+
   transferStock(payload: InventoryTransferPayload): Observable<InventoryMovement[]> {
     return this.withActiveCompany((companyId) => this.repository.transferStock(companyId, payload));
   }
