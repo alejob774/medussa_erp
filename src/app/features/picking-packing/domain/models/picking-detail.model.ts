@@ -13,6 +13,7 @@ export interface PickingDetail {
   cantidadSolicitada: number;
   cantidadConfirmada: number;
   stockDisponible: number;
+  reservationId?: string | null;
   tieneFaltante: boolean;
   observacion: string | null;
   estado: PickingDetailState;

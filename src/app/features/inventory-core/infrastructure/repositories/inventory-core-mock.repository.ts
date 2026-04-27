@@ -82,12 +82,23 @@ export class InventoryCoreMockRepository implements InventoryCoreRepository {
     }
 
     const balance = this.findBalance(companyId, payload);
+    const existingReservation = this.findActiveReservation(companyId, {
+      productoId: payload.productoId,
+      bodegaId: payload.bodegaId,
+      loteId: payload.loteId,
+      origenTipo: payload.origenTipo,
+      origenId: payload.origenId,
+    });
+
+    if (existingReservation && existingReservation.cantidad === Math.round(payload.cantidad)) {
+      return of({ ...existingReservation }).pipe(delay(120));
+    }
 
     if (!this.canDispatchLot(companyId, payload.loteId)) {
       return throwError(() => new Error('El lote esta bloqueado, retenido, en cuarentena o rechazado.'));
     }
 
-    if (!balance || payload.cantidad > balance.cantidadDisponible - balance.cantidadReservada) {
+    if (!balance || payload.cantidad > balance.cantidadDisponible - this.sumActiveReserved(companyId, balance)) {
       return throwError(() => new Error('Stock insuficiente para reservar.'));
     }
 
@@ -150,7 +161,7 @@ export class InventoryCoreMockRepository implements InventoryCoreRepository {
     const now = new Date().toISOString();
     const released: InventoryReservation = {
       ...reservation,
-      estado: 'LIBERADA',
+      estado: payload.estadoFinal ?? 'LIBERADA',
     };
     const balance = this.findBalance(companyId, {
       productoId: reservation.productoId,
@@ -173,25 +184,27 @@ export class InventoryCoreMockRepository implements InventoryCoreRepository {
           : { ...item },
       ),
     });
-    recordInventoryCoreMovement({
-      empresaId: companyId,
-      tipoMovimiento: 'LIBERACION_RESERVA',
-      documentoOrigen: payload.documentoOrigen ?? reservation.origenId,
-      moduloOrigen: payload.moduloOrigen,
-      productoId: reservation.productoId,
-      sku: reservation.sku,
-      productoNombre: reservation.sku,
-      bodegaId: reservation.bodegaId,
-      ubicacionId: balance?.ubicacionId ?? '',
-      loteId: reservation.loteId,
-      lote: reservation.lote,
-      cantidad: reservation.cantidad,
-      signo: 0,
-      costoUnitario: balance?.costoUnitario ?? 0,
-      saldoResultante: balance?.cantidadDisponible ?? 0,
-      usuarioId: payload.usuarioId,
-      observacion: payload.observacion ?? null,
-    });
+    if (payload.registrarMovimiento !== false) {
+      recordInventoryCoreMovement({
+        empresaId: companyId,
+        tipoMovimiento: 'LIBERACION_RESERVA',
+        documentoOrigen: payload.documentoOrigen ?? reservation.origenId,
+        moduloOrigen: payload.moduloOrigen,
+        productoId: reservation.productoId,
+        sku: reservation.sku,
+        productoNombre: reservation.sku,
+        bodegaId: reservation.bodegaId,
+        ubicacionId: balance?.ubicacionId ?? '',
+        loteId: reservation.loteId,
+        lote: reservation.lote,
+        cantidad: reservation.cantidad,
+        signo: 0,
+        costoUnitario: balance?.costoUnitario ?? 0,
+        saldoResultante: balance?.cantidadDisponible ?? 0,
+        usuarioId: payload.usuarioId,
+        observacion: payload.observacion ?? null,
+      });
+    }
 
     return of({ ...released }).pipe(delay(160));
   }
@@ -312,6 +325,22 @@ export class InventoryCoreMockRepository implements InventoryCoreRepository {
       !this.canDispatchLot(companyId, lot.id)
     ) {
       return throwError(() => new Error('El lote esta bloqueado, retenido, en cuarentena o rechazado.'));
+    }
+
+    if (delta < 0 && movementType === 'DESPACHO_VENTA') {
+      const balance = this.findBalance(companyId, payload);
+      const requested = Math.abs(Math.round(delta));
+      const reservedByOthers = balance
+        ? this.sumActiveReserved(companyId, balance, {
+            reservationId: payload.reservationId ?? null,
+            origenTipo: payload.origenTipo ?? null,
+            origenId: payload.origenId ?? null,
+          })
+        : 0;
+
+      if (!balance || requested > balance.cantidadDisponible - reservedByOthers) {
+        return throwError(() => new Error('Stock insuficiente o reservado por otro origen.'));
+      }
     }
 
     updateStorageLayoutLotStock(companyId, lot.id, nextStock, {
@@ -444,6 +473,42 @@ export class InventoryCoreMockRepository implements InventoryCoreRepository {
     const balanceId = `${companyId}|${payload.productoId}|${payload.bodegaId}|${payload.ubicacionId}|${payload.loteId ?? 'SIN_LOTE'}`;
 
     return readInventoryCoreStore().balances.find((item) => item.id === balanceId) ?? null;
+  }
+
+  private findActiveReservation(
+    companyId: string,
+    filters: {
+      productoId: string;
+      bodegaId: string;
+      loteId: string | null;
+      origenTipo?: string | null;
+      origenId?: string | null;
+    },
+  ): InventoryReservation | null {
+    return readInventoryCoreStore().reservations.find(
+      (item) =>
+        item.empresaId === companyId &&
+        item.estado === 'ACTIVA' &&
+        item.productoId === filters.productoId &&
+        item.bodegaId === filters.bodegaId &&
+        item.loteId === (filters.loteId ?? 'SIN_LOTE') &&
+        (!filters.origenTipo || item.origenTipo === filters.origenTipo) &&
+        (!filters.origenId || item.origenId === filters.origenId),
+    ) ?? null;
+  }
+
+  private sumActiveReserved(
+    companyId: string,
+    balance: InventoryBalance,
+    exclude?: { reservationId?: string | null; origenTipo?: string | null; origenId?: string | null },
+  ): number {
+    return readInventoryCoreStore().reservations
+      .filter((item) => item.empresaId === companyId && item.estado === 'ACTIVA')
+      .filter((item) => item.productoId === balance.productoId && item.bodegaId === balance.bodegaId)
+      .filter((item) => item.loteId === (balance.loteId ?? 'SIN_LOTE'))
+      .filter((item) => item.id !== exclude?.reservationId)
+      .filter((item) => !(exclude?.origenTipo && item.origenTipo === exclude.origenTipo && item.origenId === exclude.origenId))
+      .reduce((sum, item) => sum + item.cantidad, 0);
   }
 
   private canDispatchLot(companyId: string, lotId: string | null): boolean {

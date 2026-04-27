@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { delay, Observable, of, throwError } from 'rxjs';
 import { Client } from '../../../clients/domain/models/client.model';
 import { ClientStore } from '../../../clients/domain/models/client-response.model';
@@ -16,7 +16,14 @@ import {
   StorageLayoutLot,
   StorageLayoutStore,
 } from '../../../storage-layout/domain/models/storage-layout-response.model';
-import { ensureStorageLayoutBaseline, updateStorageLayoutLotStock } from '../../../storage-layout/infrastructure/data/storage-layout-store.utils';
+import { ensureStorageLayoutBaseline } from '../../../storage-layout/infrastructure/data/storage-layout-store.utils';
+import { InventoryBalance } from '../../../inventory-core/domain/models/inventory-balance.model';
+import { InventoryReservation } from '../../../inventory-core/domain/models/inventory-reservation.model';
+import { InventoryCoreMockRepository } from '../../../inventory-core/infrastructure/repositories/inventory-core-mock.repository';
+import {
+  projectStorageLayoutLotsToBalances,
+  readInventoryCoreStore,
+} from '../../../inventory-core/infrastructure/repositories/inventory-core-store.utils';
 import { Packing, PackingState, PackingType } from '../../domain/models/packing.model';
 import {
   PickingAlert,
@@ -100,6 +107,8 @@ type SeedTask = {
   providedIn: 'root',
 })
 export class PickingPackingMockRepository implements PickingPackingRepository {
+  private readonly inventoryCore = inject(InventoryCoreMockRepository);
+
   getDashboard(companyId: string, filters: PickingFilters): Observable<PickingPackingDashboard> {
     const normalizedFilters = this.normalizeFilters(filters);
     const layoutStore = ensureStorageLayoutBaseline(companyId);
@@ -220,7 +229,7 @@ export class PickingPackingMockRepository implements PickingPackingRepository {
     );
     const lot = layoutStore.lots.find((item) => item.empresaId === companyId && item.id === currentDetail.loteId);
     const locationBlocked = !location || location.estado !== 'ACTIVA';
-    const available = this.resolveAvailableStock(store, layoutStore, currentDetail, currentTask.id);
+    const available = this.resolveAvailableStock(companyId, store, layoutStore, currentDetail, currentTask);
 
     if (!lot) {
       return throwError(() => new Error('El lote asociado ya no existe en el layout.'));
@@ -228,6 +237,10 @@ export class PickingPackingMockRepository implements PickingPackingRepository {
 
     if (locationBlocked && payload.cantidadConfirmada > 0) {
       return throwError(() => new Error('La ubicacion esta bloqueada o no disponible para picking.'));
+    }
+
+    if (!this.canPickLot(companyId, currentDetail.loteId) && payload.cantidadConfirmada > 0) {
+      return throwError(() => new Error('El lote esta bloqueado, retenido, en cuarentena o rechazado.'));
     }
 
     if (payload.cantidadConfirmada > available) {
@@ -315,6 +328,20 @@ export class PickingPackingMockRepository implements PickingPackingRepository {
       return throwError(() => new Error('Debes confirmar al menos una linea antes de cerrar el picking.'));
     }
 
+    const reservationResult = this.reserveConfirmedPickingLines(
+      companyId,
+      currentTask,
+      taskDetails,
+      layoutStore,
+      payload.usuario.trim(),
+    );
+
+    const reservationError = reservationResult.error;
+
+    if (reservationError) {
+      return throwError(() => new Error(reservationError));
+    }
+
     const now = new Date().toISOString();
     const nextTask = this.rebuildTask(
       {
@@ -322,7 +349,7 @@ export class PickingPackingMockRepository implements PickingPackingRepository {
         estado: 'ALISTADO',
         fechaCierre: now,
       },
-      taskDetails,
+      reservationResult.details,
     );
     const currentPacking = store.packings.find((item) => item.empresaId === companyId && item.pedidoId === currentTask.pedidoId) ?? null;
     const nextPacking: Packing = currentPacking ?? {
@@ -341,7 +368,11 @@ export class PickingPackingMockRepository implements PickingPackingRepository {
     const nextStore: PickingPackingStore = {
       ...store,
       tasks: store.tasks.map((item) => (item.id === taskId ? nextTask : { ...item })),
-      details: store.details.map((item) => ({ ...item })),
+      details: store.details.map((item) =>
+        item.tareaId === taskId
+          ? reservationResult.details.find((detail) => detail.id === item.id) ?? { ...item }
+          : { ...item },
+      ),
       packings: currentPacking
         ? store.packings.map((item) => (item.id === currentPacking.id ? nextPacking : { ...item }))
         : [nextPacking, ...store.packings.map((item) => ({ ...item }))],
@@ -401,44 +432,17 @@ export class PickingPackingMockRepository implements PickingPackingRepository {
       return throwError(() => new Error('El packing ya fue cerrado previamente.'));
     }
 
-    const deductions = taskDetails.reduce<Record<string, number>>((acc, detail) => {
-      if (detail.cantidadConfirmada > 0) {
-        acc[detail.loteId] = (acc[detail.loteId] ?? 0) + detail.cantidadConfirmada;
-      }
-      return acc;
-    }, {});
-    const lotsById = new Map(layoutStore.lots.map((item) => [item.id, item]));
+    const issueResult = this.issueConfirmedPackingLines(
+      companyId,
+      currentTask,
+      taskDetails,
+      layoutStore,
+      payload.usuarioCierre.trim(),
+    );
 
-    for (const [lotId, quantity] of Object.entries(deductions)) {
-      const lot = lotsById.get(lotId);
-
-      if (!lot) {
-        return throwError(() => new Error('Uno de los lotes del pedido ya no existe en el layout.'));
-      }
-
-      if (quantity > lot.stockSistema) {
-        return throwError(
-          () =>
-            new Error(
-              `El lote ${lot.lote} no tiene stock suficiente para cerrar el packing (${lot.stockSistema} disponible).`,
-            ),
-        );
-      }
+    if (issueResult) {
+      return throwError(() => new Error(issueResult));
     }
-
-    Object.entries(deductions).forEach(([lotId, quantity]) => {
-      const lot = lotsById.get(lotId);
-
-      if (lot) {
-        updateStorageLayoutLotStock(companyId, lotId, Math.max(0, lot.stockSistema - quantity), {
-          tipoMovimiento: 'DESPACHO_VENTA',
-          documentoOrigen: currentTask.pedidoId,
-          moduloOrigen: 'HU-032_PICKING_PACKING',
-          usuarioId: payload.usuarioCierre.trim(),
-          observacion: `Salida por cierre de packing ${currentTask.pedidoId}.`,
-        });
-      }
-    });
 
     const now = new Date().toISOString();
     const nextTask: PickingTask = {
@@ -630,7 +634,7 @@ export class PickingPackingMockRepository implements PickingPackingRepository {
 
       const taskId = `pick-task-${companyId}-${index + 1}`;
       const taskDetails = seed.lines
-        .map((line, lineIndex) => {
+        .map((line, lineIndex): PickingDetail | null => {
           const lot = lotsByCode.get(line.lot);
 
           if (!lot) {
@@ -652,6 +656,7 @@ export class PickingPackingMockRepository implements PickingPackingRepository {
             cantidadSolicitada: line.requested,
             cantidadConfirmada: line.confirmed,
             stockDisponible: lot.stockSistema,
+            reservationId: null,
             tieneFaltante: line.state === 'FALTANTE' || line.state === 'BLOQUEADO' || line.confirmed < line.requested,
             observacion: line.observation ?? null,
             estado: line.state,
@@ -929,7 +934,10 @@ export class PickingPackingMockRepository implements PickingPackingRepository {
     });
 
     const hydratedDetails = companyDetails.map((detail) => {
-      const available = this.resolveAvailableStock(store, layoutStore, detail, detail.tareaId);
+      const relatedTask = companyTasks.find((task) => task.id === detail.tareaId);
+      const available = relatedTask
+        ? this.resolveAvailableStock(companyId, store, layoutStore, detail, relatedTask)
+        : 0;
       const location = layoutStore.locations.find((item) => item.id === detail.ubicacionId);
       const blocked = !location || location.estado !== 'ACTIVA';
 
@@ -1213,34 +1221,258 @@ export class PickingPackingMockRepository implements PickingPackingRepository {
       );
   }
 
+  private reserveConfirmedPickingLines(
+    companyId: string,
+    task: PickingTask,
+    details: PickingDetail[],
+    layoutStore: StorageLayoutStore,
+    usuario: string,
+  ): { details: PickingDetail[]; error: string | null } {
+    const nextDetails = details.map((item) => ({ ...item }));
+    const currentDetailIds = new Set(nextDetails.map((item) => item.id));
+    const baseStore = this.readStore();
+    const availabilityStore: PickingPackingStore = {
+      ...baseStore,
+      details: [
+        ...baseStore.details.filter((item) => !currentDetailIds.has(item.id)).map((item) => ({ ...item })),
+        ...nextDetails,
+      ],
+    };
+
+    for (const detail of nextDetails.filter((item) => item.cantidadConfirmada > 0)) {
+      const available = this.resolveAvailableStock(
+        companyId,
+        availabilityStore,
+        layoutStore,
+        detail,
+        task,
+      );
+
+      if (detail.cantidadConfirmada > available) {
+        return {
+          details: nextDetails,
+          error: `La linea ${detail.sku} supera el stock disponible para reservar (${available} unidades).`,
+        };
+      }
+
+      const lot = layoutStore.lots.find((item) => item.empresaId === companyId && item.id === detail.loteId) ?? null;
+
+      if (!lot) {
+        return { details: nextDetails, error: 'Uno de los lotes del pedido ya no existe en el layout.' };
+      }
+
+      const existing = this.findActiveReservationForDetail(companyId, detail, task);
+      let reservation = existing;
+
+      if (!reservation) {
+        let error: string | null = null;
+        this.inventoryCore.reserveStock(companyId, {
+          productoId: detail.skuId,
+          sku: detail.sku,
+          productoNombre: detail.productoNombre,
+          bodegaId: lot.bodegaId,
+          ubicacionId: detail.ubicacionId,
+          loteId: detail.loteId,
+          lote: detail.lote,
+          cantidad: detail.cantidadConfirmada,
+          documentoOrigen: task.pedidoId,
+          moduloOrigen: 'PICKING_PACKING',
+          usuarioId: usuario,
+          observacion: `Reserva por cierre de picking ${task.pedidoId}.`,
+          origenTipo: 'PICKING',
+          origenId: task.pedidoId,
+        }).subscribe({
+          error: (cause: unknown) => (error = cause instanceof Error ? cause.message : 'No fue posible reservar stock.'),
+        });
+
+        if (error) {
+          return { details: nextDetails, error };
+        }
+
+        reservation = this.findActiveReservationForDetail(companyId, detail, task);
+      }
+
+      detail.reservationId = reservation?.id ?? detail.reservationId ?? null;
+    }
+
+    return { details: nextDetails, error: null };
+  }
+
+  private issueConfirmedPackingLines(
+    companyId: string,
+    task: PickingTask,
+    details: PickingDetail[],
+    layoutStore: StorageLayoutStore,
+    usuario: string,
+  ): string | null {
+    for (const detail of details.filter((item) => item.cantidadConfirmada > 0)) {
+      const lot = layoutStore.lots.find((item) => item.empresaId === companyId && item.id === detail.loteId) ?? null;
+
+      if (!lot) {
+        return 'Uno de los lotes del pedido ya no existe en el layout.';
+      }
+
+      if (!this.canPickLot(companyId, detail.loteId)) {
+        return `El lote ${detail.lote} esta bloqueado, retenido, en cuarentena o rechazado.`;
+      }
+
+      let reservation = this.findActiveReservationForDetail(companyId, detail, task);
+
+      if (!reservation) {
+        const reservationResult = this.reserveConfirmedPickingLines(companyId, task, [detail], layoutStore, usuario);
+
+        if (reservationResult.error) {
+          return reservationResult.error;
+        }
+
+        reservation = this.findActiveReservationForDetail(companyId, reservationResult.details[0], task);
+      }
+
+      let issueError: string | null = null;
+      this.inventoryCore.issueStock(companyId, {
+        productoId: detail.skuId,
+        sku: detail.sku,
+        productoNombre: detail.productoNombre,
+        bodegaId: lot.bodegaId,
+        ubicacionId: detail.ubicacionId,
+        loteId: detail.loteId,
+        lote: detail.lote,
+        cantidad: detail.cantidadConfirmada,
+        documentoOrigen: task.pedidoId,
+        moduloOrigen: 'PICKING_PACKING',
+        usuarioId: usuario,
+        observacion: `Despacho por cierre de packing ${task.pedidoId}.`,
+        reservationId: reservation?.id ?? detail.reservationId ?? null,
+        origenTipo: 'PICKING',
+        origenId: task.pedidoId,
+      }).subscribe({
+        error: (cause: unknown) => (issueError = cause instanceof Error ? cause.message : 'No fue posible despachar stock.'),
+      });
+
+      if (issueError) {
+        return issueError;
+      }
+
+      if (reservation) {
+        let releaseError: string | null = null;
+        this.inventoryCore.releaseReservation(companyId, {
+          reservationId: reservation.id,
+          usuarioId: usuario,
+          documentoOrigen: task.pedidoId,
+          moduloOrigen: 'PICKING_PACKING',
+          estadoFinal: 'CONSUMIDA',
+          registrarMovimiento: false,
+          observacion: `Reserva consumida por packing ${task.pedidoId}.`,
+        }).subscribe({
+          error: (cause: unknown) => (releaseError = cause instanceof Error ? cause.message : 'No fue posible consumir la reserva.'),
+        });
+
+        if (releaseError) {
+          return releaseError;
+        }
+      }
+    }
+
+    return null;
+  }
+
   private resolveAvailableStock(
+    companyId: string,
     store: PickingPackingStore,
     layoutStore: StorageLayoutStore,
     detail: PickingDetail,
-    taskId: string,
+    task: PickingTask,
   ): number {
     const lot = layoutStore.lots.find((item) => item.id === detail.loteId);
     const location = layoutStore.locations.find((item) => item.id === detail.ubicacionId);
 
-    if (!lot || !location || location.estado !== 'ACTIVA') {
+    if (!lot || !location || location.estado !== 'ACTIVA' || !this.canPickLot(companyId, detail.loteId)) {
       return 0;
     }
 
-    const reservedByOthers = store.details.reduce((sum, item) => {
+    const balance = this.findInventoryBalance(companyId, layoutStore, detail);
+    const centralStock = balance?.cantidadDisponible ?? lot.stockSistema;
+    const centralReservedByOthers = balance ? this.sumCentralReservedByOthers(companyId, balance, task, detail) : 0;
+    const localConfirmedByOthers = store.details.reduce((sum, item) => {
       if (item.loteId !== detail.loteId || item.id === detail.id) {
         return sum;
       }
 
       const relatedTask = store.tasks.find((task) => task.id === item.tareaId);
 
-      if (!relatedTask || relatedTask.estado === 'CERRADO') {
+      if (!relatedTask || relatedTask.estado === 'CERRADO' || relatedTask.estado === 'ALISTADO') {
         return sum;
       }
 
       return sum + item.cantidadConfirmada;
     }, 0);
 
-    return Math.max(0, lot.stockSistema - reservedByOthers);
+    return Math.max(0, centralStock - centralReservedByOthers - localConfirmedByOthers);
+  }
+
+  private findInventoryBalance(
+    companyId: string,
+    layoutStore: StorageLayoutStore,
+    detail: PickingDetail,
+  ): InventoryBalance | null {
+    const lot = layoutStore.lots.find((item) => item.id === detail.loteId) ?? null;
+
+    return projectStorageLayoutLotsToBalances(companyId, layoutStore.lots).find(
+      (item) =>
+        item.empresaId === companyId &&
+        item.productoId === detail.skuId &&
+        item.bodegaId === lot?.bodegaId &&
+        item.ubicacionId === detail.ubicacionId &&
+        item.loteId === detail.loteId,
+    ) ?? null;
+  }
+
+  private sumCentralReservedByOthers(
+    companyId: string,
+    balance: InventoryBalance,
+    task: PickingTask,
+    detail: PickingDetail,
+  ): number {
+    return readInventoryCoreStore().reservations
+      .filter((item) => item.empresaId === companyId && item.estado === 'ACTIVA')
+      .filter((item) => item.productoId === balance.productoId && item.bodegaId === balance.bodegaId)
+      .filter((item) => item.loteId === (balance.loteId ?? 'SIN_LOTE'))
+      .filter((item) => item.id !== detail.reservationId)
+      .filter((item) => !(item.origenTipo === 'PICKING' && (item.origenId === task.pedidoId || item.origenId === task.id)))
+      .reduce((sum, item) => sum + item.cantidad, 0);
+  }
+
+  private findActiveReservationForDetail(
+    companyId: string,
+    detail: PickingDetail,
+    task: PickingTask,
+  ): InventoryReservation | null {
+    const reservations = readInventoryCoreStore().reservations.filter(
+      (item) => item.empresaId === companyId && item.estado === 'ACTIVA',
+    );
+
+    return (
+      reservations.find((item) => item.id === detail.reservationId) ??
+      reservations.find(
+        (item) =>
+          item.productoId === detail.skuId &&
+          item.loteId === detail.loteId &&
+          item.origenTipo === 'PICKING' &&
+          item.origenId === task.pedidoId,
+      ) ??
+      null
+    );
+  }
+
+  private canPickLot(companyId: string, lotId: string): boolean {
+    const coreLot = readInventoryCoreStore().lots.find((item) => item.empresaId === companyId && item.id === lotId) ?? null;
+
+    if (coreLot) {
+      return coreLot.estado === 'LIBERADO';
+    }
+
+    const layoutLot = ensureStorageLayoutBaseline(companyId).lots.find((item) => item.id === lotId) ?? null;
+    return layoutLot?.estado === 'ACTIVO' || layoutLot?.estado === 'PROXIMO_VENCER';
   }
 
   private rebuildTask(task: PickingTask, details: PickingDetail[]): PickingTask {

@@ -29,6 +29,9 @@ export interface InventoryStockCommandPayload {
   cantidad: number;
   costoUnitario?: number | null;
   saldoDisponibleMock?: number | null;
+  reservationId?: string | null;
+  origenTipo?: string | null;
+  origenId?: string | null;
   documentoOrigen?: string | null;
   moduloOrigen: string;
   usuarioId: string;
@@ -45,6 +48,8 @@ export interface InventoryReleaseReservationPayload {
   usuarioId: string;
   documentoOrigen?: string | null;
   moduloOrigen: string;
+  estadoFinal?: 'LIBERADA' | 'CONSUMIDA' | 'CANCELADA';
+  registrarMovimiento?: boolean;
   observacion?: string | null;
 }
 

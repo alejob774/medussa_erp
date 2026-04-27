@@ -249,11 +249,19 @@ function upsertBalanceAndLot(
   store: InventoryCoreStore,
   projection: { balance: InventoryBalance; lot: InventoryLot },
 ): InventoryCoreStore {
+  const current = store.balances.find((item) => item.id === projection.balance.id) ?? null;
+  const nextBalance: InventoryBalance = {
+    ...projection.balance,
+    cantidadReservada: current?.cantidadReservada ?? projection.balance.cantidadReservada,
+    cantidadTransito: current?.cantidadTransito ?? projection.balance.cantidadTransito,
+    costoUnitario: current?.costoUnitario ?? projection.balance.costoUnitario,
+  };
+
   return {
     ...store,
     balances: [
-      projection.balance,
-      ...store.balances.filter((item) => item.id !== projection.balance.id).map((item) => ({ ...item })),
+      nextBalance,
+      ...store.balances.filter((item) => item.id !== nextBalance.id).map((item) => ({ ...item })),
     ],
     lots: [
       projection.lot,
