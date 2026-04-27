@@ -19,6 +19,7 @@ export const SECURITY_PERMISSION_MODULES: readonly SecurityPermissionModuleCatal
   { key: 'perfiles', name: 'Perfiles' },
   { key: 'configuracion', name: 'Configuracion' },
   { key: 'presupuestos', name: 'Presupuestos SCM' },
+  { key: 'bi', name: 'Business Intelligence' },
   { key: 'auditoria', name: 'Auditoria' },
 ];
 
