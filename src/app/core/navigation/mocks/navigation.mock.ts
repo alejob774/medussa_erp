@@ -221,6 +221,14 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
         companyIds: ALL_COMPANIES,
         children: [
           {
+            id: 'bi-dashboard-ejecutivo',
+            label: 'Dashboard Ejecutivo 360',
+            route: '/business-intelligence/dashboard-ejecutivo',
+            icon: 'dashboard',
+            requiredPermissions: ['bi.executive.view'],
+            companyIds: ALL_COMPANIES,
+          },
+          {
             id: 'empresas',
             label: 'Empresas',
             route: '/configuracion/empresas',

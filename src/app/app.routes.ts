@@ -342,6 +342,33 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'business-intelligence',
+        children: [
+          {
+            path: '',
+            component: ModulePlaceholderPageComponent,
+            canActivate: [permissionGuard],
+            data: {
+              title: 'Business Intelligence',
+              description: 'Base para visualizaciones ejecutivas embebidas desde Grafana sobre datamarts.',
+              hint: 'HU-033 habilita el primer tablero ejecutivo mock-first.',
+              permission: 'bi.executive.view',
+            },
+          },
+          {
+            path: 'dashboard-ejecutivo',
+            loadComponent: () =>
+              import(
+                './features/business-intelligence/presentation/pages/executive-dashboard-page/executive-dashboard-page.component'
+              ).then((module) => module.ExecutiveDashboardPageComponent),
+            canActivate: [permissionGuard],
+            data: {
+              permission: 'bi.executive.view',
+            },
+          },
+        ],
+      },
+      {
         path: 'gestion-almacen',
         component: ModulePlaceholderPageComponent,
         canActivate: [permissionGuard],
