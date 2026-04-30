@@ -245,6 +245,14 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
             companyIds: ALL_COMPANIES,
           },
           {
+            id: 'bi-clientes-estrategicos',
+            label: 'Clientes Estrategicos',
+            route: '/business-intelligence/clientes-estrategicos',
+            icon: 'groups',
+            requiredPermissions: ['bi.clients.view'],
+            companyIds: ALL_COMPANIES,
+          },
+          {
             id: 'empresas',
             label: 'Empresas',
             route: '/configuracion/empresas',

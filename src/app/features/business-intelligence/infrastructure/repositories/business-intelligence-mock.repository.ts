@@ -192,28 +192,57 @@ export class BusinessIntelligenceMockRepository implements BusinessIntelligenceR
     filters: StrategicClientsFilters,
   ): Observable<StrategicClientsResponse> {
     const normalized = this.withCompany(companyId, filters);
+    const topClientes = [
+      { clienteId: 'cli-001', clienteNombre: 'Distribuidora Santa Clara', zonaId: 'bogota-norte', zonaNombre: 'Bogota Norte', vendedorId: 'ven-001', vendedorNombre: 'Carolina Mejia', ventas: 72_600_000, pedidos: 28, ticketPromedio: 2_592_857, frecuenciaCompra: 3.6, participacionPct: 14.9, clasificacion: 'CLAVE' as const },
+      { clienteId: 'cli-002', clienteNombre: 'Supermercados La Colina', zonaId: 'sabana', zonaNombre: 'Sabana', vendedorId: 'ven-002', vendedorNombre: 'Andres Rubio', ventas: 65_100_000, pedidos: 24, ticketPromedio: 2_712_500, frecuenciaCompra: 3.1, participacionPct: 13.4, clasificacion: 'CLAVE' as const },
+      { clienteId: 'cli-004', clienteNombre: 'Mayorista Los Andes', zonaId: 'bogota-norte', zonaNombre: 'Bogota Norte', vendedorId: 'ven-004', vendedorNombre: 'Felipe Torres', ventas: 39_400_000, pedidos: 18, ticketPromedio: 2_188_889, frecuenciaCompra: 2.7, participacionPct: 8.1, clasificacion: 'CRECIMIENTO' as const },
+      { clienteId: 'cli-003', clienteNombre: 'Autoservicio El Prado', zonaId: 'centro', zonaNombre: 'Centro', vendedorId: 'ven-003', vendedorNombre: 'Natalia Gomez', ventas: 41_800_000, pedidos: 21, ticketPromedio: 1_990_476, frecuenciaCompra: 2.4, participacionPct: 8.6, clasificacion: 'RIESGO' as const },
+      { clienteId: 'cli-005', clienteNombre: 'Mercados Don Rafael', zonaId: 'centro', zonaNombre: 'Centro', vendedorId: 'ven-003', vendedorNombre: 'Natalia Gomez', ventas: 28_900_000, pedidos: 16, ticketPromedio: 1_806_250, frecuenciaCompra: 2.2, participacionPct: 5.9, clasificacion: 'OPORTUNIDAD' as const },
+      { clienteId: 'cli-006', clienteNombre: 'Tienda La Esperanza', zonaId: 'sabana', zonaNombre: 'Sabana', vendedorId: 'ven-002', vendedorNombre: 'Andres Rubio', ventas: 9_800_000, pedidos: 5, ticketPromedio: 1_960_000, frecuenciaCompra: 0.8, participacionPct: 2.0, clasificacion: 'INACTIVO' as const },
+    ].filter(
+      (item) =>
+        (!normalized.zonaId || item.zonaId === normalized.zonaId) &&
+        (!normalized.vendedorId || item.vendedorId === normalized.vendedorId) &&
+        (!normalized.clienteId || item.clienteId === normalized.clienteId),
+    );
+    const clientesInactivos = [
+      { clienteId: 'cli-006', clienteNombre: 'Tienda La Esperanza', vendedorId: 'ven-002', vendedorNombre: 'Andres Rubio', zonaId: 'sabana', zonaNombre: 'Sabana', diasInactivo: 46, ultimaCompra: '2026-03-15', ventasUltimoPeriodo: 2_400_000, ventasHistoricas: 48_600_000, accionSugerida: 'Agendar visita de recuperacion y validar surtido minimo.' },
+      { clienteId: 'cli-007', clienteNombre: 'Mini Market San Luis', vendedorId: 'ven-004', vendedorNombre: 'Felipe Torres', zonaId: 'bogota-norte', zonaNombre: 'Bogota Norte', diasInactivo: 63, ultimaCompra: '2026-02-26', ventasUltimoPeriodo: 1_850_000, ventasHistoricas: 36_200_000, accionSugerida: 'Ofrecer paquete de reactivacion con lacteos bebibles.' },
+      { clienteId: 'cli-008', clienteNombre: 'Autoservicio La Pradera', vendedorId: 'ven-003', vendedorNombre: 'Natalia Gomez', zonaId: 'centro', zonaNombre: 'Centro', diasInactivo: 91, ultimaCompra: '2026-01-29', ventasUltimoPeriodo: 0, ventasHistoricas: 29_700_000, accionSugerida: 'Escalar a plan de retencion por riesgo de perdida.' },
+    ].filter(
+      (item) =>
+        (!normalized.zonaId || item.zonaId === normalized.zonaId) &&
+        (!normalized.vendedorId || item.vendedorId === normalized.vendedorId) &&
+        (!normalized.clienteId || item.clienteId === normalized.clienteId),
+    );
+    const crecimientoClientes = [
+      { clienteId: 'cli-001', clienteNombre: 'Distribuidora Santa Clara', ventasPeriodoActual: 72_600_000, ventasPeriodoAnterior: 66_240_000, crecimientoPct: 9.6, tendencia: 'CRECE' as const, oportunidadSugerida: 'Profundizar portafolio UHT y queso campesino.' },
+      { clienteId: 'cli-002', clienteNombre: 'Supermercados La Colina', ventasPeriodoActual: 65_100_000, ventasPeriodoAnterior: 61_880_000, crecimientoPct: 5.2, tendencia: 'CRECE' as const, oportunidadSugerida: 'Negociar exhibicion secundaria para yogurt bebible.' },
+      { clienteId: 'cli-003', clienteNombre: 'Autoservicio El Prado', ventasPeriodoActual: 41_800_000, ventasPeriodoAnterior: 42_260_000, crecimientoPct: -1.1, tendencia: 'ESTABLE' as const, oportunidadSugerida: 'Revisar frecuencia de visita y quiebres por SKU.' },
+      { clienteId: 'cli-004', clienteNombre: 'Mayorista Los Andes', ventasPeriodoActual: 39_400_000, ventasPeriodoAnterior: 34_620_000, crecimientoPct: 13.8, tendencia: 'CRECE' as const, oportunidadSugerida: 'Convertir a cliente clave con meta mensual propia.' },
+      { clienteId: 'cli-006', clienteNombre: 'Tienda La Esperanza', ventasPeriodoActual: 9_800_000, ventasPeriodoAnterior: 14_900_000, crecimientoPct: -34.2, tendencia: 'CAE' as const, oportunidadSugerida: 'Activar plan de recuperacion por inactividad.' },
+    ].filter((item) => !normalized.clienteId || item.clienteId === normalized.clienteId);
+    const ventas = topClientes.reduce((sum, item) => sum + item.ventas, 0);
+    const pedidos = topClientes.reduce((sum, item) => sum + item.pedidos, 0);
+    const frecuencia = topClientes.length
+      ? Number((topClientes.reduce((sum, item) => sum + item.frecuenciaCompra, 0) / topClientes.length).toFixed(1))
+      : 0;
 
     return of<StrategicClientsResponse>({
       filters: normalized,
-      topClientes: [
-        { id: 'cli-001', nombre: 'Distribuidora Santa Clara', valor: 72_600_000, variacionPct: 9.6 },
-        { id: 'cli-002', nombre: 'Supermercados La Colina', valor: 65_100_000, variacionPct: 5.2 },
-        { id: 'cli-004', nombre: 'Mayorista Los Andes', valor: 39_400_000, variacionPct: 13.8 },
-      ],
-      clientesInactivos: [
-        { clienteId: 'cli-011', clienteNombre: 'Tienda La Esperanza', diasInactivo: 46, ultimaCompra: '2026-03-12', ventasUltimoPeriodo: 2_400_000 },
-        { clienteId: 'cli-017', clienteNombre: 'Mini Market San Luis', diasInactivo: 39, ultimaCompra: '2026-03-19', ventasUltimoPeriodo: 1_850_000 },
-      ],
-      crecimientoClientes: [
-        { fecha: '2026-01', clientesNuevos: 8, clientesActivos: 124, clientesPerdidos: 3 },
-        { fecha: '2026-02', clientesNuevos: 11, clientesActivos: 132, clientesPerdidos: 4 },
-        { fecha: '2026-03', clientesNuevos: 9, clientesActivos: 137, clientesPerdidos: 2 },
-        { fecha: '2026-04', clientesNuevos: 7, clientesActivos: 141, clientesPerdidos: 3 },
-      ],
+      topClientes: topClientes.sort((left, right) => right.ventas - left.ventas),
+      clientesInactivos,
+      crecimientoClientes,
       concentracionVentasTop5: 36.4,
       concentracionVentasTop10: 54.7,
-      ticketPromedioCliente: 1_280_000,
-      frecuenciaCompra: 2.8,
+      ticketPromedioCliente: pedidos ? Math.round(ventas / pedidos) : 0,
+      frecuenciaCompra: frecuencia,
+      concentracion: {
+        top5Pct: 36.4,
+        top10Pct: 54.7,
+        nivelRiesgo: 'MEDIO',
+        lecturaEjecutiva: 'La cartera tiene concentracion sana para expansion, pero los dos primeros clientes explican una parte sensible del ingreso comercial.',
+      },
       grafana: this.embed('strategic-clients', normalized),
     }).pipe(delay(180));
   }

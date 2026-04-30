@@ -388,6 +388,17 @@ export const routes: Routes = [
               permission: 'bi.commercial.view',
             },
           },
+          {
+            path: 'clientes-estrategicos',
+            loadComponent: () =>
+              import(
+                './features/business-intelligence/presentation/pages/strategic-clients-page/strategic-clients-page.component'
+              ).then((module) => module.StrategicClientsPageComponent),
+            canActivate: [permissionGuard],
+            data: {
+              permission: 'bi.clients.view',
+            },
+          },
         ],
       },
       {
