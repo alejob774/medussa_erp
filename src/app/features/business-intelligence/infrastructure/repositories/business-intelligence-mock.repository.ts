@@ -147,29 +147,42 @@ export class BusinessIntelligenceMockRepository implements BusinessIntelligenceR
     filters: CommercialPerformanceFilters,
   ): Observable<CommercialPerformanceResponse> {
     const normalized = this.withCompany(companyId, filters);
+    const sellers = [
+      { vendedorId: 'ven-001', vendedorNombre: 'Carolina Mejia', zonaId: 'bogota-norte', zonaNombre: 'Bogota Norte', ventas: 126_800_000, meta: 120_000_000, cumplimientoMetaPct: 105.7, pedidos: 92, ticketPromedio: 1_378_261 },
+      { vendedorId: 'ven-002', vendedorNombre: 'Andres Rubio', zonaId: 'sabana', zonaNombre: 'Sabana', ventas: 98_300_000, meta: 104_000_000, cumplimientoMetaPct: 94.5, pedidos: 76, ticketPromedio: 1_293_421 },
+      { vendedorId: 'ven-003', vendedorNombre: 'Natalia Gomez', zonaId: 'centro', zonaNombre: 'Centro', ventas: 86_900_000, meta: 96_000_000, cumplimientoMetaPct: 90.5, pedidos: 71, ticketPromedio: 1_223_944 },
+      { vendedorId: 'ven-004', vendedorNombre: 'Felipe Torres', zonaId: 'bogota-norte', zonaNombre: 'Bogota Norte', ventas: 74_700_000, meta: 72_000_000, cumplimientoMetaPct: 103.8, pedidos: 54, ticketPromedio: 1_383_333 },
+    ].filter((item) => (!normalized.zonaId || item.zonaId === normalized.zonaId) && (!normalized.vendedorId || item.vendedorId === normalized.vendedorId));
+    const zones = [
+      { zonaId: 'bogota-norte', zonaNombre: 'Bogota Norte', ventas: 201_500_000, meta: 192_000_000, cumplimientoMetaPct: 104.9, pedidos: 146 },
+      { zonaId: 'sabana', zonaNombre: 'Sabana', ventas: 141_500_000, meta: 153_000_000, cumplimientoMetaPct: 92.5, pedidos: 109 },
+      { zonaId: 'centro', zonaNombre: 'Centro', ventas: 119_300_000, meta: 134_500_000, cumplimientoMetaPct: 88.7, pedidos: 98 },
+    ].filter((item) => !normalized.zonaId || item.zonaId === normalized.zonaId);
+    const clients = [
+      { clienteId: 'cli-001', clienteNombre: 'Distribuidora Santa Clara', zonaId: 'bogota-norte', zonaNombre: 'Bogota Norte', vendedorId: 'ven-001', vendedorNombre: 'Carolina Mejia', ventas: 72_600_000, pedidos: 28, ticketPromedio: 2_592_857 },
+      { clienteId: 'cli-002', clienteNombre: 'Supermercados La Colina', zonaId: 'sabana', zonaNombre: 'Sabana', vendedorId: 'ven-002', vendedorNombre: 'Andres Rubio', ventas: 65_100_000, pedidos: 24, ticketPromedio: 2_712_500 },
+      { clienteId: 'cli-003', clienteNombre: 'Autoservicio El Prado', zonaId: 'centro', zonaNombre: 'Centro', vendedorId: 'ven-003', vendedorNombre: 'Natalia Gomez', ventas: 41_800_000, pedidos: 21, ticketPromedio: 1_990_476 },
+      { clienteId: 'cli-004', clienteNombre: 'Mayorista Los Andes', zonaId: 'bogota-norte', zonaNombre: 'Bogota Norte', vendedorId: 'ven-004', vendedorNombre: 'Felipe Torres', ventas: 39_400_000, pedidos: 18, ticketPromedio: 2_188_889 },
+    ].filter(
+      (item) =>
+        (!normalized.zonaId || item.zonaId === normalized.zonaId) &&
+        (!normalized.vendedorId || item.vendedorId === normalized.vendedorId) &&
+        (!normalized.clienteId || item.clienteId === normalized.clienteId),
+    );
+    const ventasMes = sellers.reduce((sum, item) => sum + item.ventas, 0);
+    const metaMes = sellers.reduce((sum, item) => sum + item.meta, 0);
+    const pedidos = sellers.reduce((sum, item) => sum + item.pedidos, 0);
 
     return of<CommercialPerformanceResponse>({
       filters: normalized,
-      ventasDia: 18_400_000,
-      ventasMes: 486_200_000,
-      cumplimientoMeta: 94.2,
-      ticketPromedio: 1_280_000,
-      conversionComercial: 38.6,
-      topVendedores: [
-        { id: 'ven-001', nombre: 'Carolina Mejia', valor: 126_800_000, variacionPct: 11.2 },
-        { id: 'ven-002', nombre: 'Andres Rubio', valor: 98_300_000, variacionPct: 6.5 },
-        { id: 'ven-003', nombre: 'Natalia Gomez', valor: 86_900_000, variacionPct: 4.1 },
-      ],
-      ventasPorZona: [
-        { zonaId: 'bogota-norte', zonaNombre: 'Bogota Norte', ventas: 172_000_000, cumplimientoMetaPct: 97.5 },
-        { zonaId: 'sabana', zonaNombre: 'Sabana', ventas: 141_500_000, cumplimientoMetaPct: 92.4 },
-        { zonaId: 'centro', zonaNombre: 'Centro', ventas: 119_300_000, cumplimientoMetaPct: 88.7 },
-      ],
-      topClientes: [
-        { id: 'cli-001', nombre: 'Distribuidora Santa Clara', valor: 72_600_000, variacionPct: 9.6 },
-        { id: 'cli-002', nombre: 'Supermercados La Colina', valor: 65_100_000, variacionPct: 5.2 },
-        { id: 'cli-003', nombre: 'Autoservicio El Prado', valor: 41_800_000, variacionPct: -1.1 },
-      ],
+      ventasDia: Math.round(ventasMes * 0.038),
+      ventasMes,
+      cumplimientoMeta: metaMes ? Number(((ventasMes / metaMes) * 100).toFixed(1)) : 0,
+      ticketPromedio: pedidos ? Math.round(ventasMes / pedidos) : 0,
+      conversionComercial: normalized.zonaId === 'centro' ? 33.8 : 38.6,
+      topVendedores: sellers.sort((left, right) => right.ventas - left.ventas),
+      ventasPorZona: zones,
+      topClientes: clients.sort((left, right) => right.ventas - left.ventas),
       grafana: this.embed('commercial-performance', normalized),
     }).pipe(delay(180));
   }

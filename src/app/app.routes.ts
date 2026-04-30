@@ -377,6 +377,17 @@ export const routes: Routes = [
               permission: 'bi.alerts.view',
             },
           },
+          {
+            path: 'ventas-cumplimiento-comercial',
+            loadComponent: () =>
+              import(
+                './features/business-intelligence/presentation/pages/commercial-performance-page/commercial-performance-page.component'
+              ).then((module) => module.CommercialPerformancePageComponent),
+            canActivate: [permissionGuard],
+            data: {
+              permission: 'bi.commercial.view',
+            },
+          },
         ],
       },
       {

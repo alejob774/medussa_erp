@@ -1,4 +1,4 @@
-import { BiBaseDateFilters, BiRankingItem } from './bi-filter-context.model';
+import { BiBaseDateFilters } from './bi-filter-context.model';
 import { BiDashboardEmbedConfig } from './grafana-embed.model';
 
 export interface CommercialPerformanceFilters extends BiBaseDateFilters {
@@ -11,7 +11,33 @@ export interface SalesByZoneItem {
   zonaId: string;
   zonaNombre: string;
   ventas: number;
+  meta: number;
   cumplimientoMetaPct: number;
+  pedidos: number;
+}
+
+export interface CommercialSellerRankingItem {
+  vendedorId: string;
+  vendedorNombre: string;
+  zonaId: string;
+  zonaNombre: string;
+  ventas: number;
+  meta: number;
+  cumplimientoMetaPct: number;
+  pedidos: number;
+  ticketPromedio: number;
+}
+
+export interface CommercialTopClientItem {
+  clienteId: string;
+  clienteNombre: string;
+  zonaId: string;
+  zonaNombre: string;
+  vendedorId: string;
+  vendedorNombre: string;
+  ventas: number;
+  pedidos: number;
+  ticketPromedio: number;
 }
 
 export interface CommercialPerformanceResponse {
@@ -21,8 +47,8 @@ export interface CommercialPerformanceResponse {
   cumplimientoMeta: number;
   ticketPromedio: number;
   conversionComercial: number;
-  topVendedores: BiRankingItem[];
+  topVendedores: CommercialSellerRankingItem[];
   ventasPorZona: SalesByZoneItem[];
-  topClientes: BiRankingItem[];
+  topClientes: CommercialTopClientItem[];
   grafana?: BiDashboardEmbedConfig | null;
 }

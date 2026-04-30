@@ -237,6 +237,14 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
             companyIds: ALL_COMPANIES,
           },
           {
+            id: 'bi-ventas-cumplimiento-comercial',
+            label: 'Ventas y Cumplimiento Comercial',
+            route: '/business-intelligence/ventas-cumplimiento-comercial',
+            icon: 'monitoring',
+            requiredPermissions: ['bi.commercial.view'],
+            companyIds: ALL_COMPANIES,
+          },
+          {
             id: 'empresas',
             label: 'Empresas',
             route: '/configuracion/empresas',
