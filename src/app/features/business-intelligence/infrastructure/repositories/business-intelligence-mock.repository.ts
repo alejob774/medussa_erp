@@ -96,18 +96,49 @@ export class BusinessIntelligenceMockRepository implements BusinessIntelligenceR
     filters: ProfitabilityFilters,
   ): Observable<ProfitabilityProductLineResponse> {
     const normalized = this.withCompany(companyId, filters);
-    const ranking = this.profitabilityRanking();
+    const ranking = this.profitabilityRanking().filter(
+      (item) =>
+        (!normalized.lineaProductoId || item.lineaProductoId === normalized.lineaProductoId) &&
+        (!normalized.productoId || item.productoId === normalized.productoId),
+    );
+    const top = normalized.top ?? 3;
+    const costosVariables = ranking.reduce((sum, item) => sum + item.costoVariable, 0);
+    const costosIndirectos = ranking.reduce((sum, item) => sum + item.costoIndirecto, 0);
+    const utilidadEstimadaTotal = ranking.reduce((sum, item) => sum + item.utilidad, 0);
+    const ventasTotales = ranking.reduce((sum, item) => sum + item.ventas, 0);
+    const rentabilidadLineas = this.profitabilityLineSummary(ranking, ventasTotales);
+    const topRentables = [...ranking].sort((left, right) => right.margenBrutoPct - left.margenBrutoPct);
+    const topNoRentables = [...ranking].sort((left, right) => left.margenBrutoPct - right.margenBrutoPct);
 
     return of<ProfitabilityProductLineResponse>({
       filters: normalized,
-      productoMasRentable: ranking[0],
-      productoMenosRentable: ranking[ranking.length - 1],
-      margenBrutoPromedio: 26.9,
-      costosVariables: 298_600_000,
-      costosIndirectos: 61_400_000,
-      topRentables: ranking.slice(0, normalized.top ?? 3),
-      topNoRentables: [...ranking].reverse().slice(0, normalized.top ?? 3),
-      rankingProductos: ranking,
+      productoMasRentable: topRentables[0] ?? null,
+      productoMenosRentable: topNoRentables[0] ?? null,
+      margenBrutoPromedio: ventasTotales ? Number(((utilidadEstimadaTotal / ventasTotales) * 100).toFixed(1)) : 0,
+      costosVariables,
+      costosIndirectos,
+      utilidadEstimadaTotal,
+      topRentables: topRentables.slice(0, top),
+      topNoRentables: topNoRentables.slice(0, top),
+      rentabilidadLineas,
+      rankingProductos: topRentables,
+      lecturaEjecutiva: [
+        {
+          titulo: 'Lacteos bebibles sostiene la mayor contribucion',
+          descripcion: 'Yogurt y kumis combinan buena rotacion, costo variable controlado y margen superior al promedio.',
+          severidad: 'POSITIVA',
+        },
+        {
+          titulo: 'Quesos requiere seguimiento de costo',
+          descripcion: 'Queso campesino y cuajada absorben mayor costo indirecto y presion de materia prima.',
+          severidad: 'SEGUIMIENTO',
+        },
+        {
+          titulo: 'Avena UHT opera cerca del umbral minimo',
+          descripcion: 'El margen bajo sugiere revisar precio de venta, empaque y eficiencia de lote antes de escalar volumen.',
+          severidad: 'CRITICA',
+        },
+      ],
       grafana: this.embed('profitability', normalized),
     }).pipe(delay(180));
   }
@@ -352,10 +383,38 @@ export class BusinessIntelligenceMockRepository implements BusinessIntelligenceR
 
   private profitabilityRanking(): ProductProfitabilityItem[] {
     return [
-      { productoId: 'prod-arb-001', sku: 'ARB-YOG-200-FR', productoNombre: 'Yogurt bebible fresa 200 ml', lineaProductoId: 'lacteos-bebibles', lineaProductoNombre: 'Lacteos bebibles', ventas: 178_200_000, costoVentas: 109_600_000, margenBruto: 68_600_000, margenBrutoPct: 38.5 },
-      { productoId: 'prod-arb-003', sku: 'ARB-UHT-1L', productoNombre: 'Leche entera UHT 1L', lineaProductoId: 'uht', lineaProductoNombre: 'UHT', ventas: 142_800_000, costoVentas: 101_200_000, margenBruto: 41_600_000, margenBrutoPct: 29.1 },
-      { productoId: 'prod-arb-002', sku: 'ARB-QUE-500', productoNombre: 'Queso campesino 500 g', lineaProductoId: 'quesos', lineaProductoNombre: 'Quesos', ventas: 96_400_000, costoVentas: 77_900_000, margenBruto: 18_500_000, margenBrutoPct: 19.2 },
+      { productoId: 'prod-arb-001', sku: 'ARB-YOG-200-FR', productoNombre: 'Yogurt bebible fresa 200 ml', lineaProductoId: 'lacteos-bebibles', lineaProductoNombre: 'Lacteos bebibles', ventas: 178_200_000, costoVariable: 92_400_000, costoIndirecto: 17_200_000, costoVentas: 109_600_000, utilidad: 68_600_000, margenBruto: 68_600_000, margenBrutoPct: 38.5, clasificacion: 'ALTA_RENTABILIDAD', causaSugerida: 'Rotacion alta y BOM estable con empaque controlado.' },
+      { productoId: 'prod-arb-004', sku: 'ARB-KUM-150', productoNombre: 'Kumis tradicional 150 g', lineaProductoId: 'lacteos-bebibles', lineaProductoNombre: 'Lacteos bebibles', ventas: 84_700_000, costoVariable: 48_900_000, costoIndirecto: 8_100_000, costoVentas: 57_000_000, utilidad: 27_700_000, margenBruto: 27_700_000, margenBrutoPct: 32.7, clasificacion: 'RENTABLE', causaSugerida: 'Buen margen, dependiente de eficiencia de llenado.' },
+      { productoId: 'prod-arb-003', sku: 'ARB-UHT-1L', productoNombre: 'Leche entera UHT 1L', lineaProductoId: 'uht', lineaProductoNombre: 'UHT', ventas: 142_800_000, costoVariable: 86_300_000, costoIndirecto: 14_900_000, costoVentas: 101_200_000, utilidad: 41_600_000, margenBruto: 41_600_000, margenBrutoPct: 29.1, clasificacion: 'RENTABLE', causaSugerida: 'Volumen estable con costo energetico moderado.' },
+      { productoId: 'prod-arb-002', sku: 'ARB-QUE-500', productoNombre: 'Queso campesino 500 g', lineaProductoId: 'quesos', lineaProductoNombre: 'Quesos', ventas: 96_400_000, costoVariable: 67_800_000, costoIndirecto: 10_100_000, costoVentas: 77_900_000, utilidad: 18_500_000, margenBruto: 18_500_000, margenBrutoPct: 19.2, clasificacion: 'MARGEN_BAJO', causaSugerida: 'Costo materia prima alto y merma estimada en maduracion.' },
+      { productoId: 'prod-arb-006', sku: 'ARB-CUA-450', productoNombre: 'Cuajada fresca 450 g', lineaProductoId: 'quesos', lineaProductoNombre: 'Quesos', ventas: 52_600_000, costoVariable: 38_700_000, costoIndirecto: 6_900_000, costoVentas: 45_600_000, utilidad: 7_000_000, margenBruto: 7_000_000, margenBrutoPct: 13.3, clasificacion: 'REVISAR_COSTO', causaSugerida: 'Baja rotacion y costo indirecto alto por lote corto.' },
+      { productoId: 'prod-arb-005', sku: 'ARB-AVN-1L', productoNombre: 'Avena UHT 1L', lineaProductoId: 'uht', lineaProductoNombre: 'UHT', ventas: 64_900_000, costoVariable: 50_800_000, costoIndirecto: 7_900_000, costoVentas: 58_700_000, utilidad: 6_200_000, margenBruto: 6_200_000, margenBrutoPct: 9.6, clasificacion: 'MARGEN_BAJO', causaSugerida: 'Bajo precio venta y costo de empaque por encima del objetivo.' },
     ];
+  }
+
+  private profitabilityLineSummary(ranking: ProductProfitabilityItem[], ventasTotales: number) {
+    const grouped = new Map<string, ProductProfitabilityItem[]>();
+
+    ranking.forEach((item) => {
+      const key = item.lineaProductoId ?? 'sin-linea';
+      grouped.set(key, [...(grouped.get(key) ?? []), item]);
+    });
+
+    return Array.from(grouped.entries()).map(([lineaProductoId, items]) => {
+      const ventas = items.reduce((sum, item) => sum + item.ventas, 0);
+      const costoTotal = items.reduce((sum, item) => sum + item.costoVentas, 0);
+      const utilidad = items.reduce((sum, item) => sum + item.utilidad, 0);
+
+      return {
+        lineaProductoId,
+        lineaProductoNombre: items[0]?.lineaProductoNombre ?? 'Sin linea',
+        ventas,
+        costoTotal,
+        utilidad,
+        margenPromedioPct: ventas ? Number(((utilidad / ventas) * 100).toFixed(1)) : 0,
+        participacionVentasPct: ventasTotales ? Number(((ventas / ventasTotales) * 100).toFixed(1)) : 0,
+      };
+    }).sort((left, right) => right.utilidad - left.utilidad);
   }
 
   private executiveManagerialAlerts(companyId: string): ManagerialAlert[] {

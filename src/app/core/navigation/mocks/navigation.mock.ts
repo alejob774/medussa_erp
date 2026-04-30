@@ -229,6 +229,14 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
             companyIds: ALL_COMPANIES,
           },
           {
+            id: 'bi-rentabilidad-producto-linea',
+            label: 'Rentabilidad por Producto / Linea',
+            route: '/business-intelligence/rentabilidad-producto-linea',
+            icon: 'payments',
+            requiredPermissions: ['bi.profitability.view'],
+            companyIds: ALL_COMPANIES,
+          },
+          {
             id: 'bi-alertas-gerenciales',
             label: 'Alertas Gerenciales',
             route: '/business-intelligence/alertas-gerenciales',

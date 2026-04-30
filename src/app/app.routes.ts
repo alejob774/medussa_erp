@@ -367,6 +367,17 @@ export const routes: Routes = [
             },
           },
           {
+            path: 'rentabilidad-producto-linea',
+            loadComponent: () =>
+              import(
+                './features/business-intelligence/presentation/pages/profitability-product-line-page/profitability-product-line-page.component'
+              ).then((module) => module.ProfitabilityProductLinePageComponent),
+            canActivate: [permissionGuard],
+            data: {
+              permission: 'bi.profitability.view',
+            },
+          },
+          {
             path: 'alertas-gerenciales',
             loadComponent: () =>
               import(
