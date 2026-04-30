@@ -366,6 +366,17 @@ export const routes: Routes = [
               permission: 'bi.executive.view',
             },
           },
+          {
+            path: 'alertas-gerenciales',
+            loadComponent: () =>
+              import(
+                './features/business-intelligence/presentation/pages/managerial-alerts-page/managerial-alerts-page.component'
+              ).then((module) => module.ManagerialAlertsPageComponent),
+            canActivate: [permissionGuard],
+            data: {
+              permission: 'bi.alerts.view',
+            },
+          },
         ],
       },
       {

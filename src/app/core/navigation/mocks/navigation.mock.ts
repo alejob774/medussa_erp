@@ -229,6 +229,14 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
             companyIds: ALL_COMPANIES,
           },
           {
+            id: 'bi-alertas-gerenciales',
+            label: 'Alertas Gerenciales',
+            route: '/business-intelligence/alertas-gerenciales',
+            icon: 'notification_important',
+            requiredPermissions: ['bi.alerts.view'],
+            companyIds: ALL_COMPANIES,
+          },
+          {
             id: 'empresas',
             label: 'Empresas',
             route: '/configuracion/empresas',
