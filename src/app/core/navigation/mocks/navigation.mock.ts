@@ -253,6 +253,14 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
             companyIds: ALL_COMPANIES,
           },
           {
+            id: 'bi-demanda-vs-forecast',
+            label: 'Demanda vs Forecast',
+            route: '/business-intelligence/demanda-vs-forecast',
+            icon: 'stacked_line_chart',
+            requiredPermissions: ['bi.forecast.view'],
+            companyIds: ALL_COMPANIES,
+          },
+          {
             id: 'empresas',
             label: 'Empresas',
             route: '/configuracion/empresas',

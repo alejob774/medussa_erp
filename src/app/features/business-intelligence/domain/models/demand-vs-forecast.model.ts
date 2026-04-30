@@ -11,10 +11,27 @@ export interface ForecastDeviationItem {
   productoId: string;
   sku: string;
   productoNombre: string;
+  lineaId: string;
+  lineaNombre: string;
+  zonaId: string;
+  zonaNombre: string;
   forecast: number;
   ventaReal: number;
   desviacion: number;
   errorForecastPct: number;
+  impactoEstimado: number;
+}
+
+export type ForecastAccuracyStatus = 'ALTA' | 'MEDIA' | 'BAJA';
+
+export interface ForecastAccuracySegmentItem {
+  segmentoId: string;
+  segmentoNombre: string;
+  tipoSegmento: 'ZONA' | 'LINEA';
+  forecast: number;
+  ventaReal: number;
+  precisionPct: number;
+  estado: ForecastAccuracyStatus;
 }
 
 export interface DemandVsForecastResponse {
@@ -26,6 +43,8 @@ export interface DemandVsForecastResponse {
   precisionPct: number;
   subestimados: ForecastDeviationItem[];
   sobrestimados: ForecastDeviationItem[];
+  precisionSegmentos: ForecastAccuracySegmentItem[];
+  lecturaEjecutiva: string;
   tendenciaForecastReal: BiTrendPoint[];
   grafana?: BiDashboardEmbedConfig | null;
 }

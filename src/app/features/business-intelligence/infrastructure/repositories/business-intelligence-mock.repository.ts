@@ -252,20 +252,50 @@ export class BusinessIntelligenceMockRepository implements BusinessIntelligenceR
     filters: DemandVsForecastFilters,
   ): Observable<DemandVsForecastResponse> {
     const normalized = this.withCompany(companyId, filters);
+    const deviations = [
+      { productoId: 'prod-arb-001', sku: 'ARB-YOG-200-FR', productoNombre: 'Yogurt bebible fresa 200 ml', lineaId: 'lacteos-bebibles', lineaNombre: 'Lacteos bebibles', zonaId: 'bogota-norte', zonaNombre: 'Bogota Norte', forecast: 72_000, ventaReal: 78_400, desviacion: 6_400, errorForecastPct: 8.9, impactoEstimado: 8_320_000 },
+      { productoId: 'prod-arb-003', sku: 'ARB-UHT-1L', productoNombre: 'Leche entera UHT 1L', lineaId: 'uht', lineaNombre: 'UHT', zonaId: 'sabana', zonaNombre: 'Sabana', forecast: 58_000, ventaReal: 62_100, desviacion: 4_100, errorForecastPct: 7.1, impactoEstimado: 5_330_000 },
+      { productoId: 'prod-arb-004', sku: 'ARB-KUM-150', productoNombre: 'Kumis tradicional 150 g', lineaId: 'lacteos-bebibles', lineaNombre: 'Lacteos bebibles', zonaId: 'centro', zonaNombre: 'Centro', forecast: 31_000, ventaReal: 35_200, desviacion: 4_200, errorForecastPct: 13.5, impactoEstimado: 3_150_000 },
+      { productoId: 'prod-arb-002', sku: 'ARB-QUE-500', productoNombre: 'Queso campesino 500 g', lineaId: 'quesos', lineaNombre: 'Quesos', zonaId: 'centro', zonaNombre: 'Centro', forecast: 42_000, ventaReal: 37_200, desviacion: -4_800, errorForecastPct: 11.4, impactoEstimado: 6_720_000 },
+      { productoId: 'prod-arb-005', sku: 'ARB-AVN-1L', productoNombre: 'Avena UHT 1L', lineaId: 'uht', lineaNombre: 'UHT', zonaId: 'sabana', zonaNombre: 'Sabana', forecast: 35_000, ventaReal: 30_600, desviacion: -4_400, errorForecastPct: 12.6, impactoEstimado: 4_620_000 },
+      { productoId: 'prod-arb-006', sku: 'ARB-CUA-450', productoNombre: 'Cuajada fresca 450 g', lineaId: 'quesos', lineaNombre: 'Quesos', zonaId: 'bogota-norte', zonaNombre: 'Bogota Norte', forecast: 24_000, ventaReal: 22_900, desviacion: -1_100, errorForecastPct: 4.6, impactoEstimado: 1_870_000 },
+    ].filter(
+      (item) =>
+        (!normalized.productoId || item.productoId === normalized.productoId) &&
+        (!normalized.lineaId || item.lineaId === normalized.lineaId) &&
+        (!normalized.zonaId || item.zonaId === normalized.zonaId),
+    );
+    const forecastTotal = deviations.reduce((sum, item) => sum + item.forecast, 0);
+    const ventaReal = deviations.reduce((sum, item) => sum + item.ventaReal, 0);
+    const desviacionAbsoluta = Math.abs(ventaReal - forecastTotal);
+    const errorForecastPct = forecastTotal ? Number(((desviacionAbsoluta / forecastTotal) * 100).toFixed(1)) : 0;
+    const precisionPct = Number(Math.max(0, 100 - errorForecastPct).toFixed(1));
+    const precisionSegmentos = [
+      { segmentoId: 'bogota-norte', segmentoNombre: 'Bogota Norte', tipoSegmento: 'ZONA' as const, forecast: 96_000, ventaReal: 101_300, precisionPct: 94.5, estado: 'ALTA' as const },
+      { segmentoId: 'sabana', segmentoNombre: 'Sabana', tipoSegmento: 'ZONA' as const, forecast: 93_000, ventaReal: 92_700, precisionPct: 99.7, estado: 'ALTA' as const },
+      { segmentoId: 'centro', segmentoNombre: 'Centro', tipoSegmento: 'ZONA' as const, forecast: 73_000, ventaReal: 72_400, precisionPct: 99.2, estado: 'ALTA' as const },
+      { segmentoId: 'lacteos-bebibles', segmentoNombre: 'Lacteos bebibles', tipoSegmento: 'LINEA' as const, forecast: 103_000, ventaReal: 113_600, precisionPct: 89.7, estado: 'MEDIA' as const },
+      { segmentoId: 'quesos', segmentoNombre: 'Quesos', tipoSegmento: 'LINEA' as const, forecast: 66_000, ventaReal: 60_100, precisionPct: 91.1, estado: 'ALTA' as const },
+      { segmentoId: 'uht', segmentoNombre: 'UHT', tipoSegmento: 'LINEA' as const, forecast: 93_000, ventaReal: 92_700, precisionPct: 99.7, estado: 'ALTA' as const },
+    ].filter(
+      (item) =>
+        (!normalized.zonaId || item.segmentoId === normalized.zonaId || item.tipoSegmento === 'LINEA') &&
+        (!normalized.lineaId || item.segmentoId === normalized.lineaId || item.tipoSegmento === 'ZONA'),
+    );
 
     return of<DemandVsForecastResponse>({
       filters: normalized,
-      forecastTotal: 238_000,
-      ventaReal: 226_400,
-      desviacionAbsoluta: 11_600,
-      errorForecastPct: 4.9,
-      precisionPct: 95.1,
-      subestimados: [
-        { productoId: 'prod-arb-001', sku: 'ARB-YOG-200-FR', productoNombre: 'Yogurt bebible fresa 200 ml', forecast: 72_000, ventaReal: 78_400, desviacion: 6_400, errorForecastPct: 8.9 },
-      ],
-      sobrestimados: [
-        { productoId: 'prod-arb-002', sku: 'ARB-QUE-500', productoNombre: 'Queso campesino 500 g', forecast: 42_000, ventaReal: 37_200, desviacion: -4_800, errorForecastPct: 11.4 },
-      ],
+      forecastTotal,
+      ventaReal,
+      desviacionAbsoluta,
+      errorForecastPct,
+      precisionPct,
+      subestimados: deviations.filter((item) => item.ventaReal > item.forecast).sort((left, right) => right.desviacion - left.desviacion),
+      sobrestimados: deviations.filter((item) => item.forecast > item.ventaReal).sort((left, right) => left.desviacion - right.desviacion),
+      precisionSegmentos,
+      lecturaEjecutiva: precisionPct >= 95
+        ? 'La precision global del forecast es alta, con desviaciones localizadas que deben revisarse por linea y zona.'
+        : 'La precision del forecast requiere seguimiento: hay riesgo combinado de quiebres por subestimacion y sobreinventario por sobrestimacion.',
       tendenciaForecastReal: [
         { fecha: '2026-01', valor: 214_000, comparativo: 208_500 },
         { fecha: '2026-02', valor: 221_000, comparativo: 219_200 },
@@ -287,7 +317,7 @@ export class BusinessIntelligenceMockRepository implements BusinessIntelligenceR
       { dashboardKey: 'managerial-alerts', dashboardUid: 'medussa-alerts', title: 'HU-035 Alertas Gerenciales', datasource: 'datamart', refreshInterval: '5m', requiredPermission: 'bi.alerts.view' },
       { dashboardKey: 'commercial-performance', dashboardUid: 'medussa-commercial', title: 'HU-036 Ventas y Cumplimiento Comercial', datasource: 'datamart', refreshInterval: '15m', requiredPermission: 'bi.commercial.view' },
       { dashboardKey: 'strategic-clients', dashboardUid: 'medussa-clients', title: 'HU-037 Clientes Estrategicos', datasource: 'datamart', refreshInterval: '30m', requiredPermission: 'bi.clients.view' },
-      { dashboardKey: 'demand-vs-forecast', dashboardUid: 'medussa-demand-forecast', title: 'HU-038 Demanda vs Forecast', datasource: 'datamart', refreshInterval: '30m', requiredPermission: 'bi.forecast.view' },
+      { dashboardKey: 'demand-vs-forecast', dashboardUid: 'medussa-forecast', title: 'HU-038 Demanda vs Forecast', datasource: 'datamart', refreshInterval: '30m', requiredPermission: 'bi.forecast.view' },
     ];
   }
 

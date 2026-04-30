@@ -399,6 +399,17 @@ export const routes: Routes = [
               permission: 'bi.clients.view',
             },
           },
+          {
+            path: 'demanda-vs-forecast',
+            loadComponent: () =>
+              import(
+                './features/business-intelligence/presentation/pages/demand-vs-forecast-page/demand-vs-forecast-page.component'
+              ).then((module) => module.DemandVsForecastPageComponent),
+            canActivate: [permissionGuard],
+            data: {
+              permission: 'bi.forecast.view',
+            },
+          },
         ],
       },
       {
