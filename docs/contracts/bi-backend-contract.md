@@ -68,6 +68,7 @@ Respuesta:
   otif: BiMetricValue;
   margenEstimado: BiMetricValue;
   alertasCriticas: BiMetricValue;
+  alertas?: ExecutiveCriticalAlert[];
   tendencias?: {
     ventas?: BiTrendPoint[];
     margen?: BiTrendPoint[];
@@ -102,9 +103,13 @@ Respuesta:
   margenBrutoPromedio: number;
   costosVariables: number;
   costosIndirectos: number;
+  utilidadEstimadaTotal: number;
   topRentables: ProductProfitabilityItem[];
   topNoRentables: ProductProfitabilityItem[];
+  rentabilidadLineas: ProductLineProfitabilityItem[];
   rankingProductos: ProductProfitabilityItem[];
+  lecturaEjecutiva: ProfitabilityExecutiveInsight[];
+  grafana?: BiDashboardEmbedConfig | null;
 }
 ```
 
@@ -161,9 +166,10 @@ Respuesta:
   cumplimientoMeta: number;
   ticketPromedio: number;
   conversionComercial: number;
-  topVendedores: BiRankingItem[];
+  topVendedores: CommercialSellerRankingItem[];
   ventasPorZona: SalesByZoneItem[];
-  topClientes: BiRankingItem[];
+  topClientes: CommercialTopClientItem[];
+  grafana?: BiDashboardEmbedConfig | null;
 }
 ```
 
@@ -186,13 +192,15 @@ Respuesta:
 
 ```ts
 {
-  topClientes: BiRankingItem[];
+  topClientes: StrategicClientRankingItem[];
   clientesInactivos: InactiveClientItem[];
-  crecimientoClientes: ClientGrowthPoint[];
+  crecimientoClientes: StrategicClientGrowthItem[];
   concentracionVentasTop5: number;
   concentracionVentasTop10: number;
   ticketPromedioCliente: number;
   frecuenciaCompra: number;
+  concentracion: SalesConcentrationSummary;
+  grafana?: BiDashboardEmbedConfig | null;
 }
 ```
 
@@ -222,7 +230,10 @@ Respuesta:
   precisionPct: number;
   subestimados: ForecastDeviationItem[];
   sobrestimados: ForecastDeviationItem[];
+  precisionSegmentos: ForecastAccuracySegmentItem[];
+  lecturaEjecutiva: string;
   tendenciaForecastReal: BiTrendPoint[];
+  grafana?: BiDashboardEmbedConfig | null;
 }
 ```
 
