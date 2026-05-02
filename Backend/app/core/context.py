@@ -1,7 +1,7 @@
 from contextvars import ContextVar
 from typing import Optional
 
-# Definimos la variable de contexto global
+# Variable de contexto global para el aislamiento de datos
 _company_id_ctx_var: ContextVar[Optional[str]] = ContextVar("company_id", default=None)
 
 def get_company_context() -> Optional[str]:

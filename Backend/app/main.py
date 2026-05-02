@@ -13,13 +13,13 @@ from app.api.v1 import (
     equipos, proveedores, oee, bom, calidad, mps, tpm,
     demanda, analisis_demanda, desarrollo_productos,
     scm_compras_api, scm_presupuesto_api, scm_inventario_api,
-    scm_layout_api, wms_api # <--- Nuevo Router HU-032
-)
+    scm_layout_api, wms_api, bi
+    )
 
 app = FastAPI(
     title="Medussa ERP API",
     description="Sistema Integral de Gestión - SCM, Producción e Inventarios Multiempresa",
-    version="1.5.0"
+    version="1.6.0" # Incremento por nuevo módulo BI
 )
 
 app.add_middleware(MultiCompanyMiddleware)
@@ -77,6 +77,9 @@ app.include_router(scm_inventario_api.router, prefix="/api/v1/scm/inventario/cic
 app.include_router(scm_layout_api.router, prefix="/api/v1/scm/inventario/layout", tags=["SCM - Layout Estratégico"])
 app.include_router(wms_api.router, prefix="/api/v1/wms", tags=["WMS - Picking & Packing"])
 
+# BLOQUE: BI & DIRECCIÓN GENERAL (HU-033 al HU-035)
+app.include_router(bi.router, prefix="/api/v1/bi", tags=["Business Intelligence - Dirección"])
+
 @app.get("/")
 def read_root():
-    return {"message": "Medussa ERP API Online - WMS Operativo", "version": "1.5.0"}
+    return {"message": "Medussa ERP API Online - Módulo BI Activo", "version": "1.6.0"}

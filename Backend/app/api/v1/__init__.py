@@ -37,3 +37,9 @@ from . import scm_presupuesto_api # HU-029: Gestión de Presupuestos de Compra
 from . import scm_inventario_api  # HU-030: Ciclo de Inventarios
 from . import scm_layout_api      # HU-031: Control de Layout
 from . import wms_api             # HU-032: Picking & Packing (WMS Operativo)
+
+# ... importaciones existentes ...
+from . import bi  # Añadir esta línea para registrar los endpoints de Business Intelligence
+
+# Asegúrate de que el router se incluya en el objeto principal (usualmente en main.py o api.py)
+# api_router.include_router(bi.router, prefix="/bi", tags=["BI"])
