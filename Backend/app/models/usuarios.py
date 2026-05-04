@@ -14,7 +14,6 @@ class Usuario(Base):
     cargo = Column(String(150), nullable=False) # Requerido por HU-011 
     celular = Column(String(20), nullable=False) # Requerido por HU-011 
     telefono_fijo = Column(String(20), nullable=True)
-    rol = Column(String(20)) 
     estado = Column(Boolean, default=True) # Para Soft Delete 
 
 # Renombramos y actualizamos para coincidir con la lógica Multiempresa

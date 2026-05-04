@@ -1,86 +1,99 @@
-from fastapi import APIRouter, Depends, Request, HTTPException
+from fastapi import APIRouter, Depends, Request, HTTPException, status, Query
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
+
 from app.db.session import get_db
-from app.api.deps import get_current_user
+# CORRECCIÓN: Se añade get_current_company a la importación
+from app.api.deps import get_current_user, get_current_company 
 from app.schemas.producto import ProductoCreate, ProductoResponse, ProductoUpdate
 from app.services import inventario_service as crud
 from app.utils.auditoria import registrar_log
 
 router = APIRouter()
 
-@router.get("/", response_model=List[ProductoResponse])
-async def listar_productos(
-    empresa_id: str,
-    skip: int = 0,
-    limit: int = 100,
+@router.post("/", response_model=ProductoResponse, status_code=status.HTTP_201_CREATED)
+async def crear_producto(
+    request: Request,
+    obj_in: ProductoCreate, 
     db: Session = Depends(get_db),
+    empresa_id: str = Depends(get_current_company),
     current_user = Depends(get_current_user)
 ):
-    return await crud.obtener_productos(db, empresa_id, skip, limit)
+    existe = await crud.validar_sku_empresa(db, obj_in.producto_sku, empresa_id)
+    if existe:
+        raise HTTPException(status_code=400, detail="El SKU ya existe en esta empresa")
+
+    nuevo_producto = await crud.crear_producto(db, obj_in, empresa_id)
+    
+    await registrar_log(
+        db, request,
+        user_id=current_user.id,
+        user_name=current_user.username,
+        modulo="INVENTARIO",
+        accion="CREATE",
+        empresa_id=empresa_id,
+        payload_despues=jsonable_encoder(nuevo_producto)
+    )
+    return nuevo_producto
+
+@router.get("/", response_model=dict)
+async def listar_productos(
+    db: Session = Depends(get_db),
+    empresa_id: str = Depends(get_current_company),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, le=100),
+    search: Optional[str] = None
+):
+    total, items = await crud.obtener_productos_paginados(db, empresa_id, skip, limit, search)
+    return {
+        "total": total,
+        "items": items,
+        "skip": skip,
+        "limit": limit
+    }
+
+# ... (imports existentes)
 
 @router.get("/{producto_id}", response_model=ProductoResponse)
 async def obtener_producto(
     producto_id: int,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    empresa_id: str = Depends(get_current_company)
 ):
-    producto = await crud.obtener_producto_por_id(db, producto_id)
+    producto = await crud.obtener_producto_por_id(db, producto_id, empresa_id)
     if not producto:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
-    return producto
+    return producto[cite: 14]
 
-@router.patch("/{producto_id}", response_model=ProductoResponse)
+@router.put("/{producto_id}", response_model=ProductoResponse)
 async def actualizar_producto(
     producto_id: int,
     obj_in: ProductoUpdate,
     request: Request,
     db: Session = Depends(get_db),
+    empresa_id: str = Depends(get_current_company),
     current_user = Depends(get_current_user)
 ):
-    producto_actual = await crud.obtener_producto_por_id(db, producto_id)
-    if not producto_actual:
+    db_obj = await crud.obtener_producto_por_id(db, producto_id, empresa_id)
+    if not db_obj:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
     
-    antes = jsonable_encoder(producto_actual)
-    actualizado = await crud.actualizar_producto(db, producto_id, obj_in)
+    producto_upd = await crud.actualizar_producto(db, db_obj, obj_in)
     
-    await registrar_log(
-        db, request,
-        user_id=current_user.id,
-        user_name=current_user.username,
-        modulo="INVENTARIO",
-        accion="ACTUALIZAR",
-        empresa_id=actualizado.empresa_id,
-        payload_antes=antes,
-        payload_despues=jsonable_encoder(actualizado)
-    )
-    return actualizado
+    await registrar_log(db, request, user_id=current_user.id, user_name=current_user.username,
+                        modulo="INVENTARIO", accion="UPDATE", empresa_id=empresa_id)
+    return producto_upd[cite: 14]
 
 @router.delete("/{producto_id}")
 async def eliminar_producto(
     producto_id: int,
-    request: Request,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    empresa_id: str = Depends(get_current_company)
 ):
-    producto = await crud.eliminar_producto(db, producto_id)
-    if not producto:
+    db_obj = await crud.obtener_producto_por_id(db, producto_id, empresa_id)
+    if not db_obj:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
-        
-    await registrar_log(
-        db, request,
-        user_id=current_user.id,
-        user_name=current_user.username,
-        modulo="INVENTARIO",
-        accion="ELIMINAR_LOGICO",
-        empresa_id=producto.empresa_id,
-        descripcion=f"Producto {producto.producto_sku} marcado como Inactivo"
-    )
-    return {"status": "success", "message": "Producto desactivado"}
-
-@router.post("/")
-def crear_producto(payload: dict, db: Session = Depends(get_db)):
-    # Aquí va tu lógica de inserción actual
-    return {"mensaje": "Producto creado exitosamente"}
+    
+    await crud.eliminar_producto_logico(db, db_obj)
+    return {"message": "Producto desactivado correctamente"}[cite: 14]

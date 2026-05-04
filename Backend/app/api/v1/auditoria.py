@@ -31,6 +31,13 @@ def listar_auditoria(
         query = query.filter(Auditoria.accion == accion)
         
     total = query.count()
+    # Se obtienen los logs aplicando el orden y la paginación real
     logs = query.order_by(Auditoria.fecha_hora.desc()).offset(skip).limit(limit).all()
     
-    return query.all()
+    # CAMBIO: Retornar objeto estructurado en lugar de query.all()
+    return {
+        "total": total,
+        "skip": skip,
+        "limit": limit,
+        "items": logs
+    }

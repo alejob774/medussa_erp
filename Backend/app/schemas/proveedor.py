@@ -1,29 +1,30 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from typing import Optional
 from datetime import datetime
 
 class ProveedorBase(BaseModel):
-    nombre: str = Field(..., max_length=150)
-    ciudad: str = Field(..., max_length=100)
-    direccion: str = Field(..., max_length=200)
-    telefono: str = Field(..., max_length=20)
+    # Alineado con 'nombre_razon_social' en el modelo[cite: 18]
+    nombre_razon_social: str = Field(..., max_length=100)
     nit: str = Field(..., max_length=20)
-    producto: Optional[str] = Field(None, max_length=150)
+    contacto_nombre: Optional[str] = Field(None, max_length=100)
+    email: Optional[EmailStr] = None
+    telefono: Optional[str] = Field(None, max_length=20)
+    categoria: Optional[str] = Field(None, max_length=50)
 
 class ProveedorCreate(ProveedorBase):
     pass
 
 class ProveedorUpdate(BaseModel):
-    nombre: Optional[str] = None
-    ciudad: Optional[str] = None
-    direccion: Optional[str] = None
+    nombre_razon_social: Optional[str] = None
+    contacto_nombre: Optional[str] = None
+    email: Optional[EmailStr] = None
     telefono: Optional[str] = None
-    producto: Optional[str] = None
-    estado: Optional[bool] = None
+    categoria: Optional[str] = None
+    estado: Optional[str] = None # "Activo" o "Inactivo"
 
 class ProveedorResponse(ProveedorBase):
     id: int
-    estado: bool
+    estado: str
     fecha_creacion: datetime
 
     class Config:

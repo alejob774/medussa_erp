@@ -1,18 +1,17 @@
-from pydantic import BaseModel
-from typing import Optional, List
+from pydantic import BaseModel, Field
+from typing import List, Optional
 
 class ConteoCreate(BaseModel):
-    empresa_id: str
     bodega_id: int
-    responsable_id: int
-    descripcion: Optional[str] = None
+    nombre_sesion: str
+    tipo_conteo: str  # 'Cíclico', 'Wall-to-Wall'
 
 class RegistroFisico(BaseModel):
     conteo_id: int
     producto_id: int
+    cantidad_encontrada: float = Field(..., ge=0)
     lote_id: Optional[str] = None
-    cantidad_fisica: float
-    ubicacion: Optional[str] = None
+    ubicacion_id: Optional[int] = None
 
 class VarianzaResumen(BaseModel):
     sku: str

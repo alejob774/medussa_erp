@@ -1,26 +1,45 @@
-from sqlalchemy import Column, Integer, String, Boolean, Numeric, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, DateTime
+from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.db.session import Base
 
 class Producto(Base):
     __tablename__ = "productos"
-    __table_args__ = {"schema": "inventario"}
-
+    
     id = Column(Integer, primary_key=True, index=True)
-    producto_nom = Column(String(50), nullable=False)
-    producto_sku = Column(String(50), nullable=False) # Único por empresa validado en lógica
-    producto_fam = Column(String(50), nullable=False)
-    producto_descrip = Column(String(200), nullable=False)
-    uom_base = Column(String(10), nullable=False) # Unidad de medida
-    producto_ref = Column(String(50), nullable=True)
+    producto_sku = Column(String(100), unique=True, index=True, nullable=False)
+    nombre = Column(String(200), nullable=False)
+    descripcion = Column(String(500), nullable=True)
     maneja_lote = Column(Boolean, default=False, nullable=False)
-    maneja_venc = Column(Boolean, default=False, nullable=False)
-    vida_util = Column(Integer, nullable=True)
-    producto_status = Column(String(10), default="Activo", nullable=False) # Activo/Inactivo
-    fact_convers = Column(Numeric(10, 4), nullable=True)
+    estado = Column(Boolean, default=True, nullable=False)
+    empresa_id = Column(String(50), nullable=False)
+
+class InventarioSaldo(Base):
+    __tablename__ = "inventario_saldos"
     
-    # Relación Multiempresa
-    empresa_id = Column(String(50), ForeignKey("configuracion.configuraciones.empresa_id"), nullable=False)
+    id = Column(Integer, primary_key=True, index=True)
+    producto_id = Column(Integer, ForeignKey("productos.id"), nullable=False)
+    bodega_id = Column(Integer, nullable=False)
+    lote_id = Column(String(100), nullable=True)
+    empresa_id = Column(String(50), nullable=False)
     
-    # Relación para auditoría o movimientos futuros
-    # movimientos = relationship("MovimientoInventario", back_populates="producto")
+    cantidad_fisica = Column(Float, default=0.0)
+    cantidad_reservada = Column(Float, default=0.0)
+    cantidad_bloqueada = Column(Float, default=0.0)
+
+    @property
+    def cantidad_disponible(self):
+        return self.cantidad_fisica - self.cantidad_reservada - self.cantidad_bloqueada
+
+class InventarioKardex(Base):
+    __tablename__ = "inventario_kardex"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    empresa_id = Column(String(50), nullable=False)
+    producto_id = Column(Integer, ForeignKey("productos.id"), nullable=False)
+    bodega_id = Column(Integer, nullable=False)
+    cantidad = Column(Float, nullable=False) # Positivo entrada, Negativo salida
+    tipo_movimiento = Column(String(50), nullable=False)
+    fecha_registro = Column(DateTime(timezone=True), server_default=func.now())
+    documento_referencia = Column(String(100), nullable=True)
+    lote_id = Column(String(100), nullable=True)

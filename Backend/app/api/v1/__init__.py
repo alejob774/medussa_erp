@@ -13,8 +13,10 @@ from . import auditoria      # HU-004: Logs de Auditoría
 from . import seguridad      # HU-005: Roles y Permisos
 
 # Módulo: Operaciones Core (Comercial y Logística)
-from . import inventario     # HU-010: Maestro de Productos e Inventarios
-from . import clientes       # HU-012: Gestión de Clientes
+# Módulo: Operaciones Core (Comercial y Logística)
+from . import inventario      # HU-010: Maestro de Productos
+from . import inventory_core  # <--- NUEVO: Dominio Transaccional (Kardex, Saldos, Reservas)
+from . import clientes        # HU-012: Gestión de Clientes
 from . import vendedores     # HU-013: Gestión de Fuerza de Ventas
 from . import conductores    # HU-014: Maestro de Conductores
 from . import rutas          # HU-015: Logística y Distribución
