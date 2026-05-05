@@ -15,14 +15,10 @@ class Usuario(Base):
     cargo = Column(String(150), nullable=False)
     celular = Column(String(20), nullable=False)
     telefono_fijo = Column(String(20), nullable=True)
-<<<<<<< HEAD
-    estado = Column(Boolean, default=True)
+    estado = Column(Boolean, default=True) # Soporta Soft Delete
 
-    # Relación para Joinedload
+    # Relación para Joinedload y lógica de Tenant
     membresias_rel = relationship("UsuarioEmpresaConfig", back_populates="usuario_rel", cascade="all, delete-orphan")
-=======
-    estado = Column(Boolean, default=True) # Para Soft Delete 
->>>>>>> Back
 
 class UsuarioEmpresaConfig(Base):
     __tablename__ = "usuario_empresa_config"
@@ -34,7 +30,8 @@ class UsuarioEmpresaConfig(Base):
     rol_id = Column(Integer, ForeignKey("seguridad.roles.id"))
     perfil_id = Column(Integer, ForeignKey("seguridad.perfiles_empresa.id"), nullable=True)
 
-    # Relaciones para obtener nombres
+    # Relaciones inversas
     usuario_rel = relationship("Usuario", back_populates="membresias_rel")
-    rol_rel = relationship("Rol") # Requiere que Rol esté importado o disponible
+    # Nota: Rol y Perfil se resuelven en tiempo de ejecución si están en el mismo Base
+    rol_rel = relationship("Rol") 
     perfil_rel = relationship("Perfil")

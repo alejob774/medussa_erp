@@ -1,52 +1,33 @@
 from sqlalchemy.orm import Session
-<<<<<<< HEAD
-from sqlalchemy import func
-from app.models.inventario import Producto, MovimientoInventario
-from app.schemas.producto import ProductoCreate, ProductoUpdate
-from app.core.context import get_company_context
-from fastapi import HTTPException, status
-
-async def obtener_productos_contextual(db: Session, skip: int = 0, limit: int = 100):
-    empresa_id = get_company_context()
-    return db.query(Producto).filter(Producto.empresa_id == empresa_id).offset(skip).limit(limit).all()
-
-async def crear_producto(db: Session, obj_in: ProductoCreate):
-    empresa_id = get_company_context()
-    if not empresa_id:
-        raise HTTPException(status_code=422, detail="X-Company-ID faltante")
-
-    data = obj_in.model_dump()
-    data["empresa_id"] = empresa_id
-    
-    db_obj = Producto(**data)
-=======
 from sqlalchemy import or_
+from fastapi import HTTPException, status
 from app.models.inventario import Producto, InventarioSaldo, InventarioKardex
 from app.schemas.producto import ProductoCreate, ProductoUpdate
 from app.schemas.inventario import MovimientoCreate, TransferenciaCreate
 from .costos_service import procesar_costo_movimiento
 
+# --- GESTIÓN DE PRODUCTOS ---
+
 async def obtener_producto_por_id(db: Session, producto_id: int, empresa_id: str):
     return db.query(Producto).filter(
         Producto.id == producto_id, 
         Producto.empresa_id == empresa_id
-    ).first()[cite: 14, 17]
+    ).first()
 
-async def actualizar_producto(db: Session, db_obj: Producto, obj_in: ProductoUpdate):
-    update_data = obj_in.model_dump(exclude_unset=True)
-    for field in update_data:
-        setattr(db_obj, field, update_data[field])
-    db.commit()
-    db.refresh(db_obj)
-    return db_obj[cite: 17]
-
-async def eliminar_producto_logico(db: Session, db_obj: Producto):
-    db_obj.estado = False # Soft delete[cite: 13]
-    db.commit()
-    return db_obj
+async def obtener_productos_paginados(db: Session, empresa_id: str, skip: int, limit: int, search: str = None):
+    query = db.query(Producto).filter(Producto.empresa_id == empresa_id)
+    if search:
+        query = query.filter(
+            or_(
+                Producto.nombre.ilike(f"%{search}%"), 
+                Producto.producto_sku.ilike(f"%{search}%")
+            )
+        )
+    total = query.count()
+    items = query.offset(skip).limit(limit).all()
+    return total, items
 
 async def validar_sku_empresa(db: Session, sku: str, empresa_id: str) -> bool:
-    """Verifica si un SKU ya existe dentro de una empresa específica."""
     resultado = db.query(Producto).filter(
         Producto.producto_sku == sku, 
         Producto.empresa_id == empresa_id
@@ -54,52 +35,36 @@ async def validar_sku_empresa(db: Session, sku: str, empresa_id: str) -> bool:
     return resultado is not None
 
 async def crear_producto(db: Session, obj_in: ProductoCreate, empresa_id: str):
-    """Persiste un nuevo producto asegurando el vínculo con la empresa."""
     datos = obj_in.model_dump()
     datos["empresa_id"] = empresa_id
     db_obj = Producto(**datos)
->>>>>>> Back
     db.add(db_obj)
     db.commit()
     db.refresh(db_obj)
     return db_obj
 
-<<<<<<< HEAD
-async def recalcular_costo_promedio(db: Session, producto_id: int):
-    empresa_id = get_company_context()
-    
-    movimientos = db.query(MovimientoInventario).filter(
-        MovimientoInventario.producto_id == producto_id,
-        MovimientoInventario.empresa_id == empresa_id,
-        MovimientoInventario.tipo_movimiento.in_(['COMPRA', 'PRODUCCION_INGRESO'])
-    ).all()
-    
-    if not movimientos:
-        return 0.0
+async def actualizar_producto(db: Session, db_obj: Producto, obj_in: ProductoUpdate):
+    update_data = obj_in.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_obj, field, value)
+    db.commit()
+    db.refresh(db_obj)
+    return db_obj
 
-    total_valor = sum(float(m.costo_total) for m in movimientos)
-    total_cantidad = sum(float(m.cantidad) for m in movimientos)
-    
-    if total_cantidad > 0:
-        return round(total_valor / total_cantidad, 4)
-    return 0.0
-=======
-async def obtener_productos_paginados(db: Session, empresa_id: str, skip: int, limit: int, search: str = None):
-    query = db.query(Producto).filter(Producto.empresa_id == empresa_id)
-    if search:
-        query = query.filter(or_(Producto.nombre.ilike(f"%{search}%"), Producto.producto_sku.ilike(f"%{search}%")))
-    
-    total = query.count()
-    items = query.offset(skip).limit(limit).all()
-    return total, items
+async def eliminar_producto_logico(db: Session, db_obj: Producto):
+    db_obj.estado = False
+    db.commit()
+    return db_obj
+
+# --- MOVIMIENTOS Y KARDEX ---
 
 async def registrar_movimiento(db: Session, mov_in: MovimientoCreate, empresa_id: str, costo_unitario: float = 0.0):
-    # ... (Lógica existente de creación de Kardex y Saldo)[cite: 18]
+    """Registra un movimiento en Kardex y actualiza el saldo físico en bodega."""
     nuevo_kardex = InventarioKardex(**mov_in.model_dump(), empresa_id=empresa_id)
     db.add(nuevo_kardex)
-    db.flush() # Para obtener el ID del kardex sin hacer commit total[cite: 18]
+    db.flush() 
 
-    # Hook automático al Costs Core
+    # Integración con el núcleo de costos
     await procesar_costo_movimiento(
         db, 
         kardex_id=nuevo_kardex.id, 
@@ -109,8 +74,6 @@ async def registrar_movimiento(db: Session, mov_in: MovimientoCreate, empresa_id
         empresa_id=empresa_id
     )
 
-    # ... (Resto de la lógica de saldos y commit final)[cite: 18]
-    # 2. Buscar o Crear el registro de Saldo
     saldo = db.query(InventarioSaldo).filter(
         InventarioSaldo.producto_id == mov_in.producto_id,
         InventarioSaldo.bodega_id == mov_in.bodega_id,
@@ -128,17 +91,13 @@ async def registrar_movimiento(db: Session, mov_in: MovimientoCreate, empresa_id
         )
         db.add(saldo)
 
-    # 3. Actualizar cantidad física
     saldo.cantidad_fisica += mov_in.cantidad
-    
     db.commit()
     db.refresh(saldo)
     return saldo    
 
 async def gestionar_reserva(db: Session, producto_id: int, bodega_id: int, cantidad: float, accion: str, empresa_id: str, lote_id: str = None):
-    """
-    Maneja el bloqueo y liberación de stock para Picking y Ventas.
-    """
+    """Maneja el bloqueo y liberación de stock para picking y ventas."""
     saldo = db.query(InventarioSaldo).filter(
         InventarioSaldo.producto_id == producto_id,
         InventarioSaldo.bodega_id == bodega_id,
@@ -150,24 +109,21 @@ async def gestionar_reserva(db: Session, producto_id: int, bodega_id: int, canti
         raise HTTPException(status_code=404, detail="No existe saldo para este producto/bodega")
 
     if accion == 'RESERVAR':
-        if saldo.cantidad_disponible < cantidad:
+        if (saldo.cantidad_fisica - saldo.cantidad_reservada) < cantidad:
             raise HTTPException(status_code=400, detail="Stock disponible insuficiente")
-        saldo.cantidad_reservada += cantidad[cite: 15]
+        saldo.cantidad_reservada += cantidad
     elif accion == 'LIBERAR':
-        saldo.cantidad_reservada = max(0, saldo.cantidad_reservada - cantidad)[cite: 15]
+        saldo.cantidad_reservada = max(0, saldo.cantidad_reservada - cantidad)
     elif accion == 'EJECUTAR_SALIDA':
-        # Se asume que ya estaba reservado
-        saldo.cantidad_reservada -= cantidad
-        saldo.cantidad_fisica -= cantidad[cite: 15]
+        saldo.cantidad_reservada = max(0, saldo.cantidad_reservada - cantidad)
+        saldo.cantidad_fisica -= cantidad
     
     db.commit()
     db.refresh(saldo)
     return saldo
 
 async def transferir_stock(db: Session, trans_in: TransferenciaCreate, empresa_id: str):
-    """
-    Ejecuta una salida y una entrada en una sola transacción.
-    """
+    """Ejecuta una salida de origen y entrada en destino en una sola transacción."""
     # 1. Salida de Origen
     mov_salida = MovimientoCreate(
         producto_id=trans_in.producto_id,
@@ -190,4 +146,3 @@ async def transferir_stock(db: Session, trans_in: TransferenciaCreate, empresa_i
     )
     await registrar_movimiento(db, mov_entrada, empresa_id)
     return True
->>>>>>> Back
