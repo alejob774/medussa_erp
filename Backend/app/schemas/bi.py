@@ -1,12 +1,23 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
+from datetime import date
 
 class DashboardResponse(BaseModel):
     success: bool
-    data: dict # Contendrá ventasMes, otif, margenEstimado, etc.
+    data: Dict[str, Any]
 
 class DashboardFiltros(BaseModel):
-    empresaId: int
-    fechaDesde: str
-    fechaHasta: str
-    sedeId: Optional[int] = None[cite: 22]
+    empresaId: str
+    fechaDesde: date
+    fechaHasta: date
+    sedeId: Optional[int] = None
+
+class AlertaResponse(BaseModel):
+    id: int
+    tipo: str
+    severidad: str
+    mensaje: str
+    estado: str
+    
+    class Config:
+        from_attributes = True
