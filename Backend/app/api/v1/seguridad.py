@@ -1,25 +1,30 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
+from typing import List
 from app.db.session import get_db
-from app.models.seguridad import Rol, UsuarioEmpresaRol, Perfil # Actualizar import
+from app.api.deps import get_current_user, get_current_company
+from app.models.seguridad import Rol, UsuarioEmpresaRol, Perfil
 from app.schemas.seguridad import (
     RolCreate, RolUpdate, RolResponse, 
-    PerfilCreate, PerfilUpdate, PerfilResponse # Agregar estos
+    PerfilCreate, PerfilUpdate, PerfilResponse
 )
 from app.utils.auditoria import registrar_log
-from typing import List
 
 router = APIRouter()
 
-# CREATE: Crear un rol único por empresa
 @router.post("/roles/", response_model=RolResponse)
-async def crear_rol(rol_in: RolCreate, request: Request, db: Session = Depends(get_db)):
-    # Escenario 1: Validar nombre único en la empresa
-    existe = db.query(Rol).filter(
-        Rol.nombre == rol_in.nombre, 
-        Rol.empresa_id == rol_in.empresa_id
-    ).first()
-    
+async def crear_rol(
+    rol_in: RolCreate, 
+    request: Request, 
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user),
+    empresa_id: str = Depends(get_current_company)
+):
+    # Validar que el rol se cree en la empresa del contexto actual
+    if rol_in.empresa_id != empresa_id:
+        raise HTTPException(status_code=400, detail="El ID de empresa no coincide con el contexto activo")
+
+    existe = db.query(Rol).filter(Rol.nombre == rol_in.nombre, Rol.empresa_id == empresa_id).first()
     if existe:
         raise HTTPException(status_code=400, detail="El nombre del rol ya existe en esta empresa")
 
@@ -28,15 +33,37 @@ async def crear_rol(rol_in: RolCreate, request: Request, db: Session = Depends(g
     db.commit()
     db.refresh(nuevo_rol)
     
-    await registrar_log(db, request, user_id=0, user_name="SISTEMA", 
-                        empresa_id=rol_in.empresa_id, modulo="SEGURIDAD", 
-                        accion="CREATE_ROLE", despues=rol_in.model_dump())
+    await registrar_log(db, request, user_id=current_user.id, user_name=current_user.username, 
+                        empresa_id=empresa_id, modulo="SEGURIDAD", accion="CREATE_ROLE")
     return nuevo_rol
 
-# READ: Consultar roles de la empresa activa
 @router.get("/roles/empresa/{empresa_id}", response_model=List[RolResponse])
-def obtener_roles_empresa(empresa_id: str, db: Session = Depends(get_db)):
+def obtener_roles_empresa(
+    empresa_id: str, 
+    db: Session = Depends(get_db),
+    _ = Depends(get_current_company) # Valida acceso a la empresa
+):
     return db.query(Rol).filter(Rol.empresa_id == empresa_id).all()
+
+@router.post("/perfiles/", response_model=PerfilResponse)
+async def crear_perfil(
+    perfil_in: PerfilCreate, 
+    request: Request, 
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user),
+    empresa_id: str = Depends(get_current_company)
+):
+    if perfil_in.empresa_id != empresa_id:
+        raise HTTPException(status_code=400, detail="Contexto de empresa inválido")
+
+    nuevo_perfil = Perfil(**perfil_in.model_dump())
+    db.add(nuevo_perfil)
+    db.commit()
+    db.refresh(nuevo_perfil)
+    
+    await registrar_log(db, request, user_id=current_user.id, user_name=current_user.username,
+                        empresa_id=empresa_id, modulo="SEGURIDAD", accion="CREATE_PROFILE")
+    return nuevo_perfil
 
 # UPDATE: Editar un rol
 @router.put("/roles/{rol_id}", response_model=RolResponse)
@@ -82,24 +109,6 @@ async def desactivar_rol(rol_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Rol desactivado correctamente (trazabilidad mantenida)"}
     
-@router.post("/empresas/{empresa_id}/perfiles", response_model=PerfilResponse)
-async def crear_perfil(empresa_id: str, perfil_in: PerfilCreate, request: Request, db: Session = Depends(get_db)):
-    # Validar nombre único por empresa [cite: 74, 83]
-    existe = db.query(Perfil).filter(
-        Perfil.nombre == perfil_in.nombre,
-        Perfil.empresa_id == empresa_id
-    ).first()
-    
-    if existe:
-        raise HTTPException(status_code=400, detail="El nombre del perfil ya existe en esta empresa")
-
-    nuevo_perfil = Perfil(**perfil_in.model_dump())
-    db.add(nuevo_perfil)
-    db.commit()
-    db.refresh(nuevo_perfil)
-    
-    await registrar_log(db, request, modulo="SEGURIDAD", accion="CREATE_PROFILE", empresa_id=empresa_id)
-    return nuevo_perfil
 
 @router.get("/empresas/{empresa_id}/perfiles", response_model=List[PerfilResponse])
 def obtener_perfiles_empresa(empresa_id: str, db: Session = Depends(get_db)):

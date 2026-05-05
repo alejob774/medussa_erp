@@ -15,10 +15,14 @@ class Usuario(Base):
     cargo = Column(String(150), nullable=False)
     celular = Column(String(20), nullable=False)
     telefono_fijo = Column(String(20), nullable=True)
+<<<<<<< HEAD
     estado = Column(Boolean, default=True)
 
     # Relación para Joinedload
     membresias_rel = relationship("UsuarioEmpresaConfig", back_populates="usuario_rel", cascade="all, delete-orphan")
+=======
+    estado = Column(Boolean, default=True) # Para Soft Delete 
+>>>>>>> Back
 
 class UsuarioEmpresaConfig(Base):
     __tablename__ = "usuario_empresa_config"

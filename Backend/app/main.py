@@ -9,7 +9,7 @@ from app.db.session import engine, Base
 # Importación de Routers
 from app.api.v1 import (
     auth, usuarios, configuracion, auditoria, seguridad,
-    inventario, clientes, vendedores, conductores, rutas,
+    inventario, inventory_core, clientes, vendedores, conductores, rutas,
     equipos, proveedores, oee, bom, calidad, mps, tpm,
     demanda, analisis_demanda, desarrollo_productos,
     scm_compras_api, scm_presupuesto_api, scm_inventario_api,
@@ -47,12 +47,15 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login")
 
 # BLOQUE: CORE & ADMINISTRACIÓN (HU-001 al HU-005)
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Autenticación"])
-app.include_router(usuarios.router, prefix="/api/v1/usuarios", tags=["Gestión de Usuarios"])
+app.include_router(usuarios.router, prefix="/api/v1/usuarios", tags=["Usuarios"])
+app.include_router(seguridad.router, prefix="/api/v1/seguridad", tags=["Seguridad"])
 app.include_router(configuracion.router, prefix="/api/v1/configuracion", tags=["Configuración Sistema"])
 app.include_router(auditoria.router, prefix="/api/v1/auditoria", tags=["Auditoría"])
 
 # BLOQUE: OPERACIONES & LOGÍSTICA (HU-010 al HU-016)
-app.include_router(inventario.router, prefix="/api/v1/inventario", tags=["Inventarios"])
+# BLOQUE: OPERACIONES & LOGÍSTICA (HU-010 al HU-016)
+app.include_router(inventario.router, prefix="/api/v1/inventario", tags=["Inventarios - Maestro"])
+app.include_router(inventory_core.router, prefix="/api/v1/inventory/core", tags=["Inventarios - Core Operativo"]) # <--- Registro
 app.include_router(clientes.router, prefix="/api/v1/clientes", tags=["Comercial - Clientes"])
 app.include_router(vendedores.router, prefix="/api/v1/vendedores", tags=["Comercial - Vendedores"])
 app.include_router(conductores.router, prefix="/api/v1/conductores", tags=["Logística - Conductores"])

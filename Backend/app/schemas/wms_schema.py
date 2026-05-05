@@ -1,22 +1,20 @@
 from pydantic import BaseModel
-from typing import List, Optional
-from datetime import datetime
+from typing import Optional
 
 class PickingCreate(BaseModel):
-    pedido_id: int
+    pedido_id: str
     operario_id: int
-    prioridad: str
+    bodega_id: int
 
 class ConfirmarItemPicking(BaseModel):
-    tarea_id: int
+    pedido_id: str
     producto_id: int
-    lote_id: str
-    ubicacion_id: int
-    cantidad_recogida: float
+    bodega_id: int
+    cantidad: float
+    lote_id: Optional[str] = None
+    operario_id: int
 
 class PackingClose(BaseModel):
-    pedido_id: int
-    tipo_empaque: str
-    numero_cajas: int
-    peso_total_kg: float
-    precinto_seguridad: Optional[str] = None
+    pedido_id: str
+    peso_total: float
+    numero_bultos: int

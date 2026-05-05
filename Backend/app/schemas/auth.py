@@ -6,14 +6,13 @@ class EmpresaMe(BaseModel):
     nombre_empresa: str
     rol: str
     perfil: str
-    permisos: Any
+    permisos: Any # Soporta el JSON de permisos efectivos[cite: 22]
 
 class UserMeResponse(BaseModel):
     id: int
-    nombre: str
-    apellido: Optional[str] = None
     username: str
     email: EmailStr
+<<<<<<< HEAD
     # --- NUEVO CAMPO ---
     active_company_id: Optional[str] = None 
     # -------------------
@@ -21,3 +20,6 @@ class UserMeResponse(BaseModel):
 
     class Config:
         from_attributes = True
+=======
+    empresas: List[EmpresaMe]
+>>>>>>> Back
