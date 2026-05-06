@@ -352,10 +352,12 @@ export class BusinessIntelligenceMockRepository implements BusinessIntelligenceR
       { lineaId: 'linea-uht-1', lineaNombre: 'Linea UHT 1L', productoActual: 'Leche entera UHT 1L', ordenProduccionId: 'OP-ARB-2026-0418', unidadesPlan: 48_000, unidadesProducidas: 46_850, cumplimientoPlanPct: 97.6, eficienciaPct: 86.9, estado: 'VERDE' as const },
       { lineaId: 'linea-bebibles-2', lineaNombre: 'Linea lacteos bebibles', productoActual: 'Yogurt bebible fresa 200 ml', ordenProduccionId: 'OP-ARB-2026-0419', unidadesPlan: 72_000, unidadesProducidas: 66_400, cumplimientoPlanPct: 92.2, eficienciaPct: 78.4, estado: 'AMARILLO' as const },
       { lineaId: 'linea-quesos-1', lineaNombre: 'Linea quesos frescos', productoActual: 'Queso campesino 500 g', ordenProduccionId: 'OP-ARB-2026-0421', unidadesPlan: 18_500, unidadesProducidas: 17_920, cumplimientoPlanPct: 96.9, eficienciaPct: 82.1, estado: 'VERDE' as const },
+      { lineaId: 'linea-empaque-1', lineaNombre: 'Linea empaque multipack', productoActual: 'Mix lacteos refrigerados', ordenProduccionId: 'OP-ARB-2026-0424', unidadesPlan: 25_000, unidadesProducidas: 21_700, cumplimientoPlanPct: 86.8, eficienciaPct: 74.6, estado: 'AMARILLO' as const },
     ].filter((item) => !normalized.lineaId || item.lineaId === normalized.lineaId);
     const paradasActivas = [
-      { id: 'downtime-bebibles-valvula', lineaId: 'linea-bebibles-2', lineaNombre: 'Linea lacteos bebibles', causa: 'Ajuste de valvula de llenado', inicio: '2026-05-05T10:18:00-05:00', duracionMin: 18, responsable: 'Mantenimiento turno A', severidad: 'MEDIA' as const },
-      { id: 'downtime-quesos-cip', lineaId: 'linea-quesos-1', lineaNombre: 'Linea quesos frescos', causa: 'Espera liberacion CIP', inicio: '2026-05-05T09:54:00-05:00', duracionMin: 12, responsable: 'Calidad planta', severidad: 'BAJA' as const },
+      { id: 'downtime-bebibles-mecanica', lineaId: 'linea-bebibles-2', lineaNombre: 'Linea lacteos bebibles', causa: 'Falla mecanica en valvula de llenado', inicio: '2026-05-05T10:18:00-05:00', duracionMin: 18, responsable: 'Mantenimiento turno A', severidad: 'MEDIA' as const },
+      { id: 'downtime-quesos-limpieza', lineaId: 'linea-quesos-1', lineaNombre: 'Linea quesos frescos', causa: 'Limpieza sanitaria pendiente de liberacion', inicio: '2026-05-05T09:54:00-05:00', duracionMin: 12, responsable: 'Calidad planta', severidad: 'BAJA' as const },
+      { id: 'downtime-empaque-material', lineaId: 'linea-empaque-1', lineaNombre: 'Linea empaque multipack', causa: 'Falta material de empaque secundario', inicio: '2026-05-05T10:31:00-05:00', duracionMin: 9, responsable: 'Coordinacion SCM', severidad: 'ALTA' as const },
     ].filter((item) => !normalized.lineaId || item.lineaId === normalized.lineaId);
 
     return of<ProductionRealtimeResponse>({

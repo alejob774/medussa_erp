@@ -411,6 +411,17 @@ export const routes: Routes = [
             },
           },
           {
+            path: 'produccion-tiempo-real',
+            loadComponent: () =>
+              import(
+                './features/business-intelligence/presentation/pages/production-realtime-page/production-realtime-page.component'
+              ).then((module) => module.ProductionRealtimePageComponent),
+            canActivate: [permissionGuard],
+            data: {
+              permission: 'bi.operations.production-rt.view',
+            },
+          },
+          {
             path: 'demanda-vs-forecast',
             loadComponent: () =>
               import(

@@ -261,6 +261,14 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
             companyIds: ALL_COMPANIES,
           },
           {
+            id: 'bi-produccion-tiempo-real',
+            label: 'Produccion Tiempo Real',
+            route: '/business-intelligence/produccion-tiempo-real',
+            icon: 'precision_manufacturing',
+            requiredPermissions: ['bi.operations.production-rt.view'],
+            companyIds: ['medussa-holding', 'medussa-industrial'],
+          },
+          {
             id: 'bi-demanda-vs-forecast',
             label: 'Demanda vs Forecast',
             route: '/business-intelligence/demanda-vs-forecast',
