@@ -6,9 +6,15 @@ import { CommercialPerformanceFilters, CommercialPerformanceResponse } from '../
 import { DemandVsForecastFilters, DemandVsForecastResponse } from '../../domain/models/demand-vs-forecast.model';
 import { ExecutiveDashboard360Response, ExecutiveDashboardFilters } from '../../domain/models/executive-dashboard.model';
 import { GrafanaDashboardConfig } from '../../domain/models/grafana-embed.model';
+import { LogisticsKpiFilters, LogisticsKpiResponse } from '../../domain/models/logistics-kpi.model';
 import { ManagerialAlertsFilters, ManagerialAlertsResponse } from '../../domain/models/managerial-alerts.model';
+import { OeePlantFilters, OeePlantResponse } from '../../domain/models/oee-plant.model';
 import { ProfitabilityFilters, ProfitabilityProductLineResponse } from '../../domain/models/profitability.model';
+import { ProductionRealtimeFilters, ProductionRealtimeResponse } from '../../domain/models/production-realtime.model';
+import { QualityNonconformityFilters, QualityNonconformityResponse } from '../../domain/models/quality-nonconformity.model';
 import { StrategicClientsFilters, StrategicClientsResponse } from '../../domain/models/strategic-clients.model';
+import { StrategicInventoryFilters, StrategicInventoryResponse } from '../../domain/models/strategic-inventory.model';
+import { StrategicPurchasingFilters, StrategicPurchasingResponse } from '../../domain/models/strategic-purchasing.model';
 import { BusinessIntelligenceRepository } from '../../domain/repositories/business-intelligence.repository';
 
 @Injectable({
@@ -68,6 +74,57 @@ export class BusinessIntelligenceApiRepository implements BusinessIntelligenceRe
     filters: DemandVsForecastFilters,
   ): Observable<DemandVsForecastResponse> {
     return this.http.get<DemandVsForecastResponse>(`${this.baseUrl}/demanda-vs-forecast`, {
+      params: this.cleanParams({ ...filters, empresaId: companyId }),
+    });
+  }
+
+  getProductionRealtime(
+    companyId: string,
+    filters: ProductionRealtimeFilters,
+  ): Observable<ProductionRealtimeResponse> {
+    return this.http.get<ProductionRealtimeResponse>(`${this.baseUrl}/produccion-tiempo-real`, {
+      params: this.cleanParams({ ...filters, empresaId: companyId }),
+    });
+  }
+
+  getOeePlant(companyId: string, filters: OeePlantFilters): Observable<OeePlantResponse> {
+    return this.http.get<OeePlantResponse>(`${this.baseUrl}/oee-consolidado-planta`, {
+      params: this.cleanParams({ ...filters, empresaId: companyId }),
+    });
+  }
+
+  getQualityNonconformities(
+    companyId: string,
+    filters: QualityNonconformityFilters,
+  ): Observable<QualityNonconformityResponse> {
+    return this.http.get<QualityNonconformityResponse>(`${this.baseUrl}/calidad-no-conformidades`, {
+      params: this.cleanParams({ ...filters, empresaId: companyId }),
+    });
+  }
+
+  getStrategicInventory(
+    companyId: string,
+    filters: StrategicInventoryFilters,
+  ): Observable<StrategicInventoryResponse> {
+    return this.http.get<StrategicInventoryResponse>(`${this.baseUrl}/inventario-estrategico`, {
+      params: this.cleanParams({ ...filters, empresaId: companyId }),
+    });
+  }
+
+  getStrategicPurchasing(
+    companyId: string,
+    filters: StrategicPurchasingFilters,
+  ): Observable<StrategicPurchasingResponse> {
+    return this.http.get<StrategicPurchasingResponse>(`${this.baseUrl}/compras-estrategicas`, {
+      params: this.cleanParams({ ...filters, empresaId: companyId }),
+    });
+  }
+
+  getLogisticsKpis(
+    companyId: string,
+    filters: LogisticsKpiFilters,
+  ): Observable<LogisticsKpiResponse> {
+    return this.http.get<LogisticsKpiResponse>(`${this.baseUrl}/kpi-logisticos`, {
       params: this.cleanParams({ ...filters, empresaId: companyId }),
     });
   }

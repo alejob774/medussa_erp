@@ -4,9 +4,15 @@ import { CommercialPerformanceFilters, CommercialPerformanceResponse } from '../
 import { DemandVsForecastFilters, DemandVsForecastResponse } from '../../domain/models/demand-vs-forecast.model';
 import { ExecutiveDashboard360Response, ExecutiveDashboardFilters } from '../../domain/models/executive-dashboard.model';
 import { BiDashboardEmbedConfig, BiDashboardKey, GrafanaDashboardConfig } from '../../domain/models/grafana-embed.model';
+import { LogisticsKpiFilters, LogisticsKpiResponse } from '../../domain/models/logistics-kpi.model';
 import { ManagerialAlert, ManagerialAlertsFilters, ManagerialAlertsResponse } from '../../domain/models/managerial-alerts.model';
+import { OeePlantFilters, OeePlantResponse } from '../../domain/models/oee-plant.model';
 import { ProductProfitabilityItem, ProfitabilityFilters, ProfitabilityProductLineResponse } from '../../domain/models/profitability.model';
+import { ProductionRealtimeFilters, ProductionRealtimeResponse } from '../../domain/models/production-realtime.model';
+import { QualityNonconformityFilters, QualityNonconformityResponse } from '../../domain/models/quality-nonconformity.model';
 import { StrategicClientsFilters, StrategicClientsResponse } from '../../domain/models/strategic-clients.model';
+import { StrategicInventoryFilters, StrategicInventoryResponse } from '../../domain/models/strategic-inventory.model';
+import { StrategicPurchasingFilters, StrategicPurchasingResponse } from '../../domain/models/strategic-purchasing.model';
 import { BusinessIntelligenceRepository } from '../../domain/repositories/business-intelligence.repository';
 
 const DEMO_COMPANY_ID = 'medussa-holding';
@@ -337,6 +343,210 @@ export class BusinessIntelligenceMockRepository implements BusinessIntelligenceR
     }).pipe(delay(180));
   }
 
+  getProductionRealtime(
+    companyId: string,
+    filters: ProductionRealtimeFilters,
+  ): Observable<ProductionRealtimeResponse> {
+    const normalized = this.withCompany(companyId, filters);
+    const unidadesPorLinea = [
+      { lineaId: 'linea-uht-1', lineaNombre: 'Linea UHT 1L', productoActual: 'Leche entera UHT 1L', ordenProduccionId: 'OP-ARB-2026-0418', unidadesPlan: 48_000, unidadesProducidas: 46_850, cumplimientoPlanPct: 97.6, eficienciaPct: 86.9, estado: 'VERDE' as const },
+      { lineaId: 'linea-bebibles-2', lineaNombre: 'Linea lacteos bebibles', productoActual: 'Yogurt bebible fresa 200 ml', ordenProduccionId: 'OP-ARB-2026-0419', unidadesPlan: 72_000, unidadesProducidas: 66_400, cumplimientoPlanPct: 92.2, eficienciaPct: 78.4, estado: 'AMARILLO' as const },
+      { lineaId: 'linea-quesos-1', lineaNombre: 'Linea quesos frescos', productoActual: 'Queso campesino 500 g', ordenProduccionId: 'OP-ARB-2026-0421', unidadesPlan: 18_500, unidadesProducidas: 17_920, cumplimientoPlanPct: 96.9, eficienciaPct: 82.1, estado: 'VERDE' as const },
+    ].filter((item) => !normalized.lineaId || item.lineaId === normalized.lineaId);
+    const paradasActivas = [
+      { id: 'downtime-bebibles-valvula', lineaId: 'linea-bebibles-2', lineaNombre: 'Linea lacteos bebibles', causa: 'Ajuste de valvula de llenado', inicio: '2026-05-05T10:18:00-05:00', duracionMin: 18, responsable: 'Mantenimiento turno A', severidad: 'MEDIA' as const },
+      { id: 'downtime-quesos-cip', lineaId: 'linea-quesos-1', lineaNombre: 'Linea quesos frescos', causa: 'Espera liberacion CIP', inicio: '2026-05-05T09:54:00-05:00', duracionMin: 12, responsable: 'Calidad planta', severidad: 'BAJA' as const },
+    ].filter((item) => !normalized.lineaId || item.lineaId === normalized.lineaId);
+
+    return of<ProductionRealtimeResponse>({
+      filters: normalized,
+      produccionHoy: unidadesPorLinea.reduce((sum, item) => sum + item.unidadesProducidas, 0),
+      ordenesAbiertas: unidadesPorLinea.length + 4,
+      cumplimientoPlanPct: 95.2,
+      unidadesPorLinea,
+      paradasActivas,
+      tiempoDetenidoMin: paradasActivas.reduce((sum, item) => sum + item.duracionMin, 0),
+      eficienciaPorLinea: [...unidadesPorLinea].sort((left, right) => right.eficienciaPct - left.eficienciaPct),
+      produccionHora: [
+        { fecha: '06:00', valor: 14_800, comparativo: 15_200, plan: 15_000 },
+        { fecha: '07:00', valor: 16_300, comparativo: 15_900, plan: 16_000 },
+        { fecha: '08:00', valor: 17_100, comparativo: 16_700, plan: 17_000 },
+        { fecha: '09:00', valor: 15_950, comparativo: 17_200, plan: 17_000 },
+        { fecha: '10:00', valor: 13_420, comparativo: 16_900, plan: 17_000 },
+      ],
+      grafanaEmbedConfig: this.embed('production-realtime', normalized),
+    }).pipe(delay(180));
+  }
+
+  getOeePlant(companyId: string, filters: OeePlantFilters): Observable<OeePlantResponse> {
+    const normalized = this.withCompany(companyId, filters);
+    const oeePorLinea = [
+      { lineaId: 'linea-uht-1', lineaNombre: 'Linea UHT 1L', oee: 84.6, disponibilidad: 91.2, rendimiento: 94.1, calidad: 98.5, estado: 'VERDE' as const },
+      { lineaId: 'linea-bebibles-2', lineaNombre: 'Linea lacteos bebibles', oee: 72.8, disponibilidad: 83.7, rendimiento: 88.6, calidad: 98.1, estado: 'AMARILLO' as const },
+      { lineaId: 'linea-quesos-1', lineaNombre: 'Linea quesos frescos', oee: 78.9, disponibilidad: 87.5, rendimiento: 91.2, calidad: 98.8, estado: 'VERDE' as const },
+    ].filter((item) => !normalized.lineaId || item.lineaId === normalized.lineaId);
+
+    return of<OeePlantResponse>({
+      filters: normalized,
+      oeeTotal: 79.4,
+      disponibilidad: 87.6,
+      rendimiento: 91.3,
+      calidad: 98.4,
+      oeePorLinea,
+      oeePorTurno: [
+        { turnoId: 'turno-a', turnoNombre: 'Turno A', oee: 81.2, disponibilidad: 89.1, rendimiento: 92.6, calidad: 98.5 },
+        { turnoId: 'turno-b', turnoNombre: 'Turno B', oee: 77.5, disponibilidad: 86.3, rendimiento: 90.4, calidad: 98.2 },
+        { turnoId: 'turno-c', turnoNombre: 'Turno C', oee: 79.6, disponibilidad: 87.2, rendimiento: 91.1, calidad: 99.0 },
+      ].filter((item) => !normalized.turnoId || item.turnoId === normalized.turnoId),
+      tendenciaHistorica: [
+        { fecha: '2026-01', valor: 75.8, disponibilidad: 84.6, rendimiento: 90.8, calidad: 98.7 },
+        { fecha: '2026-02', valor: 77.1, disponibilidad: 86.0, rendimiento: 91.0, calidad: 98.5 },
+        { fecha: '2026-03', valor: 78.6, disponibilidad: 87.2, rendimiento: 91.6, calidad: 98.3 },
+        { fecha: '2026-04', valor: 79.4, disponibilidad: 87.6, rendimiento: 91.3, calidad: 98.4 },
+      ],
+      grafanaEmbedConfig: this.embed('oee-plant', normalized),
+    }).pipe(delay(180));
+  }
+
+  getQualityNonconformities(
+    companyId: string,
+    filters: QualityNonconformityFilters,
+  ): Observable<QualityNonconformityResponse> {
+    const normalized = this.withCompany(companyId, filters);
+
+    return of<QualityNonconformityResponse>({
+      filters: normalized,
+      lotesRechazados: 7,
+      reclamosCliente: 14,
+      scrapKg: 428,
+      retrabajos: 9,
+      costoMalaCalidad: 18_450_000,
+      causasTop: [
+        { causaId: 'sellado', causaNombre: 'Sellado fuera de especificacion', eventos: 8, participacionPct: 28.6, costoEstimado: 5_900_000 },
+        { causaId: 'temperatura', causaNombre: 'Desviacion de temperatura', eventos: 6, participacionPct: 21.4, costoEstimado: 4_250_000 },
+        { causaId: 'peso-neto', causaNombre: 'Peso neto bajo', eventos: 5, participacionPct: 17.9, costoEstimado: 3_100_000 },
+        { causaId: 'vida-util', causaNombre: 'Vida util comprometida', eventos: 4, participacionPct: 14.3, costoEstimado: 2_850_000 },
+      ],
+      eventosRecientes: [
+        { eventoId: 'NC-2026-078', fecha: '2026-04-29', productoId: 'prod-arb-001', productoNombre: 'Yogurt bebible fresa 200 ml', lote: 'YF-0429-A', tipo: 'RETRABAJO' as const, cantidad: 1_240, costoEstimado: 1_860_000, estado: 'EN_ANALISIS' as const },
+        { eventoId: 'NC-2026-074', fecha: '2026-04-27', productoId: 'prod-arb-003', productoNombre: 'Leche entera UHT 1L', lote: 'UHT-0427-B', tipo: 'RECLAMO_CLIENTE' as const, cantidad: 320, costoEstimado: 960_000, estado: 'ABIERTO' as const },
+        { eventoId: 'NC-2026-069', fecha: '2026-04-24', productoId: 'prod-arb-002', productoNombre: 'Queso campesino 500 g', lote: 'QC-0424-C', tipo: 'SCRAP' as const, cantidad: 88, costoEstimado: 1_340_000, estado: 'CERRADO' as const },
+      ].filter((item) => !normalized.productoId || item.productoId === normalized.productoId),
+      tendenciaMensual: [
+        { fecha: '2026-01', valor: 22, reclamos: 11, scrapKg: 390, costoMalaCalidad: 15_200_000 },
+        { fecha: '2026-02', valor: 25, reclamos: 13, scrapKg: 410, costoMalaCalidad: 16_800_000 },
+        { fecha: '2026-03', valor: 21, reclamos: 10, scrapKg: 365, costoMalaCalidad: 14_900_000 },
+        { fecha: '2026-04', valor: 30, reclamos: 14, scrapKg: 428, costoMalaCalidad: 18_450_000 },
+      ],
+      grafanaEmbedConfig: this.embed('quality-nonconformity', normalized),
+    }).pipe(delay(180));
+  }
+
+  getStrategicInventory(
+    companyId: string,
+    filters: StrategicInventoryFilters,
+  ): Observable<StrategicInventoryResponse> {
+    const normalized = this.withCompany(companyId, filters);
+    const topSkuCriticos = [
+      { productoId: 'prod-arb-001', sku: 'ARB-YOG-200-FR', productoNombre: 'Yogurt bebible fresa 200 ml', bodegaId: 'bg-prod-terminado', bodegaNombre: 'Producto terminado', stockActual: 8_400, stockMinimo: 12_000, coberturaDias: 1.8, riesgo: 'QUIEBRE' as const, valorInventario: 18_480_000 },
+      { productoId: 'prod-arb-005', sku: 'ARB-AVN-1L', productoNombre: 'Avena UHT 1L', bodegaId: 'bg-prod-terminado', bodegaNombre: 'Producto terminado', stockActual: 31_200, stockMinimo: 14_000, coberturaDias: 24.6, riesgo: 'SOBREINVENTARIO' as const, valorInventario: 93_600_000 },
+      { productoId: 'mat-empaque-200', sku: 'EMP-BOT-200', productoNombre: 'Botella PET 200 ml', bodegaId: 'bg-empaques', bodegaNombre: 'Empaques', stockActual: 420_000, stockMinimo: 180_000, coberturaDias: 52.1, riesgo: 'LENTO_MOVIMIENTO' as const, valorInventario: 58_800_000 },
+    ].filter((item) => !normalized.bodegaId || item.bodegaId === normalized.bodegaId);
+
+    return of<StrategicInventoryResponse>({
+      filters: normalized,
+      stockActual: 1_284_500,
+      rotacionPromedio: 5.8,
+      inventarioLento: 186_400_000,
+      sobreinventario: 142_900_000,
+      quiebres: 4,
+      valorInventario: 1_184_000_000,
+      coberturaDias: 18.7,
+      topSkuCriticos,
+      agingInventario: [
+        { rangoDias: '0-30', unidades: 742_000, valorInventario: 612_000_000, participacionPct: 51.7 },
+        { rangoDias: '31-60', unidades: 318_500, valorInventario: 274_000_000, participacionPct: 23.1 },
+        { rangoDias: '61-90', unidades: 132_000, valorInventario: 111_600_000, participacionPct: 9.4 },
+        { rangoDias: '>90', unidades: 92_000, valorInventario: 186_400_000, participacionPct: 15.8 },
+      ],
+      inventarioPorBodega: [
+        { bodegaId: 'bg-prod-terminado', bodegaNombre: 'Producto terminado', stockActual: 384_500, valorInventario: 548_000_000, coberturaDias: 12.4, estado: 'AMARILLO' as const },
+        { bodegaId: 'bg-mp-lacteos', bodegaNombre: 'Materias primas lacteas', stockActual: 210_000, valorInventario: 326_000_000, coberturaDias: 8.9, estado: 'VERDE' as const },
+        { bodegaId: 'bg-empaques', bodegaNombre: 'Empaques', stockActual: 690_000, valorInventario: 310_000_000, coberturaDias: 34.2, estado: 'AMARILLO' as const },
+      ].filter((item) => !normalized.bodegaId || item.bodegaId === normalized.bodegaId),
+      grafanaEmbedConfig: this.embed('strategic-inventory', normalized),
+    }).pipe(delay(180));
+  }
+
+  getStrategicPurchasing(
+    companyId: string,
+    filters: StrategicPurchasingFilters,
+  ): Observable<StrategicPurchasingResponse> {
+    const normalized = this.withCompany(companyId, filters);
+    const rankingProveedores = [
+      { proveedorId: 'sup-leche-sabana', proveedorNombre: 'Cooperativa Lechera Sabana', categoriaPrincipal: 'Leche cruda', compras: 286_000_000, ahorroPct: 3.8, cumplimientoPct: 96.2, leadTimeDias: 1.2, score: 94 },
+      { proveedorId: 'sup-empaques-andina', proveedorNombre: 'Empaques Andina', categoriaPrincipal: 'Empaques', compras: 174_500_000, ahorroPct: -4.7, cumplimientoPct: 89.4, leadTimeDias: 6.8, score: 77 },
+      { proveedorId: 'sup-cultivos-pro', proveedorNombre: 'Cultivos Probioticos SAS', categoriaPrincipal: 'Cultivos', compras: 91_300_000, ahorroPct: 2.1, cumplimientoPct: 98.1, leadTimeDias: 4.5, score: 91 },
+    ].filter((item) => !normalized.proveedorId || item.proveedorId === normalized.proveedorId);
+
+    return of<StrategicPurchasingResponse>({
+      filters: normalized,
+      ahorrosCompras: 24_800_000,
+      proveedorMasCostoso: rankingProveedores.find((item) => item.ahorroPct < 0) ?? null,
+      leadTimePromedioDias: 4.1,
+      comprasUrgentes: 18,
+      variacionPreciosPct: 5.6,
+      rankingProveedores: rankingProveedores.sort((left, right) => right.score - left.score),
+      tendenciaPrecios: [
+        { fecha: '2026-01', valor: 1_740, insumoId: 'leche-cruda', insumoNombre: 'Leche cruda litro', proveedorId: 'sup-leche-sabana', variacionPct: 1.2 },
+        { fecha: '2026-02', valor: 1_780, insumoId: 'leche-cruda', insumoNombre: 'Leche cruda litro', proveedorId: 'sup-leche-sabana', variacionPct: 2.3 },
+        { fecha: '2026-03', valor: 1_835, insumoId: 'leche-cruda', insumoNombre: 'Leche cruda litro', proveedorId: 'sup-leche-sabana', variacionPct: 3.1 },
+        { fecha: '2026-04', valor: 1_938, insumoId: 'leche-cruda', insumoNombre: 'Leche cruda litro', proveedorId: 'sup-leche-sabana', variacionPct: 5.6 },
+      ],
+      cumplimientoProveedores: [
+        { proveedorId: 'sup-leche-sabana', proveedorNombre: 'Cooperativa Lechera Sabana', entregasATiempoPct: 96.2, calidadRecepcionPct: 98.4, ordenesCompletasPct: 97.1, cumplimientoGlobalPct: 97.2 },
+        { proveedorId: 'sup-empaques-andina', proveedorNombre: 'Empaques Andina', entregasATiempoPct: 89.4, calidadRecepcionPct: 93.8, ordenesCompletasPct: 91.5, cumplimientoGlobalPct: 91.6 },
+        { proveedorId: 'sup-cultivos-pro', proveedorNombre: 'Cultivos Probioticos SAS', entregasATiempoPct: 98.1, calidadRecepcionPct: 99.2, ordenesCompletasPct: 96.8, cumplimientoGlobalPct: 98.0 },
+      ].filter((item) => !normalized.proveedorId || item.proveedorId === normalized.proveedorId),
+      grafanaEmbedConfig: this.embed('strategic-purchasing', normalized),
+    }).pipe(delay(180));
+  }
+
+  getLogisticsKpis(companyId: string, filters: LogisticsKpiFilters): Observable<LogisticsKpiResponse> {
+    const normalized = this.withCompany(companyId, filters);
+    const rankingRutas = [
+      { rutaId: 'ruta-bog-norte', rutaNombre: 'Bogota Norte TAT', zonaId: 'bogota-norte', zonaNombre: 'Bogota Norte', pedidos: 146, costoTransporte: 18_250_000, costoPorPedido: 125_000, kmRecorridos: 1_284, puntualidadEntregaPct: 94.2 },
+      { rutaId: 'ruta-sabana', rutaNombre: 'Sabana mayoristas', zonaId: 'sabana', zonaNombre: 'Sabana', pedidos: 109, costoTransporte: 16_350_000, costoPorPedido: 150_000, kmRecorridos: 1_476, puntualidadEntregaPct: 88.7 },
+      { rutaId: 'ruta-centro', rutaNombre: 'Centro tradicional', zonaId: 'centro', zonaNombre: 'Centro', pedidos: 98, costoTransporte: 13_720_000, costoPorPedido: 140_000, kmRecorridos: 1_036, puntualidadEntregaPct: 90.5 },
+    ].filter((item) => (!normalized.zonaId || item.zonaId === normalized.zonaId) && (!normalized.rutaId || item.rutaId === normalized.rutaId));
+    const rankingConductores = [
+      { conductorId: 'drv-001', conductorNombre: 'Hector Molina', entregas: 126, puntualidadEntregaPct: 95.1, kmRecorridos: 1_140, novedades: 2 },
+      { conductorId: 'drv-002', conductorNombre: 'Paula Rojas', entregas: 118, puntualidadEntregaPct: 92.4, kmRecorridos: 1_086, novedades: 3 },
+      { conductorId: 'drv-003', conductorNombre: 'Ivan Cardenas', entregas: 109, puntualidadEntregaPct: 87.8, kmRecorridos: 1_570, novedades: 6 },
+    ].filter((item) => !normalized.conductorId || item.conductorId === normalized.conductorId);
+    const costoTransporte = rankingRutas.reduce((sum, item) => sum + item.costoTransporte, 0);
+    const pedidos = rankingRutas.reduce((sum, item) => sum + item.pedidos, 0);
+
+    return of<LogisticsKpiResponse>({
+      filters: normalized,
+      costoTransporte,
+      costoPorPedido: pedidos ? Math.round(costoTransporte / pedidos) : 0,
+      pedidosPorRuta: rankingRutas.length ? Math.round(pedidos / rankingRutas.length) : 0,
+      entregasPorConductor: rankingConductores.length ? Math.round(rankingConductores.reduce((sum, item) => sum + item.entregas, 0) / rankingConductores.length) : 0,
+      utilizacionFlota: 82.6,
+      kmRecorridos: rankingRutas.reduce((sum, item) => sum + item.kmRecorridos, 0),
+      puntualidadEntrega: rankingRutas.length ? Number((rankingRutas.reduce((sum, item) => sum + item.puntualidadEntregaPct, 0) / rankingRutas.length).toFixed(1)) : 0,
+      rankingRutas: rankingRutas.sort((left, right) => right.puntualidadEntregaPct - left.puntualidadEntregaPct),
+      rankingConductores: rankingConductores.sort((left, right) => right.puntualidadEntregaPct - left.puntualidadEntregaPct),
+      flota: [
+        { vehiculoId: 'veh-001', placa: 'ARB-241', tipoVehiculo: 'Furgon refrigerado', utilizacionPct: 88.4, kmRecorridos: 1_240, estado: 'EN_RUTA' as const },
+        { vehiculoId: 'veh-002', placa: 'ARB-318', tipoVehiculo: 'Camion NHR', utilizacionPct: 81.7, kmRecorridos: 1_086, estado: 'EN_RUTA' as const },
+        { vehiculoId: 'veh-003', placa: 'ARB-156', tipoVehiculo: 'Turbo refrigerado', utilizacionPct: 64.5, kmRecorridos: 470, estado: 'MANTENIMIENTO' as const },
+      ],
+      grafanaEmbedConfig: this.embed('logistics-kpi', normalized),
+    }).pipe(delay(180));
+  }
+
   getGrafanaDashboards(_companyId: string): Observable<GrafanaDashboardConfig[]> {
     return of(this.grafanaCatalog()).pipe(delay(120));
   }
@@ -349,6 +559,12 @@ export class BusinessIntelligenceMockRepository implements BusinessIntelligenceR
       { dashboardKey: 'commercial-performance', dashboardUid: 'medussa-commercial', title: 'HU-036 Ventas y Cumplimiento Comercial', datasource: 'datamart', refreshInterval: '15m', requiredPermission: 'bi.commercial.view' },
       { dashboardKey: 'strategic-clients', dashboardUid: 'medussa-clients', title: 'HU-037 Clientes Estrategicos', datasource: 'datamart', refreshInterval: '30m', requiredPermission: 'bi.clients.view' },
       { dashboardKey: 'demand-vs-forecast', dashboardUid: 'medussa-forecast', title: 'HU-038 Demanda vs Forecast', datasource: 'datamart', refreshInterval: '30m', requiredPermission: 'bi.forecast.view' },
+      { dashboardKey: 'production-realtime', dashboardUid: 'medussa-production-rt', title: 'HU-039 Produccion Tiempo Real', datasource: 'datamart', refreshInterval: '1m', requiredPermission: 'bi.operations.production-rt.view' },
+      { dashboardKey: 'oee-plant', dashboardUid: 'medussa-oee-plant', title: 'HU-040 OEE Consolidado Planta', datasource: 'datamart', refreshInterval: '5m', requiredPermission: 'bi.operations.oee.view' },
+      { dashboardKey: 'quality-nonconformity', dashboardUid: 'medussa-quality-nc', title: 'HU-041 Calidad y No Conformidades', datasource: 'datamart', refreshInterval: '15m', requiredPermission: 'bi.operations.quality.view' },
+      { dashboardKey: 'strategic-inventory', dashboardUid: 'medussa-inventory-strategic', title: 'HU-042 Inventario Estrategico', datasource: 'datamart', refreshInterval: '15m', requiredPermission: 'bi.supply.inventory.view' },
+      { dashboardKey: 'strategic-purchasing', dashboardUid: 'medussa-purchases-strategic', title: 'HU-043 Compras Estrategicas', datasource: 'datamart', refreshInterval: '1h', requiredPermission: 'bi.supply.purchases.view' },
+      { dashboardKey: 'logistics-kpi', dashboardUid: 'medussa-logistics-kpi', title: 'HU-044 KPI Logisticos', datasource: 'datamart', refreshInterval: '15m', requiredPermission: 'bi.supply.logistics.view' },
     ];
   }
 

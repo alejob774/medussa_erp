@@ -6,7 +6,13 @@ export type BiDashboardKey =
   | 'managerial-alerts'
   | 'commercial-performance'
   | 'strategic-clients'
-  | 'demand-vs-forecast';
+  | 'demand-vs-forecast'
+  | 'production-realtime'
+  | 'oee-plant'
+  | 'quality-nonconformity'
+  | 'strategic-inventory'
+  | 'strategic-purchasing'
+  | 'logistics-kpi';
 
 export interface GrafanaDashboardConfig {
   dashboardKey: BiDashboardKey;
