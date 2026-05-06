@@ -277,6 +277,14 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
             companyIds: ['medussa-holding', 'medussa-industrial'],
           },
           {
+            id: 'bi-calidad-no-conformidades',
+            label: 'Calidad y No Conformidades',
+            route: '/business-intelligence/calidad-no-conformidades',
+            icon: 'health_and_safety',
+            requiredPermissions: ['bi.operations.quality.view'],
+            companyIds: ['medussa-holding', 'medussa-industrial'],
+          },
+          {
             id: 'bi-demanda-vs-forecast',
             label: 'Demanda vs Forecast',
             route: '/business-intelligence/demanda-vs-forecast',

@@ -433,6 +433,17 @@ export const routes: Routes = [
             },
           },
           {
+            path: 'calidad-no-conformidades',
+            loadComponent: () =>
+              import(
+                './features/business-intelligence/presentation/pages/quality-nonconformity-page/quality-nonconformity-page.component'
+              ).then((module) => module.QualityNonconformityPageComponent),
+            canActivate: [permissionGuard],
+            data: {
+              permission: 'bi.operations.quality.view',
+            },
+          },
+          {
             path: 'demanda-vs-forecast',
             loadComponent: () =>
               import(

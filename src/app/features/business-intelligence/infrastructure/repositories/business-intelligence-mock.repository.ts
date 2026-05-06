@@ -425,16 +425,26 @@ export class BusinessIntelligenceMockRepository implements BusinessIntelligenceR
       retrabajos: 9,
       costoMalaCalidad: 18_450_000,
       causasTop: [
-        { causaId: 'sellado', causaNombre: 'Sellado fuera de especificacion', eventos: 8, participacionPct: 28.6, costoEstimado: 5_900_000 },
-        { causaId: 'temperatura', causaNombre: 'Desviacion de temperatura', eventos: 6, participacionPct: 21.4, costoEstimado: 4_250_000 },
-        { causaId: 'peso-neto', causaNombre: 'Peso neto bajo', eventos: 5, participacionPct: 17.9, costoEstimado: 3_100_000 },
-        { causaId: 'vida-util', causaNombre: 'Vida util comprometida', eventos: 4, participacionPct: 14.3, costoEstimado: 2_850_000 },
+        { causaId: 'materia-prima', causaNombre: 'Materia prima fuera de especificacion', eventos: 8, participacionPct: 28.6, costoEstimado: 5_900_000 },
+        { causaId: 'maquina', causaNombre: 'Maquina / sellado fuera de especificacion', eventos: 6, participacionPct: 21.4, costoEstimado: 4_250_000 },
+        { causaId: 'operador', causaNombre: 'Operador / ajuste de proceso', eventos: 5, participacionPct: 17.9, costoEstimado: 3_100_000 },
+        { causaId: 'almacenamiento', causaNombre: 'Almacenamiento y vida util comprometida', eventos: 4, participacionPct: 14.3, costoEstimado: 2_850_000 },
+        { causaId: 'transporte', causaNombre: 'Transporte / cadena de frio', eventos: 3, participacionPct: 10.7, costoEstimado: 1_650_000 },
+        { causaId: 'empaque', causaNombre: 'Empaque secundario deteriorado', eventos: 2, participacionPct: 7.1, costoEstimado: 700_000 },
       ],
       eventosRecientes: [
-        { eventoId: 'NC-2026-078', fecha: '2026-04-29', productoId: 'prod-arb-001', productoNombre: 'Yogurt bebible fresa 200 ml', lote: 'YF-0429-A', tipo: 'RETRABAJO' as const, cantidad: 1_240, costoEstimado: 1_860_000, estado: 'EN_ANALISIS' as const },
-        { eventoId: 'NC-2026-074', fecha: '2026-04-27', productoId: 'prod-arb-003', productoNombre: 'Leche entera UHT 1L', lote: 'UHT-0427-B', tipo: 'RECLAMO_CLIENTE' as const, cantidad: 320, costoEstimado: 960_000, estado: 'ABIERTO' as const },
-        { eventoId: 'NC-2026-069', fecha: '2026-04-24', productoId: 'prod-arb-002', productoNombre: 'Queso campesino 500 g', lote: 'QC-0424-C', tipo: 'SCRAP' as const, cantidad: 88, costoEstimado: 1_340_000, estado: 'CERRADO' as const },
-      ].filter((item) => !normalized.productoId || item.productoId === normalized.productoId),
+        { eventoId: 'NC-2026-078', fecha: '2026-04-29', productoId: 'prod-arb-001', productoNombre: 'Yogurt bebible fresa 200 ml', lineaId: 'linea-bebibles-2', lineaNombre: 'Linea Yogurt', clienteId: null, clienteNombre: null, lote: 'YF-0429-A', tipo: 'RETRABAJO' as const, cantidad: 1_240, costoEstimado: 1_860_000, causa: 'Operador / ajuste de proceso', estado: 'EN_ANALISIS' as const },
+        { eventoId: 'NC-2026-074', fecha: '2026-04-27', productoId: 'prod-arb-003', productoNombre: 'Leche entera UHT 1L', lineaId: 'linea-uht-1', lineaNombre: 'Linea UHT', clienteId: 'cli-002', clienteNombre: 'Supermercados La Colina', lote: 'UHT-0427-B', tipo: 'RECLAMO_CLIENTE' as const, cantidad: 320, costoEstimado: 960_000, causa: 'Transporte / cadena de frio', estado: 'ABIERTO' as const },
+        { eventoId: 'NC-2026-069', fecha: '2026-04-24', productoId: 'prod-arb-002', productoNombre: 'Queso campesino 500 g', lineaId: 'linea-quesos-1', lineaNombre: 'Linea Quesos', clienteId: null, clienteNombre: null, lote: 'QC-0424-C', tipo: 'SCRAP' as const, cantidad: 88, costoEstimado: 1_340_000, causa: 'Materia prima fuera de especificacion', estado: 'CERRADO' as const },
+        { eventoId: 'NC-2026-066', fecha: '2026-04-22', productoId: 'prod-arb-005', productoNombre: 'Avena UHT 1L', lineaId: 'linea-uht-1', lineaNombre: 'Linea UHT', clienteId: 'cli-001', clienteNombre: 'Distribuidora Santa Clara', lote: 'AV-0422-A', tipo: 'DEVOLUCION' as const, cantidad: 210, costoEstimado: 720_000, causa: 'Empaque secundario deteriorado', estado: 'CERRADO' as const },
+        { eventoId: 'NC-2026-061', fecha: '2026-04-18', productoId: 'prod-arb-004', productoNombre: 'Kumis tradicional 150 g', lineaId: 'linea-bebibles-2', lineaNombre: 'Linea Yogurt', clienteId: null, clienteNombre: null, lote: 'KU-0418-C', tipo: 'RECHAZO_LOTE' as const, cantidad: 1_850, costoEstimado: 2_420_000, causa: 'Maquina / sellado fuera de especificacion', estado: 'CERRADO' as const },
+      ].filter(
+        (item) =>
+          (!normalized.productoId || item.productoId === normalized.productoId) &&
+          (!normalized.lineaId || item.lineaId === normalized.lineaId) &&
+          (!normalized.clienteId || item.clienteId === normalized.clienteId) &&
+          (!normalized.tipoEvento || item.tipo === normalized.tipoEvento),
+      ),
       tendenciaMensual: [
         { fecha: '2026-01', valor: 22, reclamos: 11, scrapKg: 390, costoMalaCalidad: 15_200_000 },
         { fecha: '2026-02', valor: 25, reclamos: 13, scrapKg: 410, costoMalaCalidad: 16_800_000 },

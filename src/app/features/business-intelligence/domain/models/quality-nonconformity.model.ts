@@ -5,6 +5,7 @@ export interface QualityNonconformityFilters extends BiBaseDateFilters {
   sedeId?: string | null;
   lineaId?: string | null;
   productoId?: string | null;
+  clienteId?: string | null;
   tipoEvento?: string | null;
 }
 
@@ -21,10 +22,15 @@ export interface QualityEventSummary {
   fecha: string;
   productoId: string;
   productoNombre: string;
+  lineaId?: string | null;
+  lineaNombre?: string | null;
+  clienteId?: string | null;
+  clienteNombre?: string | null;
   lote: string;
-  tipo: 'RECHAZO_LOTE' | 'RECLAMO_CLIENTE' | 'SCRAP' | 'RETRABAJO';
+  tipo: 'RECHAZO_LOTE' | 'RECLAMO_CLIENTE' | 'SCRAP' | 'RETRABAJO' | 'DEVOLUCION';
   cantidad: number;
   costoEstimado: number;
+  causa?: string | null;
   estado: 'ABIERTO' | 'EN_ANALISIS' | 'CERRADO';
 }
 
