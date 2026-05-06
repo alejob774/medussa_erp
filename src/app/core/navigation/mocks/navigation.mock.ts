@@ -285,6 +285,14 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
             companyIds: ['medussa-holding', 'medussa-industrial'],
           },
           {
+            id: 'bi-inventario-estrategico',
+            label: 'Inventario Estrategico',
+            route: '/business-intelligence/inventario-estrategico',
+            icon: 'inventory_2',
+            requiredPermissions: ['bi.supply.inventory.view'],
+            companyIds: ['medussa-holding', 'medussa-industrial'],
+          },
+          {
             id: 'bi-demanda-vs-forecast',
             label: 'Demanda vs Forecast',
             route: '/business-intelligence/demanda-vs-forecast',

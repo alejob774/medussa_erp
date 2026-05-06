@@ -444,6 +444,17 @@ export const routes: Routes = [
             },
           },
           {
+            path: 'inventario-estrategico',
+            loadComponent: () =>
+              import(
+                './features/business-intelligence/presentation/pages/strategic-inventory-page/strategic-inventory-page.component'
+              ).then((module) => module.StrategicInventoryPageComponent),
+            canActivate: [permissionGuard],
+            data: {
+              permission: 'bi.supply.inventory.view',
+            },
+          },
+          {
             path: 'demanda-vs-forecast',
             loadComponent: () =>
               import(

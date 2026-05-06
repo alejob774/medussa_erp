@@ -461,10 +461,16 @@ export class BusinessIntelligenceMockRepository implements BusinessIntelligenceR
   ): Observable<StrategicInventoryResponse> {
     const normalized = this.withCompany(companyId, filters);
     const topSkuCriticos = [
-      { productoId: 'prod-arb-001', sku: 'ARB-YOG-200-FR', productoNombre: 'Yogurt bebible fresa 200 ml', bodegaId: 'bg-prod-terminado', bodegaNombre: 'Producto terminado', stockActual: 8_400, stockMinimo: 12_000, coberturaDias: 1.8, riesgo: 'QUIEBRE' as const, valorInventario: 18_480_000 },
-      { productoId: 'prod-arb-005', sku: 'ARB-AVN-1L', productoNombre: 'Avena UHT 1L', bodegaId: 'bg-prod-terminado', bodegaNombre: 'Producto terminado', stockActual: 31_200, stockMinimo: 14_000, coberturaDias: 24.6, riesgo: 'SOBREINVENTARIO' as const, valorInventario: 93_600_000 },
-      { productoId: 'mat-empaque-200', sku: 'EMP-BOT-200', productoNombre: 'Botella PET 200 ml', bodegaId: 'bg-empaques', bodegaNombre: 'Empaques', stockActual: 420_000, stockMinimo: 180_000, coberturaDias: 52.1, riesgo: 'LENTO_MOVIMIENTO' as const, valorInventario: 58_800_000 },
-    ].filter((item) => !normalized.bodegaId || item.bodegaId === normalized.bodegaId);
+      { productoId: 'prod-arb-001', sku: 'ARB-YOG-200-FR', productoNombre: 'Yogurt bebible fresa 200 ml', categoriaId: 'cat-lacteos-bebibles', categoriaNombre: 'Lacteos bebibles', proveedorId: 'sup-leche-sabana', proveedorNombre: 'Cooperativa Lechera Sabana', bodegaId: 'bg-prod-terminado', bodegaNombre: 'Producto terminado', stockActual: 8_400, stockMinimo: 12_000, stockMaximo: 36_000, coberturaDias: 1.8, riesgo: 'QUIEBRE' as const, valorInventario: 18_480_000 },
+      { productoId: 'prod-arb-005', sku: 'ARB-AVN-1L', productoNombre: 'Avena UHT 1L', categoriaId: 'cat-uht', categoriaNombre: 'UHT', proveedorId: 'sup-cultivos-pro', proveedorNombre: 'Cultivos Probioticos SAS', bodegaId: 'bg-prod-terminado', bodegaNombre: 'Producto terminado', stockActual: 31_200, stockMinimo: 14_000, stockMaximo: 24_000, coberturaDias: 24.6, riesgo: 'SOBREINVENTARIO' as const, valorInventario: 93_600_000 },
+      { productoId: 'mat-empaque-200', sku: 'EMP-BOT-200', productoNombre: 'Botella PET 200 ml', categoriaId: 'cat-empaques', categoriaNombre: 'Empaques', proveedorId: 'sup-empaques-andina', proveedorNombre: 'Empaques Andina', bodegaId: 'bg-empaques', bodegaNombre: 'Empaques', stockActual: 420_000, stockMinimo: 180_000, stockMaximo: 320_000, coberturaDias: 52.1, riesgo: 'LENTO_MOVIMIENTO' as const, valorInventario: 58_800_000 },
+      { productoId: 'prod-arb-006', sku: 'ARB-CUA-450', productoNombre: 'Cuajada fresca 450 g', categoriaId: 'cat-quesos', categoriaNombre: 'Quesos frescos', proveedorId: 'sup-leche-sabana', proveedorNombre: 'Cooperativa Lechera Sabana', bodegaId: 'bg-cuarentena', bodegaNombre: 'Cuarentena', stockActual: 4_800, stockMinimo: 3_000, stockMaximo: 9_000, coberturaDias: 6.4, riesgo: 'VENCIMIENTO' as const, valorInventario: 13_920_000 },
+    ].filter(
+      (item) =>
+        (!normalized.bodegaId || item.bodegaId === normalized.bodegaId) &&
+        (!normalized.categoriaId || item.categoriaId === normalized.categoriaId) &&
+        (!normalized.proveedorId || item.proveedorId === normalized.proveedorId),
+    );
 
     return of<StrategicInventoryResponse>({
       filters: normalized,
@@ -477,15 +483,16 @@ export class BusinessIntelligenceMockRepository implements BusinessIntelligenceR
       coberturaDias: 18.7,
       topSkuCriticos,
       agingInventario: [
-        { rangoDias: '0-30', unidades: 742_000, valorInventario: 612_000_000, participacionPct: 51.7 },
-        { rangoDias: '31-60', unidades: 318_500, valorInventario: 274_000_000, participacionPct: 23.1 },
-        { rangoDias: '61-90', unidades: 132_000, valorInventario: 111_600_000, participacionPct: 9.4 },
-        { rangoDias: '>90', unidades: 92_000, valorInventario: 186_400_000, participacionPct: 15.8 },
+        { rangoDias: '0-30', productoId: 'prod-arb-003', sku: 'ARB-UHT-1L', productoNombre: 'Leche entera UHT 1L', bodegaId: 'bg-prod-terminado', bodegaNombre: 'Producto terminado', diasSinMovimiento: 18, unidades: 742_000, valorInventario: 612_000_000, participacionPct: 51.7, riesgo: null },
+        { rangoDias: '31-60', productoId: 'mat-leche-cruda', sku: 'MP-LEC-CRUDA', productoNombre: 'Leche cruda refrigerada', bodegaId: 'bg-mp-lacteos', bodegaNombre: 'Materias primas lacteas', diasSinMovimiento: 42, unidades: 318_500, valorInventario: 274_000_000, participacionPct: 23.1, riesgo: 'CAPITAL_INMOVILIZADO' as const },
+        { rangoDias: '61-90', productoId: 'mat-empaque-200', sku: 'EMP-BOT-200', productoNombre: 'Botella PET 200 ml', bodegaId: 'bg-empaques', bodegaNombre: 'Empaques', diasSinMovimiento: 72, unidades: 132_000, valorInventario: 111_600_000, participacionPct: 9.4, riesgo: 'LENTO_MOVIMIENTO' as const },
+        { rangoDias: '>90', productoId: 'prod-arb-005', sku: 'ARB-AVN-1L', productoNombre: 'Avena UHT 1L', bodegaId: 'bg-prod-terminado', bodegaNombre: 'Producto terminado', diasSinMovimiento: 96, unidades: 92_000, valorInventario: 186_400_000, participacionPct: 15.8, riesgo: 'CAPITAL_INMOVILIZADO' as const },
       ],
       inventarioPorBodega: [
-        { bodegaId: 'bg-prod-terminado', bodegaNombre: 'Producto terminado', stockActual: 384_500, valorInventario: 548_000_000, coberturaDias: 12.4, estado: 'AMARILLO' as const },
-        { bodegaId: 'bg-mp-lacteos', bodegaNombre: 'Materias primas lacteas', stockActual: 210_000, valorInventario: 326_000_000, coberturaDias: 8.9, estado: 'VERDE' as const },
-        { bodegaId: 'bg-empaques', bodegaNombre: 'Empaques', stockActual: 690_000, valorInventario: 310_000_000, coberturaDias: 34.2, estado: 'AMARILLO' as const },
+        { bodegaId: 'bg-prod-terminado', bodegaNombre: 'Producto terminado', stockActual: 384_500, valorInventario: 548_000_000, coberturaDias: 12.4, skuQuiebre: 3, skuSobrestock: 5, ocupacionPct: 87.4, observacion: 'Alto valor inmovilizado en UHT y riesgo de quiebre en yogurt.', estado: 'AMARILLO' as const },
+        { bodegaId: 'bg-mp-lacteos', bodegaNombre: 'Materias primas lacteas', stockActual: 210_000, valorInventario: 326_000_000, coberturaDias: 8.9, skuQuiebre: 1, skuSobrestock: 2, ocupacionPct: 71.2, observacion: 'Cobertura sana, revisar leche cruda por vida util corta.', estado: 'VERDE' as const },
+        { bodegaId: 'bg-empaques', bodegaNombre: 'Empaques', stockActual: 690_000, valorInventario: 310_000_000, coberturaDias: 34.2, skuQuiebre: 0, skuSobrestock: 8, ocupacionPct: 92.6, observacion: 'Sobrestock de botella PET y material secundario.', estado: 'AMARILLO' as const },
+        { bodegaId: 'bg-cuarentena', bodegaNombre: 'Cuarentena', stockActual: 18_000, valorInventario: 46_000_000, coberturaDias: 5.1, skuQuiebre: 0, skuSobrestock: 1, ocupacionPct: 64.8, observacion: 'Liberar o disponer lotes con riesgo de vencimiento.', estado: 'ROJO' as const },
       ].filter((item) => !normalized.bodegaId || item.bodegaId === normalized.bodegaId),
       grafanaEmbedConfig: this.embed('strategic-inventory', normalized),
     }).pipe(delay(180));
