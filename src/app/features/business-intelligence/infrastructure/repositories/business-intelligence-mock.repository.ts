@@ -386,6 +386,7 @@ export class BusinessIntelligenceMockRepository implements BusinessIntelligenceR
       { lineaId: 'linea-uht-1', lineaNombre: 'Linea UHT 1L', oee: 84.6, disponibilidad: 91.2, rendimiento: 94.1, calidad: 98.5, estado: 'VERDE' as const },
       { lineaId: 'linea-bebibles-2', lineaNombre: 'Linea lacteos bebibles', oee: 72.8, disponibilidad: 83.7, rendimiento: 88.6, calidad: 98.1, estado: 'AMARILLO' as const },
       { lineaId: 'linea-quesos-1', lineaNombre: 'Linea quesos frescos', oee: 78.9, disponibilidad: 87.5, rendimiento: 91.2, calidad: 98.8, estado: 'VERDE' as const },
+      { lineaId: 'linea-empaque-1', lineaNombre: 'Linea empaque multipack', oee: 69.7, disponibilidad: 80.4, rendimiento: 88.1, calidad: 98.5, estado: 'AMARILLO' as const },
     ].filter((item) => !normalized.lineaId || item.lineaId === normalized.lineaId);
 
     return of<OeePlantResponse>({
@@ -396,9 +397,9 @@ export class BusinessIntelligenceMockRepository implements BusinessIntelligenceR
       calidad: 98.4,
       oeePorLinea,
       oeePorTurno: [
-        { turnoId: 'turno-a', turnoNombre: 'Turno A', oee: 81.2, disponibilidad: 89.1, rendimiento: 92.6, calidad: 98.5 },
-        { turnoId: 'turno-b', turnoNombre: 'Turno B', oee: 77.5, disponibilidad: 86.3, rendimiento: 90.4, calidad: 98.2 },
-        { turnoId: 'turno-c', turnoNombre: 'Turno C', oee: 79.6, disponibilidad: 87.2, rendimiento: 91.1, calidad: 99.0 },
+        { turnoId: 'MANANA', turnoNombre: 'MANANA', oee: 81.2, disponibilidad: 89.1, rendimiento: 92.6, calidad: 98.5 },
+        { turnoId: 'TARDE', turnoNombre: 'TARDE', oee: 77.5, disponibilidad: 86.3, rendimiento: 90.4, calidad: 98.2 },
+        { turnoId: 'NOCHE', turnoNombre: 'NOCHE', oee: 79.6, disponibilidad: 87.2, rendimiento: 91.1, calidad: 99.0 },
       ].filter((item) => !normalized.turnoId || item.turnoId === normalized.turnoId),
       tendenciaHistorica: [
         { fecha: '2026-01', valor: 75.8, disponibilidad: 84.6, rendimiento: 90.8, calidad: 98.7 },

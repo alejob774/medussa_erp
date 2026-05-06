@@ -269,6 +269,14 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
             companyIds: ['medussa-holding', 'medussa-industrial'],
           },
           {
+            id: 'bi-oee-consolidado-planta',
+            label: 'OEE Consolidado Planta',
+            route: '/business-intelligence/oee-consolidado-planta',
+            icon: 'speed',
+            requiredPermissions: ['bi.operations.oee.view'],
+            companyIds: ['medussa-holding', 'medussa-industrial'],
+          },
+          {
             id: 'bi-demanda-vs-forecast',
             label: 'Demanda vs Forecast',
             route: '/business-intelligence/demanda-vs-forecast',

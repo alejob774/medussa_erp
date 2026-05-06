@@ -422,6 +422,17 @@ export const routes: Routes = [
             },
           },
           {
+            path: 'oee-consolidado-planta',
+            loadComponent: () =>
+              import(
+                './features/business-intelligence/presentation/pages/oee-plant-page/oee-plant-page.component'
+              ).then((module) => module.OeePlantPageComponent),
+            canActivate: [permissionGuard],
+            data: {
+              permission: 'bi.operations.oee.view',
+            },
+          },
+          {
             path: 'demanda-vs-forecast',
             loadComponent: () =>
               import(
