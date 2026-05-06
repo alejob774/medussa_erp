@@ -455,6 +455,17 @@ export const routes: Routes = [
             },
           },
           {
+            path: 'compras-estrategicas',
+            loadComponent: () =>
+              import(
+                './features/business-intelligence/presentation/pages/strategic-purchasing-page/strategic-purchasing-page.component'
+              ).then((module) => module.StrategicPurchasingPageComponent),
+            canActivate: [permissionGuard],
+            data: {
+              permission: 'bi.supply.purchases.view',
+            },
+          },
+          {
             path: 'demanda-vs-forecast',
             loadComponent: () =>
               import(

@@ -504,10 +504,11 @@ export class BusinessIntelligenceMockRepository implements BusinessIntelligenceR
   ): Observable<StrategicPurchasingResponse> {
     const normalized = this.withCompany(companyId, filters);
     const rankingProveedores = [
-      { proveedorId: 'sup-leche-sabana', proveedorNombre: 'Cooperativa Lechera Sabana', categoriaPrincipal: 'Leche cruda', compras: 286_000_000, ahorroPct: 3.8, cumplimientoPct: 96.2, leadTimeDias: 1.2, score: 94 },
-      { proveedorId: 'sup-empaques-andina', proveedorNombre: 'Empaques Andina', categoriaPrincipal: 'Empaques', compras: 174_500_000, ahorroPct: -4.7, cumplimientoPct: 89.4, leadTimeDias: 6.8, score: 77 },
-      { proveedorId: 'sup-cultivos-pro', proveedorNombre: 'Cultivos Probioticos SAS', categoriaPrincipal: 'Cultivos', compras: 91_300_000, ahorroPct: 2.1, cumplimientoPct: 98.1, leadTimeDias: 4.5, score: 91 },
-    ].filter((item) => !normalized.proveedorId || item.proveedorId === normalized.proveedorId);
+      { proveedorId: 'sup-leche-sabana', proveedorNombre: 'Cooperativa Lechera Sabana', categoriaId: 'cat-leche-cruda', categoriaPrincipal: 'Leche cruda', compras: 286_000_000, precioPromedio: 1_938, comprasUrgentes: 4, ahorroPct: 3.8, cumplimientoPct: 96.2, leadTimeDias: 1.2, score: 94 },
+      { proveedorId: 'sup-empaques-andina', proveedorNombre: 'Empaques Andina', categoriaId: 'cat-empaques', categoriaPrincipal: 'Empaques', compras: 174_500_000, precioPromedio: 142, comprasUrgentes: 9, ahorroPct: -4.7, cumplimientoPct: 89.4, leadTimeDias: 6.8, score: 77 },
+      { proveedorId: 'sup-cultivos-pro', proveedorNombre: 'Cultivos Probioticos SAS', categoriaId: 'cat-cultivos', categoriaPrincipal: 'Cultivos', compras: 91_300_000, precioPromedio: 84_500, comprasUrgentes: 2, ahorroPct: 2.1, cumplimientoPct: 98.1, leadTimeDias: 4.5, score: 91 },
+      { proveedorId: 'sup-azucar-centro', proveedorNombre: 'Ingenio Centro', categoriaId: 'cat-azucar', categoriaPrincipal: 'Endulzantes', compras: 68_400_000, precioPromedio: 4_180, comprasUrgentes: 3, ahorroPct: -1.6, cumplimientoPct: 92.0, leadTimeDias: 5.2, score: 82 },
+    ].filter((item) => (!normalized.proveedorId || item.proveedorId === normalized.proveedorId) && (!normalized.categoriaId || item.categoriaId === normalized.categoriaId));
 
     return of<StrategicPurchasingResponse>({
       filters: normalized,
@@ -518,15 +519,29 @@ export class BusinessIntelligenceMockRepository implements BusinessIntelligenceR
       variacionPreciosPct: 5.6,
       rankingProveedores: rankingProveedores.sort((left, right) => right.score - left.score),
       tendenciaPrecios: [
-        { fecha: '2026-01', valor: 1_740, insumoId: 'leche-cruda', insumoNombre: 'Leche cruda litro', proveedorId: 'sup-leche-sabana', variacionPct: 1.2 },
-        { fecha: '2026-02', valor: 1_780, insumoId: 'leche-cruda', insumoNombre: 'Leche cruda litro', proveedorId: 'sup-leche-sabana', variacionPct: 2.3 },
-        { fecha: '2026-03', valor: 1_835, insumoId: 'leche-cruda', insumoNombre: 'Leche cruda litro', proveedorId: 'sup-leche-sabana', variacionPct: 3.1 },
-        { fecha: '2026-04', valor: 1_938, insumoId: 'leche-cruda', insumoNombre: 'Leche cruda litro', proveedorId: 'sup-leche-sabana', variacionPct: 5.6 },
-      ],
+        { fecha: '2026-01', valor: 1_740, insumoId: 'leche-cruda', insumoNombre: 'Leche cruda litro', categoriaId: 'cat-leche-cruda', categoriaNombre: 'Leche cruda', proveedorId: 'sup-leche-sabana', precioAnterior: 1_720, precioActual: 1_740, impactoEstimado: 2_800_000, variacionPct: 1.2, tendencia: 'SUBE' as const },
+        { fecha: '2026-02', valor: 1_780, insumoId: 'leche-cruda', insumoNombre: 'Leche cruda litro', categoriaId: 'cat-leche-cruda', categoriaNombre: 'Leche cruda', proveedorId: 'sup-leche-sabana', precioAnterior: 1_740, precioActual: 1_780, impactoEstimado: 5_600_000, variacionPct: 2.3, tendencia: 'SUBE' as const },
+        { fecha: '2026-03', valor: 1_835, insumoId: 'leche-cruda', insumoNombre: 'Leche cruda litro', categoriaId: 'cat-leche-cruda', categoriaNombre: 'Leche cruda', proveedorId: 'sup-leche-sabana', precioAnterior: 1_780, precioActual: 1_835, impactoEstimado: 7_700_000, variacionPct: 3.1, tendencia: 'SUBE' as const },
+        { fecha: '2026-04', valor: 1_938, insumoId: 'leche-cruda', insumoNombre: 'Leche cruda litro', categoriaId: 'cat-leche-cruda', categoriaNombre: 'Leche cruda', proveedorId: 'sup-leche-sabana', precioAnterior: 1_835, precioActual: 1_938, impactoEstimado: 14_420_000, variacionPct: 5.6, tendencia: 'SUBE' as const },
+        { fecha: '2026-04', valor: 142, insumoId: 'botella-pet-200', insumoNombre: 'Botella PET 200 ml', categoriaId: 'cat-empaques', categoriaNombre: 'Empaques', proveedorId: 'sup-empaques-andina', precioAnterior: 132, precioActual: 142, impactoEstimado: 8_900_000, variacionPct: 7.6, tendencia: 'SUBE' as const },
+        { fecha: '2026-04', valor: 84_500, insumoId: 'cultivo-yogurt', insumoNombre: 'Cultivo yogurt termofilo', categoriaId: 'cat-cultivos', categoriaNombre: 'Cultivos', proveedorId: 'sup-cultivos-pro', precioAnterior: 86_200, precioActual: 84_500, impactoEstimado: -1_020_000, variacionPct: -2.0, tendencia: 'BAJA' as const },
+      ].filter((item) => (!normalized.proveedorId || item.proveedorId === normalized.proveedorId) && (!normalized.categoriaId || item.categoriaId === normalized.categoriaId)),
       cumplimientoProveedores: [
-        { proveedorId: 'sup-leche-sabana', proveedorNombre: 'Cooperativa Lechera Sabana', entregasATiempoPct: 96.2, calidadRecepcionPct: 98.4, ordenesCompletasPct: 97.1, cumplimientoGlobalPct: 97.2 },
-        { proveedorId: 'sup-empaques-andina', proveedorNombre: 'Empaques Andina', entregasATiempoPct: 89.4, calidadRecepcionPct: 93.8, ordenesCompletasPct: 91.5, cumplimientoGlobalPct: 91.6 },
-        { proveedorId: 'sup-cultivos-pro', proveedorNombre: 'Cultivos Probioticos SAS', entregasATiempoPct: 98.1, calidadRecepcionPct: 99.2, ordenesCompletasPct: 96.8, cumplimientoGlobalPct: 98.0 },
+        { proveedorId: 'sup-leche-sabana', proveedorNombre: 'Cooperativa Lechera Sabana', entregasATiempoPct: 96.2, leadTimeDias: 1.2, calidadRecepcionPct: 98.4, ordenesCompletasPct: 97.1, cumplimientoGlobalPct: 97.2, observacion: 'Proveedor estrategico con lead time corto y calidad estable.' },
+        { proveedorId: 'sup-empaques-andina', proveedorNombre: 'Empaques Andina', entregasATiempoPct: 89.4, leadTimeDias: 6.8, calidadRecepcionPct: 93.8, ordenesCompletasPct: 91.5, cumplimientoGlobalPct: 91.6, observacion: 'Riesgo por atrasos y aumento de precio en PET.' },
+        { proveedorId: 'sup-cultivos-pro', proveedorNombre: 'Cultivos Probioticos SAS', entregasATiempoPct: 98.1, leadTimeDias: 4.5, calidadRecepcionPct: 99.2, ordenesCompletasPct: 96.8, cumplimientoGlobalPct: 98.0, observacion: 'Cumplimiento alto, oportunidad de contrato marco.' },
+        { proveedorId: 'sup-azucar-centro', proveedorNombre: 'Ingenio Centro', entregasATiempoPct: 92.0, leadTimeDias: 5.2, calidadRecepcionPct: 96.4, ordenesCompletasPct: 94.1, cumplimientoGlobalPct: 94.2, observacion: 'Cumplimiento aceptable, revisar presupuesto por volatilidad.' },
+      ].filter((item) => !normalized.proveedorId || item.proveedorId === normalized.proveedorId),
+      comprasUrgentesDetalle: [
+        { id: 'urg-pet-001', causa: 'QUIEBRE_STOCK' as const, proveedorId: 'sup-empaques-andina', proveedorNombre: 'Empaques Andina', categoriaId: 'cat-empaques', categoriaNombre: 'Empaques', valor: 18_600_000, recomendacion: 'Ajustar punto de reorden de PET y ampliar ventana de planeacion.' },
+        { id: 'urg-leche-002', causa: 'VENTA_INESPERADA' as const, proveedorId: 'sup-leche-sabana', proveedorNombre: 'Cooperativa Lechera Sabana', categoriaId: 'cat-leche-cruda', categoriaNombre: 'Leche cruda', valor: 24_200_000, recomendacion: 'Conectar forecast comercial con compras semanales.' },
+        { id: 'urg-empaque-003', causa: 'PROVEEDOR_INCUMPLIDO' as const, proveedorId: 'sup-empaques-andina', proveedorNombre: 'Empaques Andina', categoriaId: 'cat-empaques', categoriaNombre: 'Empaques', valor: 11_800_000, recomendacion: 'Homologar segundo proveedor para empaque secundario.' },
+      ].filter((item) => (!normalized.proveedorId || item.proveedorId === normalized.proveedorId) && (!normalized.categoriaId || item.categoriaId === normalized.categoriaId)),
+      oportunidades: [
+        { id: 'opp-pet-renegociar', tipo: 'RENEGOCIAR_PRECIO' as const, proveedorId: 'sup-empaques-andina', proveedorNombre: 'Empaques Andina', categoriaNombre: 'Empaques', impactoEstimado: 12_400_000, recomendacion: 'Renegociar PET 200 ml por volumen trimestral y penalidad por atraso.' },
+        { id: 'opp-leche-dependencia', tipo: 'AMPLIAR_LEAD_TIME' as const, proveedorId: 'sup-leche-sabana', proveedorNombre: 'Cooperativa Lechera Sabana', categoriaNombre: 'Leche cruda', impactoEstimado: 8_700_000, recomendacion: 'Bloquear cupo semanal con horizonte de 14 dias para reducir urgencias.' },
+        { id: 'opp-cultivos-contrato', tipo: 'CONSOLIDAR_PROVEEDOR' as const, proveedorId: 'sup-cultivos-pro', proveedorNombre: 'Cultivos Probioticos SAS', categoriaNombre: 'Cultivos', impactoEstimado: 5_200_000, recomendacion: 'Consolidar contrato marco y escala de descuento por volumen.' },
+        { id: 'opp-presupuesto-azucar', tipo: 'REVISAR_PRESUPUESTO' as const, proveedorId: 'sup-azucar-centro', proveedorNombre: 'Ingenio Centro', categoriaNombre: 'Endulzantes', impactoEstimado: 3_900_000, recomendacion: 'Actualizar presupuesto por volatilidad de endulzantes.' },
       ].filter((item) => !normalized.proveedorId || item.proveedorId === normalized.proveedorId),
       grafanaEmbedConfig: this.embed('strategic-purchasing', normalized),
     }).pipe(delay(180));
