@@ -550,17 +550,25 @@ export class BusinessIntelligenceMockRepository implements BusinessIntelligenceR
   getLogisticsKpis(companyId: string, filters: LogisticsKpiFilters): Observable<LogisticsKpiResponse> {
     const normalized = this.withCompany(companyId, filters);
     const rankingRutas = [
-      { rutaId: 'ruta-bog-norte', rutaNombre: 'Bogota Norte TAT', zonaId: 'bogota-norte', zonaNombre: 'Bogota Norte', pedidos: 146, costoTransporte: 18_250_000, costoPorPedido: 125_000, kmRecorridos: 1_284, puntualidadEntregaPct: 94.2 },
-      { rutaId: 'ruta-sabana', rutaNombre: 'Sabana mayoristas', zonaId: 'sabana', zonaNombre: 'Sabana', pedidos: 109, costoTransporte: 16_350_000, costoPorPedido: 150_000, kmRecorridos: 1_476, puntualidadEntregaPct: 88.7 },
-      { rutaId: 'ruta-centro', rutaNombre: 'Centro tradicional', zonaId: 'centro', zonaNombre: 'Centro', pedidos: 98, costoTransporte: 13_720_000, costoPorPedido: 140_000, kmRecorridos: 1_036, puntualidadEntregaPct: 90.5 },
+      { rutaId: 'ruta-bog-norte', rutaNombre: 'Bogota Norte TAT', zonaId: 'bogota-norte', zonaNombre: 'Bogota Norte', pedidos: 146, entregas: 142, costoTransporte: 18_250_000, costoPorPedido: 125_000, kmRecorridos: 1_284, puntualidadEntregaPct: 94.2, observacion: 'Ruta estable, oportunidad de consolidar entregas TAT por franja.' },
+      { rutaId: 'ruta-sabana', rutaNombre: 'Sabana mayoristas', zonaId: 'sabana', zonaNombre: 'Sabana', pedidos: 109, entregas: 103, costoTransporte: 16_350_000, costoPorPedido: 150_000, kmRecorridos: 1_476, puntualidadEntregaPct: 88.7, observacion: 'Ruta costosa por distancia y ventanas de recibo dispersas.' },
+      { rutaId: 'ruta-centro', rutaNombre: 'Centro tradicional', zonaId: 'centro', zonaNombre: 'Centro', pedidos: 98, entregas: 95, costoTransporte: 13_720_000, costoPorPedido: 140_000, kmRecorridos: 1_036, puntualidadEntregaPct: 90.5, observacion: 'Afectada por trafico urbano y reentregas parciales.' },
+      { rutaId: 'ruta-sur-institucional', rutaNombre: 'Sur institucional', zonaId: 'sur', zonaNombre: 'Sur', pedidos: 74, entregas: 68, costoTransporte: 12_580_000, costoPorPedido: 170_000, kmRecorridos: 1_120, puntualidadEntregaPct: 86.4, observacion: 'Revisar frecuencia: costo por pedido alto y baja puntualidad.' },
     ].filter((item) => (!normalized.zonaId || item.zonaId === normalized.zonaId) && (!normalized.rutaId || item.rutaId === normalized.rutaId));
     const rankingConductores = [
-      { conductorId: 'drv-001', conductorNombre: 'Hector Molina', entregas: 126, puntualidadEntregaPct: 95.1, kmRecorridos: 1_140, novedades: 2 },
-      { conductorId: 'drv-002', conductorNombre: 'Paula Rojas', entregas: 118, puntualidadEntregaPct: 92.4, kmRecorridos: 1_086, novedades: 3 },
-      { conductorId: 'drv-003', conductorNombre: 'Ivan Cardenas', entregas: 109, puntualidadEntregaPct: 87.8, kmRecorridos: 1_570, novedades: 6 },
+      { conductorId: 'drv-001', conductorNombre: 'Hector Molina', rutaPrincipalId: 'ruta-bog-norte', rutaPrincipalNombre: 'Bogota Norte TAT', entregas: 126, puntualidadEntregaPct: 95.1, kmRecorridos: 1_140, costoAsociado: 15_740_000, productividad: 11.1, novedades: 2, observacion: 'Mejor desempeno; candidato para rutas criticas.' },
+      { conductorId: 'drv-002', conductorNombre: 'Paula Rojas', rutaPrincipalId: 'ruta-centro', rutaPrincipalNombre: 'Centro tradicional', entregas: 118, puntualidadEntregaPct: 92.4, kmRecorridos: 1_086, costoAsociado: 14_200_000, productividad: 10.9, novedades: 3, observacion: 'Productividad alta con trafico urbano controlado.' },
+      { conductorId: 'drv-003', conductorNombre: 'Ivan Cardenas', rutaPrincipalId: 'ruta-sabana', rutaPrincipalNombre: 'Sabana mayoristas', entregas: 109, puntualidadEntregaPct: 87.8, kmRecorridos: 1_570, costoAsociado: 18_900_000, productividad: 6.9, novedades: 6, observacion: 'Requiere apoyo por distancia, ventanas y reentregas.' },
+      { conductorId: 'drv-004', conductorNombre: 'Marcela Gil', rutaPrincipalId: 'ruta-sur-institucional', rutaPrincipalNombre: 'Sur institucional', entregas: 55, puntualidadEntregaPct: 84.9, kmRecorridos: 720, costoAsociado: 8_060_000, productividad: 7.6, novedades: 5, observacion: 'Ruta subutilizada; revisar consolidacion con Centro.' },
     ].filter((item) => !normalized.conductorId || item.conductorId === normalized.conductorId);
     const costoTransporte = rankingRutas.reduce((sum, item) => sum + item.costoTransporte, 0);
     const pedidos = rankingRutas.reduce((sum, item) => sum + item.pedidos, 0);
+    const flota = [
+      { vehiculoId: 'veh-001', placa: 'ARB-241', tipoVehiculo: 'Furgon refrigerado', conductorId: 'drv-001', conductorNombre: 'Hector Molina', capacidadKg: 2_800, cargaUtilizadaKg: 2_475, utilizacionPct: 88.4, kmRecorridos: 1_240, estado: 'EN_RUTA' as const, accionSugerida: 'Mantener asignacion y usar como referencia de productividad.' },
+      { vehiculoId: 'veh-002', placa: 'ARB-318', tipoVehiculo: 'Camion NHR', conductorId: 'drv-002', conductorNombre: 'Paula Rojas', capacidadKg: 2_400, cargaUtilizadaKg: 1_960, utilizacionPct: 81.7, kmRecorridos: 1_086, estado: 'EN_RUTA' as const, accionSugerida: 'Optimizar secuencia de entregas urbanas.' },
+      { vehiculoId: 'veh-003', placa: 'ARB-156', tipoVehiculo: 'Turbo refrigerado', conductorId: 'drv-003', conductorNombre: 'Ivan Cardenas', capacidadKg: 3_200, cargaUtilizadaKg: 2_064, utilizacionPct: 64.5, kmRecorridos: 470, estado: 'MANTENIMIENTO' as const, accionSugerida: 'Revisar disponibilidad TPM y reasignar carga de Sabana.' },
+      { vehiculoId: 'veh-004', placa: 'ARB-412', tipoVehiculo: 'VAN refrigerada', conductorId: 'drv-004', conductorNombre: 'Marcela Gil', capacidadKg: 1_600, cargaUtilizadaKg: 820, utilizacionPct: 51.3, kmRecorridos: 390, estado: 'DISPONIBLE' as const, accionSugerida: 'Consolidar ruta Sur con Centro o reasignar a entregas express.' },
+    ].filter((item) => !normalized.vehiculoId || item.vehiculoId === normalized.vehiculoId);
 
     return of<LogisticsKpiResponse>({
       filters: normalized,
@@ -571,12 +579,16 @@ export class BusinessIntelligenceMockRepository implements BusinessIntelligenceR
       utilizacionFlota: 82.6,
       kmRecorridos: rankingRutas.reduce((sum, item) => sum + item.kmRecorridos, 0),
       puntualidadEntrega: rankingRutas.length ? Number((rankingRutas.reduce((sum, item) => sum + item.puntualidadEntregaPct, 0) / rankingRutas.length).toFixed(1)) : 0,
+      entregasTardias: 26,
+      reentregas: 11,
       rankingRutas: rankingRutas.sort((left, right) => right.puntualidadEntregaPct - left.puntualidadEntregaPct),
       rankingConductores: rankingConductores.sort((left, right) => right.puntualidadEntregaPct - left.puntualidadEntregaPct),
-      flota: [
-        { vehiculoId: 'veh-001', placa: 'ARB-241', tipoVehiculo: 'Furgon refrigerado', utilizacionPct: 88.4, kmRecorridos: 1_240, estado: 'EN_RUTA' as const },
-        { vehiculoId: 'veh-002', placa: 'ARB-318', tipoVehiculo: 'Camion NHR', utilizacionPct: 81.7, kmRecorridos: 1_086, estado: 'EN_RUTA' as const },
-        { vehiculoId: 'veh-003', placa: 'ARB-156', tipoVehiculo: 'Turbo refrigerado', utilizacionPct: 64.5, kmRecorridos: 470, estado: 'MANTENIMIENTO' as const },
+      flota,
+      tendenciaCostos: [
+        { fecha: '2026-01', costoTransporte: 52_100_000, costoPorPedido: 136_000, puntualidadEntregaPct: 89.2 },
+        { fecha: '2026-02', costoTransporte: 54_700_000, costoPorPedido: 139_000, puntualidadEntregaPct: 90.1 },
+        { fecha: '2026-03', costoTransporte: 57_400_000, costoPorPedido: 143_000, puntualidadEntregaPct: 91.0 },
+        { fecha: '2026-04', costoTransporte, costoPorPedido: pedidos ? Math.round(costoTransporte / pedidos) : 0, puntualidadEntregaPct: rankingRutas.length ? Number((rankingRutas.reduce((sum, item) => sum + item.puntualidadEntregaPct, 0) / rankingRutas.length).toFixed(1)) : 0 },
       ],
       grafanaEmbedConfig: this.embed('logistics-kpi', normalized),
     }).pipe(delay(180));

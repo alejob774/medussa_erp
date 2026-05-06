@@ -301,6 +301,14 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
             companyIds: ['medussa-holding', 'medussa-industrial'],
           },
           {
+            id: 'bi-kpi-logisticos',
+            label: 'KPI Logisticos',
+            route: '/business-intelligence/kpi-logisticos',
+            icon: 'local_shipping',
+            requiredPermissions: ['bi.supply.logistics.view'],
+            companyIds: ['medussa-holding', 'medussa-industrial'],
+          },
+          {
             id: 'bi-demanda-vs-forecast',
             label: 'Demanda vs Forecast',
             route: '/business-intelligence/demanda-vs-forecast',

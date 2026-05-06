@@ -466,6 +466,17 @@ export const routes: Routes = [
             },
           },
           {
+            path: 'kpi-logisticos',
+            loadComponent: () =>
+              import(
+                './features/business-intelligence/presentation/pages/logistics-kpi-page/logistics-kpi-page.component'
+              ).then((module) => module.LogisticsKpiPageComponent),
+            canActivate: [permissionGuard],
+            data: {
+              permission: 'bi.supply.logistics.view',
+            },
+          },
+          {
             path: 'demanda-vs-forecast',
             loadComponent: () =>
               import(
