@@ -165,6 +165,14 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
             companyIds: ALL_COMPANIES,
           },
           {
+            id: 'scm-inventario-central',
+            label: 'Inventario Central',
+            route: '/supply-chain-management/inventario-central',
+            icon: 'database',
+            requiredPermissions: ['inventory.core.view'],
+            companyIds: ALL_COMPANIES,
+          },
+          {
             id: 'scm-picking-packing',
             label: 'Picking y Packing',
             route: '/supply-chain-management/picking-packing',

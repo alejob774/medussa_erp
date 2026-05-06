@@ -1,8 +1,8 @@
 import { Observable } from 'rxjs';
 import { InventoryBalance } from '../models/inventory-balance.model';
-import { InventoryLotStatus } from '../models/inventory-lot.model';
+import { InventoryLot, InventoryLotStatus } from '../models/inventory-lot.model';
 import { InventoryMovement, InventoryMovementType } from '../models/inventory-movement.model';
-import { InventoryReservation } from '../models/inventory-reservation.model';
+import { InventoryReservation, InventoryReservationStatus } from '../models/inventory-reservation.model';
 
 export interface InventoryStockFilters {
   productoId?: string | null;
@@ -16,6 +16,14 @@ export interface InventoryMovementFilters extends InventoryStockFilters {
   tipoMovimiento?: InventoryMovementType | 'TODOS' | null;
   fechaDesde?: string | null;
   fechaHasta?: string | null;
+}
+
+export interface InventoryLotFilters extends InventoryStockFilters {
+  estado?: InventoryLotStatus | 'TODOS' | null;
+}
+
+export interface InventoryReservationFilters extends InventoryStockFilters {
+  estado?: InventoryReservationStatus | 'TODOS' | null;
 }
 
 export interface InventoryStockCommandPayload {
@@ -85,6 +93,16 @@ export abstract class InventoryCoreRepository {
     companyId: string,
     filters: InventoryMovementFilters,
   ): Observable<InventoryMovement[]>;
+
+  abstract getLots(
+    companyId: string,
+    filters: InventoryLotFilters,
+  ): Observable<InventoryLot[]>;
+
+  abstract getReservations(
+    companyId: string,
+    filters: InventoryReservationFilters,
+  ): Observable<InventoryReservation[]>;
 
   abstract adjustStock(
     companyId: string,

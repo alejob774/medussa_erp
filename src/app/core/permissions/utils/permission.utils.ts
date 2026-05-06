@@ -11,6 +11,7 @@ const LEGACY_TO_BACKEND_PERMISSION_ALIASES: Partial<
   'products.create': ['productos_create', 'inventory.view'],
   'products.edit': ['productos_edit', 'inventory.view'],
   'products.delete': ['productos_delete', 'inventory.view'],
+  'inventory.core.view': ['inventory_core_view', 'inventory.view', 'warehouse.view'],
   'vendors.view': ['vendedores_view', 'sales.view'],
   'vendors.create': ['vendedores_create', 'sales.view'],
   'vendors.edit': ['vendedores_edit', 'sales.view'],

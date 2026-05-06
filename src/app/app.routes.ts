@@ -75,6 +75,11 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'supply-chain/inventario-central',
+        pathMatch: 'full',
+        redirectTo: 'supply-chain-management/inventario-central',
+      },
+      {
         path: 'supply-chain-management',
         children: [
           {
@@ -211,6 +216,17 @@ export const routes: Routes = [
             canActivate: [permissionGuard],
             data: {
               permission: 'storage.layout.view',
+            },
+          },
+          {
+            path: 'inventario-central',
+            loadComponent: () =>
+              import(
+                './features/inventory-core/presentation/pages/inventory-central-page/inventory-central-page.component'
+              ).then((module) => module.InventoryCentralPageComponent),
+            canActivate: [permissionGuard],
+            data: {
+              permission: 'inventory.core.view',
             },
           },
           {

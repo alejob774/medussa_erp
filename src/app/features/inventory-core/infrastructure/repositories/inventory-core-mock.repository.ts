@@ -7,8 +7,10 @@ import { InventoryReservation } from '../../domain/models/inventory-reservation.
 import {
   InventoryCoreRepository,
   InventoryLotCommandPayload,
+  InventoryLotFilters,
   InventoryMovementFilters,
   InventoryReleaseReservationPayload,
+  InventoryReservationFilters,
   InventoryReservationPayload,
   InventoryStockCommandPayload,
   InventoryStockFilters,
@@ -19,6 +21,7 @@ import {
   updateStorageLayoutLotStock,
 } from '../../../storage-layout/infrastructure/data/storage-layout-store.utils';
 import {
+  projectStorageLayoutLotsToInventoryLots,
   projectStorageLayoutLotsToBalances,
   readInventoryCoreStore,
   recordInventoryCoreMovement,
@@ -45,12 +48,39 @@ export class InventoryCoreMockRepository implements InventoryCoreRepository {
     companyId: string,
     filters: InventoryMovementFilters,
   ): Observable<InventoryMovement[]> {
-    const movements = readInventoryCoreStore().movements
+    const storedMovements = readInventoryCoreStore().movements
       .filter((item) => item.empresaId === companyId)
+      .filter((item) => this.matchesMovementFilters(item, filters));
+    const movements = (storedMovements.length ? storedMovements : this.buildReadOnlyBaselineMovements(companyId))
       .filter((item) => this.matchesMovementFilters(item, filters))
       .sort((left, right) => Date.parse(right.fechaMovimiento) - Date.parse(left.fechaMovimiento));
 
     return of(movements).pipe(delay(120));
+  }
+
+  getLots(
+    companyId: string,
+    filters: InventoryLotFilters,
+  ): Observable<InventoryLot[]> {
+    const layoutStore = ensureStorageLayoutBaseline(companyId);
+    const balances = projectStorageLayoutLotsToBalances(companyId, layoutStore.lots);
+    const lots = projectStorageLayoutLotsToInventoryLots(companyId, layoutStore.lots)
+      .filter((item) => this.matchesLotFilters(item, filters, balances));
+
+    return of(lots).pipe(delay(120));
+  }
+
+  getReservations(
+    companyId: string,
+    filters: InventoryReservationFilters,
+  ): Observable<InventoryReservation[]> {
+    const storeReservations = readInventoryCoreStore().reservations
+      .filter((item) => item.empresaId === companyId);
+    const reservations = (storeReservations.length ? storeReservations : this.buildReadOnlyBaselineReservations(companyId))
+      .filter((item) => this.matchesReservationFilters(item, filters))
+      .sort((left, right) => Date.parse(right.fechaCrea) - Date.parse(left.fechaCrea));
+
+    return of(reservations).pipe(delay(120));
   }
 
   adjustStock(
@@ -605,5 +635,121 @@ export class InventoryCoreMockRepository implements InventoryCoreRepository {
       (!filters.fechaDesde || movement.fechaMovimiento.slice(0, 10) >= filters.fechaDesde) &&
       (!filters.fechaHasta || movement.fechaMovimiento.slice(0, 10) <= filters.fechaHasta)
     );
+  }
+
+  private matchesLotFilters(
+    lot: InventoryLot,
+    filters: InventoryLotFilters,
+    balances: InventoryBalance[],
+  ): boolean {
+    const relatedBalances = balances.filter((item) => item.loteId === lot.id);
+
+    return (
+      (!filters.productoId || lot.productoId === filters.productoId) &&
+      (!filters.sku || lot.sku === filters.sku) &&
+      (!filters.loteId || lot.id === filters.loteId || lot.numeroLote === filters.loteId) &&
+      (!filters.estado || filters.estado === 'TODOS' || lot.estado === filters.estado) &&
+      (!filters.bodegaId || relatedBalances.some((item) => item.bodegaId === filters.bodegaId)) &&
+      (!filters.ubicacionId || relatedBalances.some((item) => item.ubicacionId === filters.ubicacionId))
+    );
+  }
+
+  private matchesReservationFilters(
+    reservation: InventoryReservation,
+    filters: InventoryReservationFilters,
+  ): boolean {
+    return (
+      (!filters.productoId || reservation.productoId === filters.productoId) &&
+      (!filters.sku || reservation.sku === filters.sku) &&
+      (!filters.bodegaId || reservation.bodegaId === filters.bodegaId) &&
+      (!filters.loteId || reservation.loteId === filters.loteId || reservation.lote === filters.loteId) &&
+      (!filters.estado || filters.estado === 'TODOS' || reservation.estado === filters.estado)
+    );
+  }
+
+  private buildReadOnlyBaselineMovements(companyId: string): InventoryMovement[] {
+    const layoutStore = ensureStorageLayoutBaseline(companyId);
+    const balances = projectStorageLayoutLotsToBalances(companyId, layoutStore.lots).slice(0, 8);
+    const movementTypes: InventoryMovement['tipoMovimiento'][] = [
+      'INGRESO_PT',
+      'COMPRA_RECEPCION',
+      'TRANSFER_IN',
+      'RESERVA_STOCK',
+      'DESPACHO_VENTA',
+      'BLOQUEO_CALIDAD',
+      'LIBERACION_CALIDAD',
+      'AJUSTE_POS',
+    ];
+
+    return balances.map((balance, index) => {
+      const quantity = Math.max(1, Math.round(balance.cantidadDisponible * (index % 3 === 0 ? 0.12 : 0.08)));
+      const unitCost = this.resolveBaselineUnitCost(balance.sku);
+
+      return {
+        id: `mov-readonly-${companyId}-${index + 1}`,
+        empresaId: companyId,
+        fechaMovimiento: `2026-05-${String(Math.max(1, 5 - Math.floor(index / 2))).padStart(2, '0')}T${String(8 + index).padStart(2, '0')}:20:00-05:00`,
+        tipoMovimiento: movementTypes[index % movementTypes.length],
+        documentoOrigen: `DOC-INV-${String(2400 + index).padStart(4, '0')}`,
+        moduloOrigen: index % 2 === 0 ? 'INVENTORY_CORE' : 'LAYOUT_ALMACENAMIENTO',
+        productoId: balance.productoId,
+        sku: balance.sku,
+        productoNombre: balance.sku,
+        bodegaId: balance.bodegaId,
+        ubicacionId: balance.ubicacionId,
+        loteId: balance.loteId,
+        lote: balance.lote,
+        cantidad: quantity,
+        signo: index % 4 === 3 ? -1 : index % 4 === 2 ? 0 : 1,
+        costoUnitario: unitCost,
+        costoTotal: quantity * unitCost,
+        saldoResultante: balance.cantidadDisponible,
+        usuarioId: 'mock.inventory-core',
+        observacion: 'Movimiento tecnico mock para visor interno de Inventario Central.',
+      };
+    });
+  }
+
+  private buildReadOnlyBaselineReservations(companyId: string): InventoryReservation[] {
+    const layoutStore = ensureStorageLayoutBaseline(companyId);
+    const balances = projectStorageLayoutLotsToBalances(companyId, layoutStore.lots)
+      .filter((item) => item.cantidadDisponible > 0)
+      .slice(0, 4);
+    const statuses: InventoryReservation['estado'][] = ['ACTIVA', 'ACTIVA', 'CONSUMIDA', 'LIBERADA'];
+
+    return balances.map((balance, index) => ({
+      id: `res-readonly-${companyId}-${index + 1}`,
+      empresaId: companyId,
+      productoId: balance.productoId,
+      sku: balance.sku,
+      bodegaId: balance.bodegaId,
+      loteId: balance.loteId ?? 'SIN_LOTE',
+      lote: balance.lote ?? 'SIN_LOTE',
+      cantidad: Math.max(1, Math.round(balance.cantidadDisponible * (index === 0 ? 0.08 : 0.04))),
+      origenTipo: index % 2 === 0 ? 'PEDIDO_VENTA' : 'MPS',
+      origenId: index % 2 === 0 ? `PV-ARB-${1200 + index}` : `MPS-ARB-${340 + index}`,
+      estado: statuses[index % statuses.length],
+      fechaCrea: `2026-05-${String(3 + index).padStart(2, '0')}T09:${String(10 + index).padStart(2, '0')}:00-05:00`,
+    }));
+  }
+
+  private resolveBaselineUnitCost(sku: string): number {
+    if (sku.includes('UHT')) {
+      return 1800;
+    }
+
+    if (sku.includes('YOG')) {
+      return 920;
+    }
+
+    if (sku.includes('QUE')) {
+      return 4800;
+    }
+
+    if (sku.includes('EMP')) {
+      return 110;
+    }
+
+    return 1500;
   }
 }

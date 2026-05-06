@@ -3,13 +3,16 @@ import { defer, Observable, throwError } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { CompanyContextService } from '../../../../core/company/services/company-context.service';
 import { InventoryBalance } from '../../domain/models/inventory-balance.model';
+import { InventoryLot } from '../../domain/models/inventory-lot.model';
 import { InventoryMovement } from '../../domain/models/inventory-movement.model';
 import { InventoryReservation } from '../../domain/models/inventory-reservation.model';
 import {
   InventoryCoreRepository,
   InventoryLotCommandPayload,
+  InventoryLotFilters,
   InventoryMovementFilters,
   InventoryReleaseReservationPayload,
+  InventoryReservationFilters,
   InventoryReservationPayload,
   InventoryStockCommandPayload,
   InventoryStockFilters,
@@ -32,6 +35,14 @@ export class InventoryCoreFacadeService {
 
   getMovements(filters: InventoryMovementFilters = {}): Observable<InventoryMovement[]> {
     return this.withActiveCompany((companyId) => this.repository.getMovements(companyId, filters));
+  }
+
+  getLots(filters: InventoryLotFilters = {}): Observable<InventoryLot[]> {
+    return this.withActiveCompany((companyId) => this.repository.getLots(companyId, filters));
+  }
+
+  getReservations(filters: InventoryReservationFilters = {}): Observable<InventoryReservation[]> {
+    return this.withActiveCompany((companyId) => this.repository.getReservations(companyId, filters));
   }
 
   adjustStock(payload: InventoryStockCommandPayload): Observable<InventoryMovement> {

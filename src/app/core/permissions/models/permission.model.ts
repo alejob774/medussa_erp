@@ -33,6 +33,7 @@ export type LegacyPermissionKey =
   | 'marketing.view'
   | 'warehouse.view'
   | 'inventory.view'
+  | 'inventory.core.view'
   | 'products.view'
   | 'products.create'
   | 'products.edit'

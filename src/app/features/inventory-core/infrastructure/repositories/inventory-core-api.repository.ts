@@ -3,13 +3,16 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { InventoryBalance } from '../../domain/models/inventory-balance.model';
+import { InventoryLot } from '../../domain/models/inventory-lot.model';
 import { InventoryMovement } from '../../domain/models/inventory-movement.model';
 import { InventoryReservation } from '../../domain/models/inventory-reservation.model';
 import {
   InventoryCoreRepository,
   InventoryLotCommandPayload,
+  InventoryLotFilters,
   InventoryMovementFilters,
   InventoryReleaseReservationPayload,
+  InventoryReservationFilters,
   InventoryReservationPayload,
   InventoryStockCommandPayload,
   InventoryStockFilters,
@@ -37,6 +40,24 @@ export class InventoryCoreApiRepository implements InventoryCoreRepository {
     filters: InventoryMovementFilters,
   ): Observable<InventoryMovement[]> {
     return this.http.get<InventoryMovement[]>(`${this.baseUrl}/${companyId}/movements`, {
+      params: this.cleanParams(filters),
+    });
+  }
+
+  getLots(
+    companyId: string,
+    filters: InventoryLotFilters,
+  ): Observable<InventoryLot[]> {
+    return this.http.get<InventoryLot[]>(`${this.baseUrl}/${companyId}/lots`, {
+      params: this.cleanParams(filters),
+    });
+  }
+
+  getReservations(
+    companyId: string,
+    filters: InventoryReservationFilters,
+  ): Observable<InventoryReservation[]> {
+    return this.http.get<InventoryReservation[]>(`${this.baseUrl}/${companyId}/reservations`, {
       params: this.cleanParams(filters),
     });
   }

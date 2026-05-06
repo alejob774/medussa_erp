@@ -206,6 +206,38 @@ export function projectStorageLayoutLotsToBalances(
   });
 }
 
+export function projectStorageLayoutLotsToInventoryLots(
+  companyId: string,
+  lots: StorageLayoutLot[],
+): InventoryLot[] {
+  const store = readInventoryCoreStore();
+  const projected = lots
+    .filter((item) => item.empresaId === companyId)
+    .map((lot) => {
+      const projectedLot = projectStorageLayoutLot(
+        companyId,
+        lot,
+        lot.stockSistema,
+        new Date().toISOString(),
+      ).lot;
+      const stored = store.lots.find((item) => item.id === projectedLot.id) ?? null;
+
+      return stored ? { ...projectedLot, ...stored } : projectedLot;
+    });
+  const projectedIds = new Set(projected.map((item) => item.id));
+  const storedOnly = store.lots
+    .filter((item) => item.empresaId === companyId && !projectedIds.has(item.id))
+    .map((item) => ({ ...item }));
+
+  return [...projected, ...storedOnly].sort((left, right) => {
+    if (left.sku !== right.sku) {
+      return left.sku.localeCompare(right.sku, 'es-CO');
+    }
+
+    return left.numeroLote.localeCompare(right.numeroLote, 'es-CO');
+  });
+}
+
 export function resolveInventoryProjectedStockForLayoutLot(
   lot: StorageLayoutLot,
 ): InventoryProjectedLayoutStock {
