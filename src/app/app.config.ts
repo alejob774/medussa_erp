@@ -11,12 +11,15 @@ import { provideRouter } from '@angular/router';
 
 import { routes } from './app.routes';
 import { authTokenInterceptor } from './core/interceptors/auth-token.interceptor';
+import { companyContextInterceptor } from './core/interceptors/company-context.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
-    provideHttpClient(withInterceptors([authTokenInterceptor])),
+    provideHttpClient(
+      withInterceptors([authTokenInterceptor, companyContextInterceptor]),
+    ),
   ],
 };
