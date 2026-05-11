@@ -36,14 +36,14 @@ async def get_current_user(db: Session = Depends(get_db), token: str = Depends(o
     return user
 
 async def get_current_company(
-    x_company_id: str = Header(..., alias="X-Company-ID"),
+    x_company_id: str = Header(..., alias="X-Company-ID", description="ID de la empresa (Tenant)"),
     current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> str:
     """
-    Valida que el usuario tenga acceso activo a la empresa especificada en el header.
+    Estrategia unificada: Valida que el usuario tenga acceso activo a la empresa 
+    especificada exclusivamente vía el header X-Company-ID.
     """
-    # Validación contra el modelo de seguridad unificado
     vinculo = db.query(UsuarioEmpresaRol).filter(
         UsuarioEmpresaRol.usuario_id == current_user.id,
         UsuarioEmpresaRol.empresa_id == x_company_id,
@@ -51,11 +51,10 @@ async def get_current_company(
     ).first()
 
     if not vinculo:
-        # Nota: Permitir acceso si es superusuario (opcional según reglas de negocio)
         if not getattr(current_user, 'is_superuser', False):
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, 
-                detail="No tiene permisos para la empresa solicitada o su acceso está inactivo"
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"El usuario no tiene permisos activos para la empresa: {x_company_id}"
             )
-    
+            
     return x_company_id

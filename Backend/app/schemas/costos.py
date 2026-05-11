@@ -2,12 +2,11 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 
-<<<<<<< HEAD
 class CostoProductoResponse(BaseModel):
     producto_id: int
     sku: str
     costo_actual: float
-    metodo_costeo: str # FIFO / Promedio[cite: 22]
+    metodo_costeo: str # FIFO / Promedio
     ultima_actualizacion: datetime
 
 class MargenSKUResponse(BaseModel):
@@ -15,8 +14,8 @@ class MargenSKUResponse(BaseModel):
     precio_venta: float
     costo_unitario: float
     margen_valor: float
-    margen_porcentaje: float[cite: 22]
-=======
+    margen_porcentaje: float
+
 class CostoSkuResponse(BaseModel):
     producto_id: int
     costo_promedio: float
@@ -33,4 +32,3 @@ class RentabilidadResponse(BaseModel):
     precio_venta: float
     margen_bruto: float
     porcentaje_rentabilidad: float
->>>>>>> Back

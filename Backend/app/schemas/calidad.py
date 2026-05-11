@@ -1,4 +1,3 @@
-# app/schemas/calidad.py
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
@@ -11,10 +10,12 @@ class InspeccionDetalleBase(BaseModel):
     conforme: Optional[bool] = None
 
 class InspeccionCreate(BaseModel):
-    empresa_id: str
+    empresa_id: Optional[str] = None # Se inyecta en router
     tipo_control: str
     lote: str
     producto_id: int
+    bodega_id: int           # <-- REQUERIDO PARA INVENTORY CORE
+    cantidad_lote: float     # <-- REQUERIDO PARA INVENTORY CORE
     analista: str
     equipo_utilizado: Optional[str] = None
     parametros: List[InspeccionDetalleBase]
@@ -23,9 +24,8 @@ class InspeccionCreate(BaseModel):
 class InspeccionResponse(BaseModel):
     id: int
     lote: str
-    estado_lote: str
+    resultado_final: str # Ajustado al modelo
     liberado: bool
-    fecha_crea: datetime
     
     class Config:
         from_attributes = True

@@ -1,16 +1,18 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import func, desc, and_
+from sqlalchemy import func, desc, and_, case
 from datetime import date, timedelta
 from typing import List, Optional, Dict, Any
 from app.models.bi import (
     AlertaDashboard, FactRentabilidadProducto, FactVentasComercial, 
-    FactClienteVentas, DimCliente, FactForecastDemanda
+    FactClienteVentas, DimCliente, FactForecastDemanda, FactProduccionRT, 
+    DimLinea, FactCalidad, DimCausaNC, FactInventario, FactCompras, 
+    FactLogistica, DimRuta
 )
 from app.models.oee import OEE_Registro
 from app.models.inventario import Producto
 
 async def obtener_kpis_ejecutivos(db: Session, empresa_id: str, desde: date, hasta: date):
-    """Dashboard de alto nivel[cite: 11, 12]."""
+    """Dashboard de alto nivel."""
     ventas = db.query(func.sum(FactVentasComercial.ventas)).filter(
         FactVentasComercial.empresa_id == empresa_id,
         FactVentasComercial.fecha.between(desde, hasta)
@@ -33,7 +35,7 @@ async def obtener_kpis_ejecutivos(db: Session, empresa_id: str, desde: date, has
     }
 
 def calcular_rentabilidad(db: Session, empresa_id: str, desde: date, hasta: date, top: int):
-    """Ranking de rentabilidad basado en FactRentabilidadProducto[cite: 12, 14, 15]."""
+    """Ranking de rentabilidad basado en FactRentabilidadProducto."""
     query = db.query(
         Producto.nombre,
         func.sum(FactRentabilidadProducto.ventas).label("ventas"),
@@ -57,14 +59,14 @@ def calcular_rentabilidad(db: Session, empresa_id: str, desde: date, hasta: date
     }
 
 async def obtener_alertas_gerenciales(db: Session, empresa_id: str, estado: str):
-    """Consulta de alertas activas[cite: 12, 14]."""
+    """Consulta de alertas activas."""
     return db.query(AlertaDashboard).filter(
         AlertaDashboard.empresa_id == empresa_id,
         AlertaDashboard.estado == estado
     ).order_by(desc(AlertaDashboard.fecha_creacion)).all()
 
 async def obtener_cumplimiento_comercial(db: Session, empresa_id: str, desde: date, hasta: date, zona_id, vendedor_id):
-    """Ratios de conversión y cumplimiento de metas[cite: 12, 14]."""
+    """Ratios de conversión y cumplimiento de metas."""
     filters = [FactVentasComercial.empresa_id == empresa_id, FactVentasComercial.fecha.between(desde, hasta)]
     if zona_id: filters.append(FactVentasComercial.zona_id == zona_id)
     if vendedor_id: filters.append(FactVentasComercial.vendedor_id == vendedor_id)
@@ -86,7 +88,7 @@ async def obtener_cumplimiento_comercial(db: Session, empresa_id: str, desde: da
     }
 
 async def obtener_clientes_estrategicos(db: Session, empresa_id: str, desde: date, hasta: date, vendedor_id, zona_id):
-    """Análisis de concentración y clientes inactivos[cite: 12, 14]."""
+    """Análisis de concentración y clientes inactivos."""
     filters = [FactClienteVentas.empresa_id == empresa_id, FactClienteVentas.fecha.between(desde, hasta)]
     if vendedor_id: filters.append(FactClienteVentas.vendedor_id == vendedor_id)
     if zona_id: filters.append(FactClienteVentas.zona_id == zona_id)
@@ -103,7 +105,7 @@ async def obtener_clientes_estrategicos(db: Session, empresa_id: str, desde: dat
     }
 
 async def obtener_demanda_vs_forecast(db: Session, empresa_id: str, params: dict):
-    """Precisión del forecast (HU-038)[cite: 12, 14]."""
+    """Precisión del forecast (HU-038)."""
     filters = [FactForecastDemanda.empresa_id == empresa_id, 
                FactForecastDemanda.fecha.between(params['fechaDesde'], params['fechaHasta'])]
     
@@ -122,7 +124,7 @@ async def obtener_demanda_vs_forecast(db: Session, empresa_id: str, params: dict
     }
 
 async def obtener_produccion_tiempo_real(db: Session, empresa_id: str, planta_id: Optional[int] = None, linea_id: Optional[int] = None):
-    """Calcula KPIs operativos en tiempo real desde FactProduccionRT[cite: 14]."""
+    """Calcula KPIs operativos en tiempo real desde FactProduccionRT."""
     hoy = date.today()
     filters = [FactProduccionRT.empresa_id == empresa_id, func.date(FactProduccionRT.fecha_hora) == hoy]
     
@@ -136,10 +138,8 @@ async def obtener_produccion_tiempo_real(db: Session, empresa_id: str, planta_id
         func.sum(FactProduccionRT.minutos_parada).label("t_parada")
     ).filter(and_(*filters)).first()
 
-    # Cálculo de cumplimiento[cite: 14]
     cumplimiento = (res.total_u / res.total_p * 100) if res.total_p and res.total_p > 0 else 0
 
-    # Detalle por línea
     lineas = db.query(
         DimLinea.nombre,
         func.sum(FactProduccionRT.unidades).label("u")
@@ -150,14 +150,12 @@ async def obtener_produccion_tiempo_real(db: Session, empresa_id: str, planta_id
         "ordenesAbiertas": res.ordenes or 0,
         "cumplimientoPlanPct": round(float(cumplimiento), 2),
         "unidadesPorLinea": [{"linea": l.nombre, "unidades": float(l.u)} for l in lineas],
-        "paradasActivas": [], # Lógica para eventos activos
+        "paradasActivas": [],
         "tiempoDetenidoMin": int(res.t_parada or 0)
     }
-    
-# app/services/bi_service.py (referenciado como bi_service_12.py)
 
 async def obtener_dashboard_calidad(db: Session, empresa_id: str, filtros: dict):
-    """Calcula indicadores de calidad y costo de mala calidad (HU-041)[cite: 19]."""
+    """Calcula indicadores de calidad y costo de mala calidad (HU-041)."""
     
     base_query = db.query(FactCalidad).filter(
         FactCalidad.empresa_id == empresa_id,
@@ -171,7 +169,6 @@ async def obtener_dashboard_calidad(db: Session, empresa_id: str, filtros: dict)
 
     eventos = base_query.all()
 
-    # Agregaciones manuales para optimizar una sola pasada[cite: 19]
     metrics = {
         "RECHAZO": {"count": 0, "costo": 0},
         "RECLAMO": {"count": 0, "costo": 0},
@@ -187,9 +184,8 @@ async def obtener_dashboard_calidad(db: Session, empresa_id: str, filtros: dict)
                 metrics[e.tipo_evento]["count"] += 1
             metrics[e.tipo_evento]["costo"] += float(e.costo)
 
-    total_costo = sum(m["costo"] for m in metrics.values())[cite: 19]
+    total_costo = sum(m["costo"] for m in metrics.values())
 
-    # Pareto de causas[cite: 19]
     causas = db.query(
         DimCausaNC.nombre,
         func.sum(FactCalidad.costo).label("total")
@@ -201,22 +197,19 @@ async def obtener_dashboard_calidad(db: Session, empresa_id: str, filtros: dict)
         "scrapKg": metrics["SCRAP"]["qty"],
         "retrabajos": metrics["RETRABAJO"]["count"],
         "costoMalaCalidad": total_costo,
-        "tasaRechazo": 0.0, # Requiere cruce con total lotes producidos
+        "tasaRechazo": 0.0,
         "scrapPct": 0.0,
         "causasTop": [{"causa": c.nombre, "impacto": float(c.total)} for c in causas],
         "tendenciaMensual": [] 
     }
-    
-# app/services/bi_service.py (referenciado como bi_service_13.py)
 
 async def obtener_inventario_estrategico(db: Session, empresa_id: str, bodega_id: Optional[int] = None):
-    """Calcula KPIs estratégicos de inventario (HU-042)[cite: 22]."""
+    """Calcula KPIs estratégicos de inventario (HU-042)."""
     
     filters = [FactInventario.empresa_id == empresa_id]
     if bodega_id:
         filters.append(FactInventario.bodega_id == bodega_id)
 
-    # 1. Resumen General[cite: 22]
     resumen = db.query(
         func.sum(FactInventario.valor_inventario).label("valor_total"),
         func.sum(case((FactInventario.es_quiebre == True, 1), else_=0)).label("quiebres"),
@@ -224,7 +217,6 @@ async def obtener_inventario_estrategico(db: Session, empresa_id: str, bodega_id
         func.avg(FactInventario.indice_rotacion).label("rotacion_avg")
     ).filter(*filters).first()
 
-    # 2. Top SKUs Críticos (Por valor inmovilizado o quiebre)[cite: 22]
     criticos = db.query(
         Producto.nombre,
         FactInventario.stock_actual,
@@ -235,7 +227,6 @@ async def obtener_inventario_estrategico(db: Session, empresa_id: str, bodega_id
      .order_by(desc(FactInventario.es_quiebre), desc(FactInventario.valor_inventario))\
      .limit(10).all()
 
-    # 3. Análisis de Lento Movimiento[cite: 22]
     lento = db.query(
         case(
             (FactInventario.dias_sin_movimiento > 90, "90+ días"),
@@ -251,12 +242,12 @@ async def obtener_inventario_estrategico(db: Session, empresa_id: str, bodega_id
         "skuSobreStock": int(resumen.sobrestock or 0),
         "rotacionGlobal": round(float(resumen.rotacion_avg or 0), 2),
         "topCriticos": [{"producto": c.nombre, "stock": float(c.stock_actual), "cobertura": float(c.dias_cobertura)} for c in criticos],
-        "composicionPorBodega": [], # Agregación opcional por bodega
+        "composicionPorBodega": [],
         "analisisAntiguedad": {row.rango: row.total for row in lento}
     }
     
 async def obtener_compras_estrategicas(db: Session, empresa_id: str, filtros: dict):
-    """Calcula KPIs de abastecimiento (HU-043)[cite: 28]."""
+    """Calcula KPIs de abastecimiento (HU-043)."""
     query = db.query(FactCompras).filter(
         FactCompras.empresa_id == empresa_id,
         FactCompras.fecha_oc.between(filtros['fechaDesde'], filtros['fechaHasta'])
@@ -265,18 +256,15 @@ async def obtener_compras_estrategicas(db: Session, empresa_id: str, filtros: di
     if filtros.get('proveedorId'):
         query = query.filter(FactCompras.proveedor_id == filtros['proveedorId'])
 
-    # 1. KPIs Generales[cite: 28]
     stats = db.query(
         func.sum(FactCompras.ahorro).label("total_ahorro"),
         func.avg(FactCompras.lead_time_dias).label("avg_lead"),
         func.sum(case((FactCompras.urgente == True, 1), else_=0)).label("total_urgentes")
     ).filter(FactCompras.empresa_id == empresa_id).first()
 
-    # 2. Proveedor más costoso[cite: 28]
     costoso = db.query(FactCompras.proveedor_id, func.avg(FactCompras.precio_unitario).label("p"))\
         .group_by(FactCompras.proveedor_id).order_by(desc("p")).first()
 
-    # 3. Variación de Precios (Simplificado: Comparativa vs Referencia)[cite: 28]
     variacion = db.query(
         func.avg((FactCompras.precio_unitario - FactCompras.precio_referencia) / 
                  FactCompras.precio_referencia * 100)
@@ -290,9 +278,8 @@ async def obtener_compras_estrategicas(db: Session, empresa_id: str, filtros: di
         "variacionPreciosPct": round(float(variacion), 2)
     }
 
-# Agregar a bi_service_15.py
 async def obtener_kpis_logisticos(db: Session, empresa_id: str, desde: date, hasta: date):
-    """Calcula KPIs de última milla (HU-044)[cite: 30]."""
+    """Calcula KPIs de última milla (HU-044)."""
     
     query = db.query(
         func.sum(FactLogistica.costo_transporte).label("costo_t"),
@@ -307,12 +294,10 @@ async def obtener_kpis_logisticos(db: Session, empresa_id: str, desde: date, has
         FactLogistica.fecha.between(desde, hasta)
     ).first()
 
-    # Cálculo de KPIs[cite: 30]
     costo_pedido = (query.costo_t / query.pedidos_t) if query.pedidos_t and query.pedidos_t > 0 else 0
     utilizacion = (query.vol_u / query.vol_t * 100) if query.vol_t and query.vol_t > 0 else 0
     puntualidad = (query.puntuales / query.total_viajes * 100) if query.total_viajes and query.total_viajes > 0 else 0
     
-    # Ranking de rutas por costo por pedido[cite: 30]
     rutas = db.query(
         DimRuta.nombre,
         (func.sum(FactLogistica.costo_transporte) / func.sum(FactLogistica.pedidos_entregados)).label("cpp")
@@ -324,12 +309,8 @@ async def obtener_kpis_logisticos(db: Session, empresa_id: str, desde: date, has
     return {
         "costoPromedioPorPedido": round(float(costo_pedido), 2),
         "utilizacionFlotaPct": round(float(utilizacion), 2),
-        "productividadPromedioConductor": round(float(query.pedidos_t / 1), 2), # Ajustar según conteo de conductores
+        "productividadPromedioConductor": round(float(query.pedidos_t / 1), 2), 
         "nivelServicioPuntualidad": round(float(puntualidad), 2),
         "distanciaTotalKm": float(query.km_t or 0),
         "rankingRutasCostosas": [{"ruta": r.nombre, "costo_pedido": float(r.cpp)} for r in rutas]
     }
-
-
-
-

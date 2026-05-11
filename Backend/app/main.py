@@ -13,7 +13,7 @@ from app.api.v1 import (
     equipos, proveedores, oee, bom, calidad, mps, tpm,
     demanda, analisis_demanda, desarrollo_productos,
     scm_compras_api, scm_presupuesto_api, scm_inventario_api,
-    scm_layout_api, wms_api, bi
+    scm_layout_api, wms_api, bi, costs_core, pedidos
     )
 
 app = FastAPI(
@@ -35,9 +35,10 @@ app.add_middleware(
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    # Se añade explícitamente X-Company-ID para evitar bloqueos de preflight (OPTIONS)
+    allow_headers=["*", "Authorization", "Content-Type", "X-Company-ID"],
+    expose_headers=["X-Company-ID"]
 )
-
 # 2. Seguridad Swagger
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login")
 
@@ -56,6 +57,7 @@ app.include_router(auditoria.router, prefix="/api/v1/auditoria", tags=["Auditor�
 # BLOQUE: OPERACIONES & LOGÍSTICA (HU-010 al HU-016)
 app.include_router(inventario.router, prefix="/api/v1/inventario", tags=["Inventarios - Maestro"])
 app.include_router(inventory_core.router, prefix="/api/v1/inventory/core", tags=["Inventarios - Core Operativo"]) # <--- Registro
+app.include_router(costs_core.router, prefix="/api/v1/costs-core", tags=["Costos Core"])
 app.include_router(clientes.router, prefix="/api/v1/clientes", tags=["Comercial - Clientes"])
 app.include_router(vendedores.router, prefix="/api/v1/vendedores", tags=["Comercial - Vendedores"])
 app.include_router(conductores.router, prefix="/api/v1/conductores", tags=["Logística - Conductores"])
@@ -79,6 +81,8 @@ app.include_router(scm_presupuesto_api.router, prefix="/api/v1/scm/presupuesto",
 app.include_router(scm_inventario_api.router, prefix="/api/v1/scm/inventario/ciclo", tags=["SCM - Ciclo de Inventarios"])
 app.include_router(scm_layout_api.router, prefix="/api/v1/scm/inventario/layout", tags=["SCM - Layout Estratégico"])
 app.include_router(wms_api.router, prefix="/api/v1/wms", tags=["WMS - Picking & Packing"])
+
+app.include_router(pedidos.router, prefix="/api/v1/comercial/pedidos", tags=["Comercial"])
 
 # BLOQUE: BI & DIRECCIÓN GENERAL (HU-033 al HU-035)
 app.include_router(bi.router, prefix="/api/v1/bi", tags=["Business Intelligence - Dirección"])

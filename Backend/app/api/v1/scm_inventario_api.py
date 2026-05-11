@@ -1,35 +1,51 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.db.session import get_db
-from app.schemas.scm_inventario_schema import ConteoCreate, RegistroFisico, VarianzaResumen
-from typing import List
+from app.api.deps import get_current_company
+from app.schemas.scm_inventario_schema import ConteoCreate, RegistroFisico
+from app.schemas.inventario import MovimientoCreate
+from app.models.inventario import InventarioSaldo
 from app.services import inventario_service
 
 router = APIRouter()
 
-@router.post("/conteo/iniciar")
-def iniciar_conteo_ciclico(payload: ConteoCreate, db: Session = Depends(get_db)):
-    # Lógica para abrir una sesión de conteo
-    return {"id": 1, "status": "ABIERTO", "mensaje": "Sesión de conteo iniciada"}
+@router.post("/cycle-counts/register-finding")
+async def registrar_hallazgo(
+    payload: RegistroFisico, 
+    db: Session = Depends(get_db),
+    empresa_id: str = Depends(get_current_company)
+):
+    """Ajusta diferencias de inventario detectadas en conteos físicos (HU-030)."""
+    bodega_id = payload.ubicacion_id or 1 # Fallback seguro
+    
+    saldo_actual = db.query(InventarioSaldo).filter(
+        InventarioSaldo.empresa_id == empresa_id,
+        InventarioSaldo.producto_id == payload.producto_id,
+        InventarioSaldo.bodega_id == bodega_id,
+        InventarioSaldo.lote_id == payload.lote_id
+    ).first()
 
-@router.post("/conteo/registrar-linea")
-async def registrar_hallazgo(payload: RegistroFisico, db: Session = Depends(get_db)):
-    """
-    Persiste el hallazgo físico. La varianza se calcula contra el InventarioSaldo actual[cite: 17].
-    """
-    # Aquí se guardaría en una tabla temporal de conteos para auditoría
-    # posterior antes de ejecutar el ajuste masivo.
-    return {"status": "success", "mensaje": "Hallazgo registrado en sesión de conteo"}
+    cantidad_sistema = float(saldo_actual.cantidad_fisica) if saldo_actual else 0.0
+    diferencia = payload.cantidad_encontrada - cantidad_sistema
 
-@router.get("/conteo/{conteo_id}/diferencias", response_model=List[VarianzaResumen])
-def consultar_diferencias(conteo_id: int, db: Session = Depends(get_db)):
-    # Mock de respuesta para prueba de endpoint
-    return [
-        {
-            "sku": "MAT-001",
-            "stock_sistema": 100.0,
-            "conteo_fisico": 95.0,
-            "diferencia": -5.0,
-            "impacto_financiero": -50.0
-        }
-    ]
+    if diferencia == 0:
+        return {"success": True, "mensaje": "Cuadre exacto. No requiere ajuste."}
+
+    tipo_ajuste = "AJUSTE_POS" if diferencia > 0 else "AJUSTE_NEG"
+    
+    mov = MovimientoCreate(
+        producto_id=payload.producto_id,
+        bodega_id=bodega_id,
+        cantidad=abs(diferencia),
+        tipo_movimiento=tipo_ajuste,
+        lote_id=payload.lote_id,
+        documento_referencia=f"CONTEO-{payload.conteo_id}",
+        observaciones="Ajuste por conteo cíclico"
+    )
+    
+    await inventario_service.registrar_movimiento(db, mov, empresa_id)
+    return {
+        "success": True, 
+        "mensaje": f"Ajuste {tipo_ajuste} realizado por {abs(diferencia)} unidades",
+        "diferencia": diferencia
+    }

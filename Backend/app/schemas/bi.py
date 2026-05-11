@@ -2,10 +2,6 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from datetime import date
 
-class DashboardResponse(BaseModel):
-    success: bool
-    data: Dict[str, Any]
-
 class DashboardFiltros(BaseModel):
     empresaId: str
     fechaDesde: date
@@ -30,10 +26,6 @@ class ProduccionRTData(BaseModel):
     paradasActivas: List[Dict[str, Any]]
     tiempoDetenidoMin: int
 
-class ProduccionRTResponse(BaseModel):
-    success: bool
-    data: ProduccionRTData
-
 class OEEConsolidadoData(BaseModel):
     oeePlanta: float
     disponibilidad: float
@@ -41,12 +33,6 @@ class OEEConsolidadoData(BaseModel):
     calidad: float
     detallePorLinea: List[Dict[str, Any]]
     evolucionHistorica: List[Dict[str, Any]]
-
-class OEEConsolidadoResponse(BaseModel):
-    success: bool
-    data: OEEConsolidadoData
-
-# app/schemas/bi.py (referenciado como bi_schemas_8.py)
 
 class CalidadDashboardData(BaseModel):
     lotesRechazados: int
@@ -59,22 +45,14 @@ class CalidadDashboardData(BaseModel):
     causasTop: List[Dict[str, Any]]
     tendenciaMensual: List[Dict[str, Any]]
 
-class CalidadDashboardResponse(BaseModel):
-    success: bool
-    data: CalidadDashboardData
-
 class InventarioEstrategicoData(BaseModel):
     valorTotalCartera: float
     skuEnQuiebre: int
     skuSobreStock: int
     rotacionGlobal: float
-    topCriticos: List[Dict[str, Any]]  #[cite: 22]
+    topCriticos: List[Dict[str, Any]]
     composicionPorBodega: List[Dict[str, Any]]
-    analisisAntiguedad: Dict[str, int] # Lento movimiento[cite: 22]
-
-class InventarioEstrategicoResponse(BaseModel):
-    success: bool
-    data: InventarioEstrategicoData
+    analisisAntiguedad: Dict[str, int] 
 
 class ComprasEstrategicasData(BaseModel):
     ahorrosCompras: float
@@ -83,22 +61,15 @@ class ComprasEstrategicasData(BaseModel):
     comprasUrgentes: int
     variacionPreciosPct: float
 
-class ComprasEstrategicasResponse(BaseModel):
-    success: bool
-    data: ComprasEstrategicasData
-
-# Agregar a bi_schemas_11.py
 class KpiLogisticosData(BaseModel):
     costoPromedioPorPedido: float
     utilizacionFlotaPct: float
-    productividadPromedioConductor: float # Pedidos/Conductor
+    productividadPromedioConductor: float 
     nivelServicioPuntualidad: float
     rankingRutasCostosas: List[Dict[str, Any]]
     distanciaTotalKm: float
 
-class KpiLogisticosResponse(BaseModel):
-    success: bool
-    data: KpiLogisticosData
-
-
-
+class GrafanaDashboardMeta(BaseModel):
+    modulo: str
+    titulo: str
+    grafana_url: str

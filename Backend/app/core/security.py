@@ -1,9 +1,10 @@
 import os
+import bcrypt  # <-- Importación agregada
 from datetime import datetime, timedelta
 from typing import Any, Union, Optional
 from jose import jwt
 from passlib.context import CryptContext
-from app.core.config import settings # Importación vital
+from app.core.config import settings
 from dotenv import load_dotenv
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -12,10 +13,9 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 load_dotenv()
 
 # Configuraciones para JWT
-# Se recomienda que en producción el SECRET_KEY sea una cadena aleatoria larga
 SECRET_KEY = os.getenv("SECRET_KEY", "medussa_erp_secret_key_2026")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 1440  # 24 horas (ajustable según necesidad)
+ACCESS_TOKEN_EXPIRE_MINUTES = 1440  
 
 def get_password_hash(password: str) -> str:
     """
@@ -23,7 +23,6 @@ def get_password_hash(password: str) -> str:
     Se trunca a 72 bytes para mantener compatibilidad con Python 3.13 y el límite de bcrypt.
     """
     pwd_bytes = password.encode('utf-8')
-    # El límite de bcrypt es de 72 bytes; truncamos para evitar errores de valor
     if len(pwd_bytes) > 72:
         pwd_bytes = pwd_bytes[:72]
     
@@ -33,7 +32,6 @@ def get_password_hash(password: str) -> str:
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
-    # El payload ahora espera: sub (username), empresa_id, y rol
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:

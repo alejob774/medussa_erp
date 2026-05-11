@@ -58,43 +58,32 @@ async def eliminar_producto_logico(db: Session, db_obj: Producto):
 
 # --- MOVIMIENTOS Y KARDEX ---
 
-async def registrar_movimiento(db: Session, mov_in: MovimientoCreate, empresa_id: str, costo_unitario: float = 0.0):
-    """Registra un movimiento en Kardex y actualiza el saldo físico en bodega."""
+async def registrar_movimiento(db: Session, mov_in: MovimientoCreate, empresa_id: str):
+    # 1. Insertar siempre en Kardex como fuente única de verdad
     nuevo_kardex = InventarioKardex(**mov_in.model_dump(), empresa_id=empresa_id)
     db.add(nuevo_kardex)
-    db.flush() 
-
-    # Integración con el núcleo de costos
-    await procesar_costo_movimiento(
-        db, 
-        kardex_id=nuevo_kardex.id, 
-        producto_id=mov_in.producto_id,
-        cantidad=mov_in.cantidad,
-        costo_u=costo_unitario,
-        empresa_id=empresa_id
-    )
-
-    saldo = db.query(InventarioSaldo).filter(
-        InventarioSaldo.producto_id == mov_in.producto_id,
-        InventarioSaldo.bodega_id == mov_in.bodega_id,
-        InventarioSaldo.lote_id == mov_in.lote_id,
-        InventarioSaldo.empresa_id == empresa_id
-    ).first()
-
-    if not saldo:
-        saldo = InventarioSaldo(
-            producto_id=mov_in.producto_id,
-            bodega_id=mov_in.bodega_id,
-            lote_id=mov_in.lote_id,
-            empresa_id=empresa_id,
-            cantidad_fisica=0.0
-        )
-        db.add(saldo)
-
-    saldo.cantidad_fisica += mov_in.cantidad
     db.commit()
-    db.refresh(saldo)
-    return saldo    
+    
+    # 2. Motor de recálculo
+    return await recalcular_saldo_desde_kardex(db, mov_in.producto_id, mov_in.bodega_id, mov_in.lote_id, empresa_id)
+
+async def recalcular_saldo_desde_kardex(db: Session, producto_id: int, bodega_id: int, lote_id: str, empresa_id: str):
+    """Hace un SUM exacto de Kardex y hace UPSERT sobre InventarioSaldo"""
+    # Suma transacciones físicas (+ Entradas, - Salidas)
+    fisico = db.query(func.sum(InventarioKardex.cantidad)).filter(
+        InventarioKardex.producto_id == producto_id,
+        InventarioKardex.bodega_id == bodega_id,
+        InventarioKardex.lote_id == lote_id,
+        InventarioKardex.tipo_movimiento.in_(['ENTRADA', 'SALIDA', 'AJUSTE', 'RECHAZO', 'CONSUMO_TPM'])
+    ).scalar() or 0.0
+
+    # Suma Reservas/Bloqueos (Positivos) - Liberaciones (Negativas)
+    reservado = db.query(func.sum(InventarioKardex.cantidad)).filter(
+        InventarioKardex.producto_id == producto_id,
+        InventarioKardex.bodega_id == bodega_id,
+        InventarioKardex.lote_id == lote_id,
+        InventarioKardex.tipo_movimiento.in_(['RESERVA', 'BLOQUEO', 'LIBERACION'])
+    ).scalar() or 0.0
 
 async def gestionar_reserva(db: Session, producto_id: int, bodega_id: int, cantidad: float, accion: str, empresa_id: str, lote_id: str = None):
     """Maneja el bloqueo y liberación de stock para picking y ventas."""
