@@ -3,33 +3,51 @@ import { Vendor, VendorAssignedClient, VendorStatus } from '../../domain/models/
 
 export interface BackendVendorAssignedClientDto {
   client_id?: string | number | null;
+  clientId?: string | number | null;
   id_cliente?: string | null;
+  idCliente?: string | null;
   nombre?: string | null;
   zona?: string | null;
   ciudad_nombre?: string | null;
+  ciudadNombre?: string | null;
 }
 
 export interface BackendVendorDto {
   id?: string | number | null;
   vendedor_id?: string | number | null;
+  vendedorId?: string | number | null;
   empresa_id?: string | number | null;
+  companyId?: string | number | null;
   empresa_nombre?: string | null;
+  companyName?: string | null;
   id_vendedor?: string | null;
+  idVendedor?: string | null;
   nombre_vendedor?: string | null;
+  nombreVendedor?: string | null;
   tipo_vendedor?: string | null;
+  tipoVendedor?: string | null;
   zona?: string | null;
   canal?: string | null;
   cuota_mensual?: number | string | null;
+  cuotaMensual?: number | string | null;
   ciudad_id?: string | number | null;
+  ciudadId?: string | number | null;
   ciudad_nombre?: string | null;
+  ciudadNombre?: string | null;
   direccion?: string | null;
   celular?: string | null;
   email?: string | null;
   estado?: boolean | string | null;
+  activo?: boolean | number | string | null;
+  isActive?: boolean | number | string | null;
   clientes_asignados?: BackendVendorAssignedClientDto[] | null;
+  clientesAsignados?: BackendVendorAssignedClientDto[] | null;
   dependencias_activas?: boolean | number | string | null;
+  tieneDependenciasActivas?: boolean | number | string | null;
   created_at?: string | null;
+  createdAt?: string | null;
   updated_at?: string | null;
+  updatedAt?: string | null;
 }
 
 export interface BackendSaveVendorPayload {
@@ -55,30 +73,36 @@ export function mapBackendVendorToVendor(
   companyIdFallback: string,
   companyNameFallback: string,
 ): Vendor {
-  const assignedClients = (dto.clientes_asignados ?? []).map((client) => mapAssignedClient(client));
-  const nombreVendedor = resolveText(dto.nombre_vendedor, 'Vendedor sin nombre');
+  const assignedClients = (dto.clientes_asignados ?? dto.clientesAsignados ?? []).map((client) =>
+    mapAssignedClient(client),
+  );
+  const nombreVendedor = resolveText(
+    dto.nombre_vendedor,
+    dto.nombreVendedor,
+    'Vendedor sin nombre',
+  );
 
   return {
-    id: resolveText(dto.id, dto.vendedor_id, dto.id_vendedor, nombreVendedor),
-    empresaId: resolveText(dto.empresa_id, companyIdFallback),
-    empresaNombre: resolveText(dto.empresa_nombre, companyNameFallback),
-    idVendedor: resolveText(dto.id_vendedor, ''),
+    id: resolveText(dto.id, dto.vendedor_id, dto.vendedorId, dto.id_vendedor, dto.idVendedor, nombreVendedor),
+    empresaId: resolveText(dto.empresa_id, dto.companyId, companyIdFallback),
+    empresaNombre: resolveText(dto.empresa_nombre, dto.companyName, companyNameFallback),
+    idVendedor: resolveText(dto.id_vendedor, dto.idVendedor, ''),
     nombreVendedor,
-    tipoVendedor: resolveText(dto.tipo_vendedor, ''),
+    tipoVendedor: resolveText(dto.tipo_vendedor, dto.tipoVendedor, ''),
     zona: resolveText(dto.zona, ''),
     canal: resolveText(dto.canal, ''),
-    cuotaMensual: resolveNullableNumber(dto.cuota_mensual),
-    ciudadId: resolveNullableText(dto.ciudad_id),
-    ciudadNombre: resolveNullableText(dto.ciudad_nombre),
+    cuotaMensual: resolveNullableNumber(dto.cuota_mensual ?? dto.cuotaMensual),
+    ciudadId: resolveNullableText(dto.ciudad_id, dto.ciudadId),
+    ciudadNombre: resolveNullableText(dto.ciudad_nombre, dto.ciudadNombre),
     direccion: resolveNullableText(dto.direccion),
     celular: resolveNullableText(dto.celular),
     email: resolveNullableText(dto.email),
     clientesAsignados: assignedClients,
     cantidadClientesAsignados: assignedClients.length,
-    estado: resolveStatus(dto.estado),
-    createdAt: resolveNullableText(dto.created_at) ?? new Date().toISOString(),
-    updatedAt: resolveNullableText(dto.updated_at),
-    tieneDependenciasActivas: resolveBoolean(dto.dependencias_activas),
+    estado: resolveStatus(dto.estado, dto.activo, dto.isActive),
+    createdAt: resolveNullableText(dto.created_at, dto.createdAt) ?? new Date().toISOString(),
+    updatedAt: resolveNullableText(dto.updated_at, dto.updatedAt),
+    tieneDependenciasActivas: resolveBoolean(dto.dependencias_activas ?? dto.tieneDependenciasActivas),
   };
 }
 
@@ -139,28 +163,36 @@ export function normalizeText(value: string | null | undefined): string {
 
 function mapAssignedClient(dto: BackendVendorAssignedClientDto): VendorAssignedClient {
   return {
-    clientId: resolveText(dto.client_id, ''),
-    idCliente: resolveText(dto.id_cliente, ''),
+    clientId: resolveText(dto.client_id, dto.clientId, ''),
+    idCliente: resolveText(dto.id_cliente, dto.idCliente, ''),
     nombre: resolveText(dto.nombre, 'Cliente asignado'),
     zona: resolveText(dto.zona, ''),
-    ciudadNombre: resolveNullableText(dto.ciudad_nombre),
+    ciudadNombre: resolveNullableText(dto.ciudad_nombre, dto.ciudadNombre),
   };
 }
 
-function resolveStatus(value: boolean | string | null | undefined): VendorStatus {
-  if (typeof value === 'boolean') {
-    return value ? 'ACTIVO' : 'INACTIVO';
-  }
-
-  if (typeof value === 'string') {
-    const normalized = value.trim().toLowerCase();
-
-    if (['activo', 'active', '1', 'true'].includes(normalized)) {
-      return 'ACTIVO';
+function resolveStatus(
+  ...values: Array<boolean | number | string | null | undefined>
+): VendorStatus {
+  for (const value of values) {
+    if (typeof value === 'boolean') {
+      return value ? 'ACTIVO' : 'INACTIVO';
     }
 
-    if (['inactivo', 'inactive', '0', 'false'].includes(normalized)) {
-      return 'INACTIVO';
+    if (typeof value === 'number') {
+      return value !== 0 ? 'ACTIVO' : 'INACTIVO';
+    }
+
+    if (typeof value === 'string') {
+      const normalized = value.trim().toLowerCase();
+
+      if (['activo', 'active', '1', 'true'].includes(normalized)) {
+        return 'ACTIVO';
+      }
+
+      if (['inactivo', 'inactive', '0', 'false'].includes(normalized)) {
+        return 'INACTIVO';
+      }
     }
   }
 

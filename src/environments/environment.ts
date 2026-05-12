@@ -13,19 +13,19 @@ export const environment = {
   useClientsAdministrationMock: true,
   enableClientsAdministrationFallback: true,
   useVendorsAdministrationMock: true,
-  enableVendorsAdministrationFallback: false,
+  enableVendorsAdministrationFallback: true,
   useDriversAdministrationMock: true,
-  enableDriversAdministrationFallback: false,
+  enableDriversAdministrationFallback: true,
   useRoutesAdministrationMock: true,
-  enableRoutesAdministrationFallback: false,
+  enableRoutesAdministrationFallback: true,
 
   // Supply, inventory, and operations masters
   useProductsAdministrationMock: true,
   enableProductsAdministrationFallback: true,
   useSuppliersAdministrationMock: true,
-  enableSuppliersAdministrationFallback: false,
+  enableSuppliersAdministrationFallback: true,
   useEquipmentsAdministrationMock: true,
-  enableEquipmentsAdministrationFallback: false,
+  enableEquipmentsAdministrationFallback: true,
 
   // SCM and planning domains
   useDemandForecastMock: true,
