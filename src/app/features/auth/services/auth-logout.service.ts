@@ -4,7 +4,7 @@ import { Observable, of } from 'rxjs';
 import { catchError, finalize, map, take } from 'rxjs/operators';
 import { PendingChangesService } from '../../../core/forms/services/pending-changes.service';
 import { AuthService } from './auth.service';
-import { AuthSessionService } from './auth-session.service';
+import { AUTH_SESSION_STORAGE_KEY, AuthSessionService } from './auth-session.service';
 
 export interface LogoutResult {
   backendLogoutAttempted: boolean;
@@ -20,7 +20,7 @@ export class AuthLogoutService {
   private readonly authSessionService = inject(AuthSessionService);
   private readonly pendingChangesService = inject(PendingChangesService);
   private readonly sessionStorageKeys = [
-    'medussa.erp.auth.session',
+    AUTH_SESSION_STORAGE_KEY,
     'medussa.erp.security.user-shadow',
   ] as const;
 

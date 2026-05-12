@@ -5,11 +5,13 @@ import { LoginResponse } from '../models/login-response.model';
 import { SessionUser } from '../models/session-user.model';
 import { resolveCompanyIdentityState } from '../utils/auth.mapper';
 
+export const AUTH_SESSION_STORAGE_KEY = 'medussa.erp.auth.session';
+
 @Injectable({
   providedIn: 'root',
 })
 export class AuthSessionService {
-  private readonly storageKey = 'medussa.erp.auth.session';
+  private readonly storageKey = AUTH_SESSION_STORAGE_KEY;
 
   private sessionSubject = new BehaviorSubject<LoginResponse | null>(
     this.restoreSession(),
@@ -90,12 +92,17 @@ export class AuthSessionService {
       return;
     }
 
+    const nextCompany = currentSession.companies?.find(
+      (company) => company.id === companyId || company.backendId === companyId,
+    );
+    const nextActiveCompanyId = companyId ? nextCompany?.id ?? companyId : null;
     const nextBackendCompanyId =
-      currentSession.companies?.find((company) => company.id === companyId)?.backendId ?? null;
+      nextCompany?.backendId ??
+      (nextCompany?.id !== companyId ? companyId : null);
 
     const updatedSession = this.normalizeSession({
       ...currentSession,
-      activeCompanyId: companyId,
+      activeCompanyId: nextActiveCompanyId,
       activeBackendCompanyId: nextBackendCompanyId,
       requiresCompanySelection: false,
     });

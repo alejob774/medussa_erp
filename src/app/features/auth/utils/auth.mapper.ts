@@ -33,7 +33,11 @@ function dedupeStrings(values: Array<string | null | undefined>): string[] {
   return Array.from(new Set(values.map((value) => value?.trim()).filter(Boolean) as string[]));
 }
 
-function normalizeNullableString(value: string | null | undefined): string | null {
+function normalizeNullableString(value: number | string | null | undefined): string | null {
+  if (typeof value === 'number') {
+    return String(value);
+  }
+
   const normalizedValue = value?.trim();
 
   return normalizedValue ? normalizedValue : null;
@@ -82,6 +86,21 @@ function extractPermissionCodes(permissionSource: unknown): string[] {
   }
 
   const permissionObject = permissionSource as Record<string, unknown>;
+  const directCode =
+    typeof permissionObject['codigo'] === 'string'
+      ? permissionObject['codigo']
+      : typeof permissionObject['code'] === 'string'
+        ? permissionObject['code']
+        : typeof permissionObject['key'] === 'string'
+          ? permissionObject['key']
+          : typeof permissionObject['permission'] === 'string'
+            ? permissionObject['permission']
+            : null;
+
+  if (directCode) {
+    return [directCode.trim()];
+  }
+
   const directModule =
     typeof permissionObject['modulo'] === 'string'
       ? permissionObject['modulo']
@@ -126,19 +145,49 @@ function extractPermissionCodes(permissionSource: unknown): string[] {
   });
 }
 
-function mapAuthMeCompanies(
-  response: BackendAuthMeResponse,
-  companies: readonly Company[],
+function isFrontendCompany(company: Company | BackendAuthMeCompany): company is Company {
+  return 'name' in company && 'code' in company;
+}
+
+export function mapBackendCompaniesToCompanies(
+  companiesInput: ReadonlyArray<Company | BackendAuthMeCompany> = [],
+  fallbackCompanies: readonly Company[] = [],
 ): Company[] {
   const mergedCompanies = new Map<string, Company>();
 
-  normalizeCompanies(companies).forEach((company) => {
+  normalizeCompanies(fallbackCompanies).forEach((company) => {
     const identity = company.backendId ?? company.id;
     mergedCompanies.set(identity, company);
   });
 
-  (response.empresas ?? []).forEach((company) => {
-    const backendId = normalizeNullableString(company.empresa_id);
+  companiesInput.forEach((company) => {
+    if (isFrontendCompany(company)) {
+      const normalizedCompany: Company = {
+        ...company,
+        id: normalizeNullableString(company.id) ?? company.id,
+        dbId: normalizeNullableString(company.dbId) ?? null,
+        backendId: normalizeNullableString(company.backendId),
+      };
+      const identity = normalizedCompany.backendId ?? normalizedCompany.id;
+      const currentCompany = mergedCompanies.get(identity);
+
+      mergedCompanies.set(identity, {
+        ...currentCompany,
+        ...normalizedCompany,
+        dbId: normalizedCompany.dbId ?? currentCompany?.dbId ?? null,
+        backendId: normalizedCompany.backendId ?? currentCompany?.backendId ?? null,
+      });
+      return;
+    }
+
+    const backendId = normalizeNullableString(
+      company.empresa_id ??
+        company.empresaId ??
+        company.companyId ??
+        company.backend_id ??
+        company.backendId ??
+        company.id,
+    );
 
     if (!backendId) {
       return;
@@ -151,11 +200,13 @@ function mapAuthMeCompanies(
       dbId: currentCompany?.dbId ?? null,
       backendId,
       name:
-        normalizeNullableString(company.nombre_empresa) ??
+        normalizeNullableString(company.nombre_empresa ?? company.nombre ?? company.name) ??
         currentCompany?.name ??
         `Empresa ${backendId}`,
-      code: currentCompany?.code ?? backendId,
-      description: currentCompany?.description,
+      code: normalizeNullableString(company.codigo ?? company.code) ?? currentCompany?.code ?? backendId,
+      description:
+        normalizeNullableString(company.descripcion ?? company.description) ??
+        currentCompany?.description,
       icon: currentCompany?.icon,
       accentColor: currentCompany?.accentColor,
     });
@@ -164,14 +215,24 @@ function mapAuthMeCompanies(
   return Array.from(mergedCompanies.values());
 }
 
+function mapAuthMeCompanies(
+  response: BackendAuthMeResponse,
+  companies: readonly Company[],
+): Company[] {
+  return mapBackendCompaniesToCompanies(response.empresas ?? response.companies ?? [], companies);
+}
+
 function resolveActiveAuthMeCompany(
   response: BackendAuthMeResponse,
   session: LoginResponse,
 ): BackendAuthMeCompany | null {
-  const responseCompanies = response.empresas ?? [];
+  const responseCompanies = response.empresas ?? response.companies ?? [];
   const requestedBackendCompanyId =
     normalizeNullableString(response.empresa_activa) ??
+    normalizeNullableString(response.active_company_id) ??
+    normalizeNullableString(response.activeCompanyId) ??
     normalizeNullableString(response.empresa_id) ??
+    normalizeNullableString(response.empresaId) ??
     session.activeBackendCompanyId ??
     null;
 
@@ -181,7 +242,15 @@ function resolveActiveAuthMeCompany(
 
   if (requestedBackendCompanyId) {
     const matchingCompany = responseCompanies.find(
-      (company) => normalizeNullableString(company.empresa_id) === requestedBackendCompanyId,
+      (company) =>
+        normalizeNullableString(
+          company.empresa_id ??
+            company.empresaId ??
+            company.companyId ??
+            company.backend_id ??
+            company.backendId ??
+            company.id,
+        ) === requestedBackendCompanyId,
     );
 
     if (matchingCompany) {
@@ -195,7 +264,14 @@ function resolveActiveAuthMeCompany(
     );
     const matchingCompany = responseCompanies.find(
       (company) =>
-        normalizeNullableString(company.empresa_id) ===
+        normalizeNullableString(
+          company.empresa_id ??
+            company.empresaId ??
+            company.companyId ??
+            company.backend_id ??
+            company.backendId ??
+            company.id,
+        ) ===
         normalizeNullableString(sessionCompany?.backendId ?? sessionCompany?.id),
     );
 
@@ -208,7 +284,8 @@ function resolveActiveAuthMeCompany(
     if (normalizedSessionCompanyName) {
       const matchingCompanyByName = responseCompanies.find(
         (company) =>
-          normalizeComparableText(company.nombre_empresa) === normalizedSessionCompanyName,
+          normalizeComparableText(company.nombre_empresa ?? company.nombre ?? company.name) ===
+          normalizedSessionCompanyName,
       );
 
       if (matchingCompanyByName) {
@@ -270,7 +347,7 @@ export function resolveCompanyIdentityState(
 
 export function mapBackendUserToAuthUser(user: BackendAuthUser): AuthUser {
   const username = resolveUsername(user.email, user.username, user.id);
-  const roleName = user.rol ?? user.roles?.[0] ?? null;
+  const roleName = user.rol ?? user.role ?? user.roles?.[0] ?? null;
 
   return {
     id: String(user.id),
@@ -279,8 +356,10 @@ export function mapBackendUserToAuthUser(user: BackendAuthUser): AuthUser {
     displayName: buildDisplayName(user.nombre, user.apellido),
     roles: dedupeStrings([...(user.roles ?? []), roleName]),
     roleName,
-    profileName: user.perfil ?? null,
-    permissions: normalizeEffectivePermissions(extractPermissionCodes(user.permisos)),
+    profileName: user.perfil ?? user.profile ?? null,
+    permissions: normalizeEffectivePermissions(
+      extractPermissionCodes(user.permisos ?? user.permissions),
+    ),
   };
 }
 
@@ -294,11 +373,25 @@ export function mapBackendAuthMeToAuthUser(
     normalizeNullableString(response.username) ?? currentUser?.username,
     response.id,
   );
-  const roleName = activeCompany?.rol ?? response.rol ?? currentUser?.roleName ?? null;
+  const roleName =
+    activeCompany?.rol ??
+    activeCompany?.role ??
+    response.rol ??
+    response.role ??
+    currentUser?.roleName ??
+    null;
   const profileName =
-    activeCompany?.perfil ?? response.perfil ?? currentUser?.profileName ?? null;
+    activeCompany?.perfil ??
+    activeCompany?.profile ??
+    response.perfil ??
+    response.profile ??
+    currentUser?.profileName ??
+    null;
   const extractedPermissions = extractPermissionCodes(
-    activeCompany?.permisos ?? response.permisos,
+    activeCompany?.permisos ??
+      activeCompany?.permissions ??
+      response.permisos ??
+      response.permissions,
   );
   const permissions = extractedPermissions.length
     ? normalizeEffectivePermissions(extractedPermissions)
@@ -314,8 +407,12 @@ export function mapBackendAuthMeToAuthUser(
     roles: dedupeStrings([
       ...(currentUser?.roles ?? []),
       response.rol,
+      response.role,
       activeCompany?.rol,
-      ...(response.empresas ?? []).map((company) => company.rol ?? undefined),
+      activeCompany?.role,
+      ...(response.empresas ?? response.companies ?? []).map(
+        (company) => company.rol ?? company.role ?? undefined,
+      ),
     ]),
     roleName,
     profileName,
@@ -337,8 +434,18 @@ export function mergeAuthenticatedContextIntoSession(
     activeCompanyId: session.activeCompanyId ?? null,
     activeBackendCompanyId:
       normalizeNullableString(response.empresa_activa) ??
+      normalizeNullableString(response.active_company_id) ??
+      normalizeNullableString(response.activeCompanyId) ??
       normalizeNullableString(response.empresa_id) ??
-      normalizeNullableString(activeCompany?.empresa_id) ??
+      normalizeNullableString(response.empresaId) ??
+      normalizeNullableString(
+        activeCompany?.empresa_id ??
+          activeCompany?.empresaId ??
+          activeCompany?.companyId ??
+          activeCompany?.backend_id ??
+          activeCompany?.backendId ??
+          activeCompany?.id,
+      ) ??
       session.activeBackendCompanyId ??
       null,
   });
@@ -362,12 +469,23 @@ export function mergeAuthenticatedContextIntoSession(
 export function mapBackendLoginResponseToLoginResponse(
   response: BackendLoginResponse,
 ): LoginResponse {
-  const companies = response.companies ?? [];
-  const loginCompanyId = normalizeNullableString(response.active_company_id);
-  const loginBackendCompanyId = normalizeNullableString(
-    response.user?.empresa_id ?? response.empresa_id,
+  const companies = mapBackendCompaniesToCompanies(
+    [...(response.companies ?? []), ...(response.empresas ?? [])],
   );
-  const hasLocalCompanyId = !!loginCompanyId && companies.some((company) => company.id === loginCompanyId);
+  const loginCompanyId = normalizeNullableString(
+    response.active_company_id ?? response.activeCompanyId,
+  );
+  const loginBackendCompanyId = normalizeNullableString(
+    response.user?.empresa_id ??
+      response.user?.empresaId ??
+      response.empresa_id ??
+      response.empresaId,
+  );
+  const hasLocalCompanyId =
+    !!loginCompanyId &&
+    companies.some(
+      (company) => company.id === loginCompanyId || company.backendId === loginCompanyId,
+    );
   const companyState = resolveCompanyIdentityState(companies, {
     activeCompanyId: hasLocalCompanyId ? loginCompanyId : null,
     activeBackendCompanyId:
@@ -375,14 +493,15 @@ export function mapBackendLoginResponseToLoginResponse(
   });
 
   return {
-    access_token: response.access_token,
-    refresh_token: response.refresh_token,
-    token_type: response.token_type,
-    expires_in: response.expires_in,
+    access_token: response.access_token ?? response.accessToken ?? '',
+    refresh_token: response.refresh_token ?? response.refreshToken ?? '',
+    token_type: response.token_type ?? response.tokenType ?? 'bearer',
+    expires_in: response.expires_in ?? response.expiresIn,
     user: response.user ? mapBackendUserToAuthUser(response.user) : undefined,
     activeCompanyId: companyState.activeCompanyId,
     activeBackendCompanyId: companyState.activeBackendCompanyId,
-    requiresCompanySelection: response.requires_company_selection ?? false,
+    requiresCompanySelection:
+      response.requires_company_selection ?? response.requiresCompanySelection ?? false,
     companies: companyState.companies,
   };
 }

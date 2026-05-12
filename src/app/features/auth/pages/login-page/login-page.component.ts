@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { of } from 'rxjs';
 import { catchError, finalize, map, switchMap } from 'rxjs/operators';
 import { CompanyContextService } from '../../../../core/company/services/company-context.service';
-import { CompaniesFacadeService } from '../../../companies/application/facade/companies.facade';
+import { getBackendErrorMessage } from '../../../../core/http/backend-error.mapper';
 import { AuthLayoutComponent } from '../../components/auth-layout/auth-layout.component';
 import {
   LoginFormComponent,
@@ -24,7 +24,6 @@ export class LoginPageComponent {
   private readonly authService = inject(AuthService);
   private readonly authSessionService = inject(AuthSessionService);
   private readonly companyContextService = inject(CompanyContextService);
-  private readonly companiesFacade = inject(CompaniesFacadeService);
   private readonly router = inject(Router);
 
   loading = false;
@@ -57,7 +56,7 @@ export class LoginPageComponent {
           this.companyContextService.enrichSession(response, value.username),
         ),
         switchMap((session) =>
-          this.companiesFacade.listContextCompanies().pipe(
+          this.authService.listUserCompanies(session, value.username).pipe(
             map((companies) =>
               this.companyContextService.hydrateSessionCompanies(session, companies),
             ),
@@ -113,6 +112,6 @@ export class LoginPageComponent {
       return 'El backend rechazo la validacion de la sesion o de la empresa activa.';
     }
 
-    return httpError?.error?.detail || 'No fue posible iniciar sesion.';
+    return getBackendErrorMessage(error) || httpError?.error?.detail || 'No fue posible iniciar sesion.';
   }
 }

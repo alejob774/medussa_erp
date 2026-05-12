@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { combineLatest, distinctUntilChanged, map, Observable } from 'rxjs';
+import { combineLatest, distinctUntilChanged, map, Observable, switchMap } from 'rxjs';
 import { LoginResponse } from '../../../features/auth/models/login-response.model';
 import { resolveCompanyIdentityState } from '../../../features/auth/utils/auth.mapper';
 import { AuthService } from '../../../features/auth/services/auth.service';
@@ -163,7 +163,9 @@ export class CompanyContextService {
     }
 
     this.authSessionService.setActiveCompanyId(companyId);
-    this.authService.syncAuthenticatedContext().subscribe({
+    this.authService.selectActiveCompany(companyId).pipe(
+      switchMap(() => this.authService.syncAuthenticatedContext()),
+    ).subscribe({
       error: (error: unknown) => {
         this.authSessionService.setActiveCompanyId(previousCompanyId);
         console.error('No fue posible sincronizar el contexto autenticado.', error);

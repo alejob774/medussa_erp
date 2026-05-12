@@ -2,7 +2,11 @@ export const environment = {
   apiUrl: 'http://127.0.0.1:8000/api/v1',
 
   // Auth
+  useAuthMock: true,
+  enableAuthFallback: true,
   allowMockLoginFallback: true,
+  useUserCompaniesMock: true,
+  enableUserCompaniesFallback: true,
 
   // Settings and company context
   useCompanySettingsMock: true,
