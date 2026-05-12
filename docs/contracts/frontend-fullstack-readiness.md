@@ -1,5 +1,38 @@
 # Frontend Fullstack Readiness
 
+## Fase 1 - Base transversal
+
+Estado: implementada como base segura para integracion gradual, manteniendo runtime mock-first.
+
+### Interceptores HTTP
+
+El frontend registra interceptores funcionales en este orden:
+
+- `authTokenInterceptor`: agrega `Authorization: Bearer <token>` a requests privados cuando existe token de sesion. No modifica login.
+- `companyContextInterceptor`: agrega `X-Company-ID` cuando existe empresa activa. No modifica login ni requests sin empresa activa.
+
+Resolucion de empresa para `X-Company-ID`:
+
+- usa `backendId` de la empresa activa si existe;
+- si no existe, usa `activeBackendCompanyId`;
+- como ultimo fallback usa `activeCompanyId`.
+
+### Errores backend
+
+`src/app/core/http/backend-error.mapper.ts` centraliza el shape UI de errores:
+
+- `status`
+- `code`
+- `message`
+- `details`
+- flags `isAuthError`, `isPermissionError`, `isNetworkError`, `isValidationError`, `isServerError`
+
+Los repositorios pueden usar `mapBackendError` o `getBackendErrorMessage` sin crear un manejo global nuevo.
+
+### Environment mock-first
+
+`environment.ts` queda organizado por dominios y todos los dominios con flags mock mantienen runtime local seguro. Las fases posteriores pueden apagar mocks dominio por dominio sin cambiar pantallas ni flujos visibles.
+
 ## Fase 2 - Maestros
 
 Estado: API-ready con runtime mock-first. Los facades de Maestros siguen usando repositorios mock porque los flags `use*AdministrationMock` permanecen en `true`.
