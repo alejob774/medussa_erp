@@ -1,0 +1,51 @@
+{
+  "annotations": { "list": [] },
+  "description": "Dashboard demo/local para HU-034. No consulta backend, ERP transaccional ni DW real.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "id": 1,
+      "type": "text",
+      "title": "Demo local",
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 0 },
+      "options": {
+        "mode": "markdown",
+        "content": "## HU-034 Rentabilidad por Producto / Linea\nBase visual demo para margen, costo y utilidad. Las consultas reales deben venir luego desde DW/datamarts."
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Margen bruto demo",
+      "datasource": { "type": "testdata", "uid": "medussa-demo-testdata" },
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 4 },
+      "targets": [{ "refId": "A", "scenarioId": "random_walk" }],
+      "fieldConfig": { "defaults": { "unit": "percent", "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "orientation": "auto", "textMode": "auto", "colorMode": "value", "graphMode": "area", "justifyMode": "auto" }
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Rentabilidad demo",
+      "datasource": { "type": "testdata", "uid": "medussa-demo-testdata" },
+      "gridPos": { "h": 8, "w": 16, "x": 8, "y": 4 },
+      "targets": [{ "refId": "A", "scenarioId": "random_walk" }],
+      "fieldConfig": { "defaults": { "unit": "percent", "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single", "sort": "none" } }
+    }
+  ],
+  "refresh": "1h",
+  "schemaVersion": 39,
+  "tags": ["medussa", "demo", "bi"],
+  "templating": { "list": [{ "name": "empresaId", "type": "constant", "query": "medussa-holding", "current": { "text": "medussa-holding", "value": "medussa-holding" } }] },
+  "time": { "from": "now-30d", "to": "now" },
+  "timezone": "browser",
+  "title": "Medussa BI Demo - HU-034 Rentabilidad por Producto / Linea",
+  "uid": "medussa-profitability",
+  "version": 1,
+  "weekStart": ""
+}

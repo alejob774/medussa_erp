@@ -498,6 +498,8 @@ Nota para HU-039 a HU-044: Grafana debe consultar DW/datamarts autorizados, no t
 
 ## Grafana Foundation
 
+Existe una foundation demo/local de Grafana en `medussa-bi/grafana`. Los dashboards JSON provisionados usan los mismos `dashboardUid` definidos para Angular y sirven solo como base tecnica de demo. Esta foundation no reemplaza el ETL, DW/datamarts ni backend BI real; en produccion Grafana debe consultar DW/datamarts autorizados, no la base transaccional ERP.
+
 Endpoint sugerido para metadata autorizada:
 
 `GET /api/v1/bi/grafana/dashboards?empresaId=...`

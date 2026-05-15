@@ -1,0 +1,10 @@
+apiVersion: 1
+
+datasources:
+  - name: Medussa Demo TestData
+    uid: medussa-demo-testdata
+    type: testdata
+    access: proxy
+    isDefault: true
+    editable: true
+    jsonData: {}
