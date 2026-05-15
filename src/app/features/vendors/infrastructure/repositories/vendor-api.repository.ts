@@ -3,11 +3,13 @@ import { Injectable, inject } from '@angular/core';
 import { catchError, map, Observable, of, switchMap, throwError } from 'rxjs';
 import {
   buildMasterListParams,
+  buildMasterEndpointUrls,
   extractArrayPayload,
   normalizeText,
   resolveNullableText,
   resolveTotal,
   withApiFallback,
+  withFlatMasterEndpointFallback,
   withTrailingSlash,
 } from '../../../../core/http/master-api.utils';
 import { environment } from '../../../../../environments/environment';
@@ -41,7 +43,7 @@ export class VendorApiRepository implements VendorsRepository {
   private readonly http = inject(HttpClient);
   private readonly authSessionService = inject(AuthSessionService);
   private readonly mockRepository = inject(VendorMockRepository);
-  private readonly baseUrl = `${environment.apiUrl}/maestros/vendedores`;
+  private readonly endpointUrls = buildMasterEndpointUrls(environment.apiUrl, 'vendedores');
 
   getCatalogs(companyId: string): Observable<VendorCatalogs> {
     return this.mockRepository.getCatalogs(companyId);
@@ -54,11 +56,11 @@ export class VendorApiRepository implements VendorsRepository {
 
     return this.withFallback(
       () =>
-        this.http
-          .get<unknown>(withTrailingSlash(this.baseUrl), {
+        this.withEndpointCompatibility((baseUrl) =>
+          this.http.get<unknown>(withTrailingSlash(baseUrl), {
             params: buildMasterListParams(this.resolveRequestCompanyId(companyId)),
-          })
-          .pipe(map((response) => this.mapListResponse(response, companyId, filters))),
+          }),
+        ).pipe(map((response) => this.mapListResponse(response, companyId, filters))),
       () => this.mockRepository.listVendors(companyId, filters),
       'catalogo de vendedores',
     );
@@ -99,11 +101,12 @@ export class VendorApiRepository implements VendorsRepository {
         if (vendorId) {
           return this.resolveVendorRequestId(companyId, vendorId).pipe(
             switchMap((requestVendorId) =>
-              this.http
-                .patch<BackendVendorDto | void>(
-                  `${withTrailingSlash(this.baseUrl)}${requestVendorId}`,
+              this.withEndpointCompatibility((baseUrl) =>
+                this.http.patch<BackendVendorDto | void>(
+                  `${withTrailingSlash(baseUrl)}${requestVendorId}`,
                   requestBody,
-                )
+                ),
+              )
                 .pipe(
                   switchMap((response) =>
                     this.resolveSavedVendor(
@@ -120,8 +123,9 @@ export class VendorApiRepository implements VendorsRepository {
           );
         }
 
-        return this.http
-          .post<BackendVendorDto>(withTrailingSlash(this.baseUrl), requestBody)
+        return this.withEndpointCompatibility((baseUrl) =>
+          this.http.post<BackendVendorDto>(withTrailingSlash(baseUrl), requestBody),
+        )
           .pipe(
             switchMap((response) =>
               this.resolveSavedVendor(companyId, response, 'created', payload.empresaNombre),
@@ -142,8 +146,9 @@ export class VendorApiRepository implements VendorsRepository {
       () =>
         this.resolveVendorRequestId(companyId, vendorId).pipe(
           switchMap((requestVendorId) =>
-            this.http
-              .delete<unknown>(`${withTrailingSlash(this.baseUrl)}${requestVendorId}`)
+            this.withEndpointCompatibility((baseUrl) =>
+              this.http.delete<unknown>(`${withTrailingSlash(baseUrl)}${requestVendorId}`),
+            )
               .pipe(
                 map((response) => this.mapDeleteResponse(companyId, vendorId, response)),
                 catchError((error: unknown) =>
@@ -178,8 +183,9 @@ export class VendorApiRepository implements VendorsRepository {
   private loadVendor(companyId: string, vendorId: string): Observable<Vendor> {
     return this.resolveVendorRequestId(companyId, vendorId).pipe(
       switchMap((requestVendorId) =>
-        this.http
-          .get<BackendVendorDto>(`${withTrailingSlash(this.baseUrl)}${requestVendorId}`)
+        this.withEndpointCompatibility((baseUrl) =>
+          this.http.get<BackendVendorDto>(`${withTrailingSlash(baseUrl)}${requestVendorId}`),
+        )
           .pipe(
             map((vendor) =>
               mapBackendVendorToVendor(vendor, companyId, this.resolveCompanyName(companyId)),
@@ -244,15 +250,16 @@ export class VendorApiRepository implements VendorsRepository {
       switchMap((vendor) =>
         this.resolveVendorRequestId(companyId, vendorId).pipe(
           switchMap((requestVendorId) =>
-            this.http
-              .patch<BackendVendorDto | void>(
-                `${withTrailingSlash(this.baseUrl)}${requestVendorId}`,
+            this.withEndpointCompatibility((baseUrl) =>
+              this.http.patch<BackendVendorDto | void>(
+                `${withTrailingSlash(baseUrl)}${requestVendorId}`,
                 {
                   estado: status,
                   activo: status === 'ACTIVO',
                   isActive: status === 'ACTIVO',
                 },
-              )
+              ),
+            )
               .pipe(
                 switchMap((response) =>
                   this.resolveSavedVendor(
@@ -332,10 +339,11 @@ export class VendorApiRepository implements VendorsRepository {
   }
 
   private resolveVendorRequestId(companyId: string, vendorId: string): Observable<string> {
-    return this.http
-      .get<unknown>(withTrailingSlash(this.baseUrl), {
+    return this.withEndpointCompatibility((baseUrl) =>
+      this.http.get<unknown>(withTrailingSlash(baseUrl), {
         params: buildMasterListParams(this.resolveRequestCompanyId(companyId)),
-      })
+      }),
+    )
       .pipe(
         map((response) => {
           const vendor = extractArrayPayload<BackendVendorDto>(response).find((candidate) =>
@@ -509,5 +517,15 @@ export class VendorApiRepository implements VendorsRepository {
       context,
       permissionMessage: 'No tienes permisos para operar vendedores en la empresa activa.',
     });
+  }
+
+  private withEndpointCompatibility<T>(
+    operation: (baseUrl: string) => Observable<T>,
+  ): Observable<T> {
+    return withFlatMasterEndpointFallback(
+      operation,
+      this.endpointUrls,
+      environment.useFlatMasterEndpointsFallback,
+    );
   }
 }

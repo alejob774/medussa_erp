@@ -3,11 +3,13 @@ import { Injectable, inject } from '@angular/core';
 import { catchError, map, Observable, of, switchMap, throwError } from 'rxjs';
 import {
   buildMasterListParams,
+  buildMasterEndpointUrls,
   extractArrayPayload,
   normalizeText,
   resolveNullableText,
   resolveTotal,
   withApiFallback,
+  withFlatMasterEndpointFallback,
   withTrailingSlash,
 } from '../../../../core/http/master-api.utils';
 import { environment } from '../../../../../environments/environment';
@@ -36,7 +38,7 @@ export class RouteApiRepository implements RoutesRepository {
   private readonly http = inject(HttpClient);
   private readonly authSessionService = inject(AuthSessionService);
   private readonly mockRepository = inject(RouteMockRepository);
-  private readonly baseUrl = `${environment.apiUrl}/maestros/rutas`;
+  private readonly endpointUrls = buildMasterEndpointUrls(environment.apiUrl, 'rutas');
 
   getCatalogs(companyId: string): Observable<RouteCatalogs> {
     return this.mockRepository.getCatalogs(companyId);
@@ -49,11 +51,11 @@ export class RouteApiRepository implements RoutesRepository {
 
     return this.withFallback(
       () =>
-        this.http
-          .get<unknown>(withTrailingSlash(this.baseUrl), {
+        this.withEndpointCompatibility((baseUrl) =>
+          this.http.get<unknown>(withTrailingSlash(baseUrl), {
             params: buildMasterListParams(this.resolveRequestCompanyId(companyId)),
-          })
-          .pipe(map((response) => this.mapListResponse(response, companyId, filters))),
+          }),
+        ).pipe(map((response) => this.mapListResponse(response, companyId, filters))),
       () => this.mockRepository.listRoutes(companyId, filters),
       'catalogo de rutas',
     );
@@ -90,11 +92,12 @@ export class RouteApiRepository implements RoutesRepository {
         if (routeId) {
           return this.resolveRouteRequestId(companyId, routeId).pipe(
             switchMap((requestRouteId) =>
-              this.http
-                .patch<BackendRouteDto | void>(
-                  `${withTrailingSlash(this.baseUrl)}${requestRouteId}`,
+              this.withEndpointCompatibility((baseUrl) =>
+                this.http.patch<BackendRouteDto | void>(
+                  `${withTrailingSlash(baseUrl)}${requestRouteId}`,
                   requestBody,
-                )
+                ),
+              )
                 .pipe(
                   switchMap((response) =>
                     this.resolveSavedRoute(
@@ -111,8 +114,9 @@ export class RouteApiRepository implements RoutesRepository {
           );
         }
 
-        return this.http
-          .post<BackendRouteDto>(withTrailingSlash(this.baseUrl), requestBody)
+        return this.withEndpointCompatibility((baseUrl) =>
+          this.http.post<BackendRouteDto>(withTrailingSlash(baseUrl), requestBody),
+        )
           .pipe(
             switchMap((response) =>
               this.resolveSavedRoute(companyId, response, 'created', payload.empresaNombre),
@@ -133,8 +137,9 @@ export class RouteApiRepository implements RoutesRepository {
       () =>
         this.resolveRouteRequestId(companyId, routeId).pipe(
           switchMap((requestRouteId) =>
-            this.http
-              .delete<unknown>(`${withTrailingSlash(this.baseUrl)}${requestRouteId}`)
+            this.withEndpointCompatibility((baseUrl) =>
+              this.http.delete<unknown>(`${withTrailingSlash(baseUrl)}${requestRouteId}`),
+            )
               .pipe(
                 map((response) => this.mapDeleteResponse(companyId, routeId, response)),
                 catchError((error: unknown) =>
@@ -169,8 +174,9 @@ export class RouteApiRepository implements RoutesRepository {
   private loadRoute(companyId: string, routeId: string): Observable<Route> {
     return this.resolveRouteRequestId(companyId, routeId).pipe(
       switchMap((requestRouteId) =>
-        this.http
-          .get<BackendRouteDto>(`${withTrailingSlash(this.baseUrl)}${requestRouteId}`)
+        this.withEndpointCompatibility((baseUrl) =>
+          this.http.get<BackendRouteDto>(`${withTrailingSlash(baseUrl)}${requestRouteId}`),
+        )
           .pipe(
             map((route) =>
               mapBackendRouteToRoute(route, companyId, this.resolveCompanyName(companyId)),
@@ -235,15 +241,16 @@ export class RouteApiRepository implements RoutesRepository {
       switchMap((route) =>
         this.resolveRouteRequestId(companyId, routeId).pipe(
           switchMap((requestRouteId) =>
-            this.http
-              .patch<BackendRouteDto | void>(
-                `${withTrailingSlash(this.baseUrl)}${requestRouteId}`,
+            this.withEndpointCompatibility((baseUrl) =>
+              this.http.patch<BackendRouteDto | void>(
+                `${withTrailingSlash(baseUrl)}${requestRouteId}`,
                 {
                   estado: status,
                   activo: status === 'ACTIVO',
                   isActive: status === 'ACTIVO',
                 },
-              )
+              ),
+            )
               .pipe(
                 switchMap((response) =>
                   this.resolveSavedRoute(
@@ -323,10 +330,11 @@ export class RouteApiRepository implements RoutesRepository {
   }
 
   private resolveRouteRequestId(companyId: string, routeId: string): Observable<string> {
-    return this.http
-      .get<unknown>(withTrailingSlash(this.baseUrl), {
+    return this.withEndpointCompatibility((baseUrl) =>
+      this.http.get<unknown>(withTrailingSlash(baseUrl), {
         params: buildMasterListParams(this.resolveRequestCompanyId(companyId)),
-      })
+      }),
+    )
       .pipe(
         map((response) => {
           const route = extractArrayPayload<BackendRouteDto>(response).find((candidate) =>
@@ -508,5 +516,15 @@ export class RouteApiRepository implements RoutesRepository {
       context,
       permissionMessage: 'No tienes permisos para operar rutas en la empresa activa.',
     });
+  }
+
+  private withEndpointCompatibility<T>(
+    operation: (baseUrl: string) => Observable<T>,
+  ): Observable<T> {
+    return withFlatMasterEndpointFallback(
+      operation,
+      this.endpointUrls,
+      environment.useFlatMasterEndpointsFallback,
+    );
   }
 }

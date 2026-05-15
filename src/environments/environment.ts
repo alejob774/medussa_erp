@@ -26,6 +26,7 @@ export const environment = {
   // Supply, inventory, and operations masters
   useProductsAdministrationMock: true,
   enableProductsAdministrationFallback: true,
+  useFlatMasterEndpointsFallback: true,
   useSuppliersAdministrationMock: true,
   enableSuppliersAdministrationFallback: true,
   useEquipmentsAdministrationMock: true,

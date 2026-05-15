@@ -2,8 +2,23 @@ import { HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { catchError, Observable, throwError } from 'rxjs';
 import { getBackendErrorMessage, mapBackendError } from './backend-error.mapper';
 
+export interface MasterEndpointUrls {
+  contractedUrl: string;
+  flatFallbackUrl: string;
+}
+
 export function withTrailingSlash(url: string): string {
   return url.endsWith('/') ? url : `${url}/`;
+}
+
+export function buildMasterEndpointUrls(
+  apiUrl: string,
+  domain: string,
+): MasterEndpointUrls {
+  return {
+    contractedUrl: `${apiUrl}/maestros/${domain}`,
+    flatFallbackUrl: `${apiUrl}/${domain}`,
+  };
 }
 
 export function buildMasterListParams(companyId: string): HttpParams {
@@ -35,12 +50,36 @@ export function withApiFallback<T>(
   );
 }
 
+export function withFlatMasterEndpointFallback<T>(
+  operation: (baseUrl: string) => Observable<T>,
+  urls: MasterEndpointUrls,
+  fallbackEnabled: boolean,
+): Observable<T> {
+  return operation(urls.contractedUrl).pipe(
+    catchError((error: unknown) => {
+      if (fallbackEnabled && shouldFallbackToFlatMasterEndpoint(error)) {
+        console.warn(
+          `Se activo compatibilidad temporal de endpoint plano para ${urls.contractedUrl}.`,
+          error,
+        );
+        return operation(urls.flatFallbackUrl);
+      }
+
+      return throwError(() => error);
+    }),
+  );
+}
+
 export function shouldFallbackToMock(error: unknown): boolean {
   if (!(error instanceof HttpErrorResponse)) {
     return true;
   }
 
   return [0, 404, 405, 500, 501, 502, 503, 504].includes(error.status);
+}
+
+export function shouldFallbackToFlatMasterEndpoint(error: unknown): boolean {
+  return error instanceof HttpErrorResponse && [404, 405].includes(error.status);
 }
 
 export function mapApiError(

@@ -3,11 +3,13 @@ import { Injectable, inject } from '@angular/core';
 import { catchError, map, Observable, of, switchMap, throwError } from 'rxjs';
 import {
   buildMasterListParams,
+  buildMasterEndpointUrls,
   extractArrayPayload,
   normalizeText,
   resolveNullableText,
   resolveTotal,
   withApiFallback,
+  withFlatMasterEndpointFallback,
   withTrailingSlash,
 } from '../../../../core/http/master-api.utils';
 import { environment } from '../../../../../environments/environment';
@@ -41,7 +43,7 @@ export class DriverApiRepository implements DriversRepository {
   private readonly http = inject(HttpClient);
   private readonly authSessionService = inject(AuthSessionService);
   private readonly mockRepository = inject(DriverMockRepository);
-  private readonly baseUrl = `${environment.apiUrl}/maestros/conductores`;
+  private readonly endpointUrls = buildMasterEndpointUrls(environment.apiUrl, 'conductores');
 
   getCatalogs(companyId: string): Observable<DriverCatalogs> {
     return this.mockRepository.getCatalogs(companyId);
@@ -54,11 +56,11 @@ export class DriverApiRepository implements DriversRepository {
 
     return this.withFallback(
       () =>
-        this.http
-          .get<unknown>(withTrailingSlash(this.baseUrl), {
+        this.withEndpointCompatibility((baseUrl) =>
+          this.http.get<unknown>(withTrailingSlash(baseUrl), {
             params: buildMasterListParams(this.resolveRequestCompanyId(companyId)),
-          })
-          .pipe(map((response) => this.mapListResponse(response, companyId, filters))),
+          }),
+        ).pipe(map((response) => this.mapListResponse(response, companyId, filters))),
       () => this.mockRepository.listDrivers(companyId, filters),
       'catalogo de conductores',
     );
@@ -99,11 +101,12 @@ export class DriverApiRepository implements DriversRepository {
         if (driverId) {
           return this.resolveDriverRequestId(companyId, driverId).pipe(
             switchMap((requestDriverId) =>
-              this.http
-                .patch<BackendDriverDto | void>(
-                  `${withTrailingSlash(this.baseUrl)}${requestDriverId}`,
+              this.withEndpointCompatibility((baseUrl) =>
+                this.http.patch<BackendDriverDto | void>(
+                  `${withTrailingSlash(baseUrl)}${requestDriverId}`,
                   requestBody,
-                )
+                ),
+              )
                 .pipe(
                   switchMap((response) =>
                     this.resolveSavedDriver(
@@ -120,8 +123,9 @@ export class DriverApiRepository implements DriversRepository {
           );
         }
 
-        return this.http
-          .post<BackendDriverDto>(withTrailingSlash(this.baseUrl), requestBody)
+        return this.withEndpointCompatibility((baseUrl) =>
+          this.http.post<BackendDriverDto>(withTrailingSlash(baseUrl), requestBody),
+        )
           .pipe(
             switchMap((response) =>
               this.resolveSavedDriver(companyId, response, 'created', payload.empresaNombre),
@@ -142,8 +146,9 @@ export class DriverApiRepository implements DriversRepository {
       () =>
         this.resolveDriverRequestId(companyId, driverId).pipe(
           switchMap((requestDriverId) =>
-            this.http
-              .delete<unknown>(`${withTrailingSlash(this.baseUrl)}${requestDriverId}`)
+            this.withEndpointCompatibility((baseUrl) =>
+              this.http.delete<unknown>(`${withTrailingSlash(baseUrl)}${requestDriverId}`),
+            )
               .pipe(
                 map((response) => this.mapDeleteResponse(companyId, driverId, response)),
                 catchError((error: unknown) =>
@@ -178,8 +183,9 @@ export class DriverApiRepository implements DriversRepository {
   private loadDriver(companyId: string, driverId: string): Observable<Driver> {
     return this.resolveDriverRequestId(companyId, driverId).pipe(
       switchMap((requestDriverId) =>
-        this.http
-          .get<BackendDriverDto>(`${withTrailingSlash(this.baseUrl)}${requestDriverId}`)
+        this.withEndpointCompatibility((baseUrl) =>
+          this.http.get<BackendDriverDto>(`${withTrailingSlash(baseUrl)}${requestDriverId}`),
+        )
           .pipe(
             map((driver) =>
               mapBackendDriverToDriver(driver, companyId, this.resolveCompanyName(companyId)),
@@ -244,15 +250,16 @@ export class DriverApiRepository implements DriversRepository {
       switchMap((driver) =>
         this.resolveDriverRequestId(companyId, driverId).pipe(
           switchMap((requestDriverId) =>
-            this.http
-              .patch<BackendDriverDto | void>(
-                `${withTrailingSlash(this.baseUrl)}${requestDriverId}`,
+            this.withEndpointCompatibility((baseUrl) =>
+              this.http.patch<BackendDriverDto | void>(
+                `${withTrailingSlash(baseUrl)}${requestDriverId}`,
                 {
                   estado: status,
                   activo: status === 'ACTIVO',
                   isActive: status === 'ACTIVO',
                 },
-              )
+              ),
+            )
               .pipe(
                 switchMap((response) =>
                   this.resolveSavedDriver(
@@ -332,10 +339,11 @@ export class DriverApiRepository implements DriversRepository {
   }
 
   private resolveDriverRequestId(companyId: string, driverId: string): Observable<string> {
-    return this.http
-      .get<unknown>(withTrailingSlash(this.baseUrl), {
+    return this.withEndpointCompatibility((baseUrl) =>
+      this.http.get<unknown>(withTrailingSlash(baseUrl), {
         params: buildMasterListParams(this.resolveRequestCompanyId(companyId)),
-      })
+      }),
+    )
       .pipe(
         map((response) => {
           const driver = extractArrayPayload<BackendDriverDto>(response).find((candidate) =>
@@ -511,5 +519,15 @@ export class DriverApiRepository implements DriversRepository {
       context,
       permissionMessage: 'No tienes permisos para operar conductores en la empresa activa.',
     });
+  }
+
+  private withEndpointCompatibility<T>(
+    operation: (baseUrl: string) => Observable<T>,
+  ): Observable<T> {
+    return withFlatMasterEndpointFallback(
+      operation,
+      this.endpointUrls,
+      environment.useFlatMasterEndpointsFallback,
+    );
   }
 }

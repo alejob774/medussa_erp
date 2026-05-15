@@ -73,6 +73,13 @@ El frontend espera `environment.apiUrl = /api/v1` y agrega el prefijo de Maestro
 - `GET|POST /api/v1/maestros/equipos`
 - `GET|PATCH|DELETE /api/v1/maestros/equipos/{id}`
 
+Compatibilidad temporal:
+
+- la ruta contratada `/api/v1/maestros/{dominio}` sigue siendo la preferida;
+- si el backend responde `404` o `405` y `useFlatMasterEndpointsFallback` esta activo, los repositorios API prueban la ruta plana actual `/api/v1/{dominio}`;
+- si la ruta plana tambien falla y el fallback mock del dominio esta activo, el flujo cae al repositorio mock;
+- esta compatibilidad solo aplica cuando se apaga el mock de un maestro para pruebas controladas.
+
 Diferencia con repos existentes: Productos, Clientes y Empresas conservan sus endpoints historicos (`/inventario`, `/clientes`, `/configuracion`) para no romper la integracion ya avanzada. La Fase 2 solo prepara los cinco Maestros pendientes bajo `/maestros/*`.
 
 ### Headers y empresa
@@ -92,6 +99,7 @@ Flags default:
 - `useVendorsAdministrationMock: true`
 - `useDriversAdministrationMock: true`
 - `useRoutesAdministrationMock: true`
+- `useFlatMasterEndpointsFallback: true`
 - `useSuppliersAdministrationMock: true`
 - `useEquipmentsAdministrationMock: true`
 

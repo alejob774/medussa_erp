@@ -3,11 +3,13 @@ import { Injectable, inject } from '@angular/core';
 import { catchError, map, Observable, of, switchMap, throwError } from 'rxjs';
 import {
   buildMasterListParams,
+  buildMasterEndpointUrls,
   extractArrayPayload,
   normalizeText,
   resolveNullableText,
   resolveTotal,
   withApiFallback,
+  withFlatMasterEndpointFallback,
   withTrailingSlash,
 } from '../../../../core/http/master-api.utils';
 import { environment } from '../../../../../environments/environment';
@@ -36,7 +38,7 @@ export class EquipmentApiRepository implements EquipmentsRepository {
   private readonly http = inject(HttpClient);
   private readonly authSessionService = inject(AuthSessionService);
   private readonly mockRepository = inject(EquipmentMockRepository);
-  private readonly baseUrl = `${environment.apiUrl}/maestros/equipos`;
+  private readonly endpointUrls = buildMasterEndpointUrls(environment.apiUrl, 'equipos');
 
   getCatalogs(companyId: string): Observable<EquipmentCatalogs> {
     return this.mockRepository.getCatalogs(companyId);
@@ -49,11 +51,11 @@ export class EquipmentApiRepository implements EquipmentsRepository {
 
     return this.withFallback(
       () =>
-        this.http
-          .get<unknown>(withTrailingSlash(this.baseUrl), {
+        this.withEndpointCompatibility((baseUrl) =>
+          this.http.get<unknown>(withTrailingSlash(baseUrl), {
             params: buildMasterListParams(this.resolveRequestCompanyId(companyId)),
-          })
-          .pipe(map((response) => this.mapListResponse(response, companyId, filters))),
+          }),
+        ).pipe(map((response) => this.mapListResponse(response, companyId, filters))),
       () => this.mockRepository.listEquipments(companyId, filters),
       'catalogo de equipos',
     );
@@ -90,11 +92,12 @@ export class EquipmentApiRepository implements EquipmentsRepository {
         if (equipmentId) {
           return this.resolveEquipmentRequestId(companyId, equipmentId).pipe(
             switchMap((requestEquipmentId) =>
-              this.http
-                .patch<BackendEquipmentDto | void>(
-                  `${withTrailingSlash(this.baseUrl)}${requestEquipmentId}`,
+              this.withEndpointCompatibility((baseUrl) =>
+                this.http.patch<BackendEquipmentDto | void>(
+                  `${withTrailingSlash(baseUrl)}${requestEquipmentId}`,
                   requestBody,
-                )
+                ),
+              )
                 .pipe(
                   switchMap((response) =>
                     this.resolveSavedEquipment(
@@ -111,8 +114,9 @@ export class EquipmentApiRepository implements EquipmentsRepository {
           );
         }
 
-        return this.http
-          .post<BackendEquipmentDto>(withTrailingSlash(this.baseUrl), requestBody)
+        return this.withEndpointCompatibility((baseUrl) =>
+          this.http.post<BackendEquipmentDto>(withTrailingSlash(baseUrl), requestBody),
+        )
           .pipe(
             switchMap((response) =>
               this.resolveSavedEquipment(companyId, response, 'created', payload.empresaNombre),
@@ -133,8 +137,9 @@ export class EquipmentApiRepository implements EquipmentsRepository {
       () =>
         this.resolveEquipmentRequestId(companyId, equipmentId).pipe(
           switchMap((requestEquipmentId) =>
-            this.http
-              .delete<unknown>(`${withTrailingSlash(this.baseUrl)}${requestEquipmentId}`)
+            this.withEndpointCompatibility((baseUrl) =>
+              this.http.delete<unknown>(`${withTrailingSlash(baseUrl)}${requestEquipmentId}`),
+            )
               .pipe(
                 map((response) => this.mapDeleteResponse(companyId, equipmentId, response)),
                 catchError((error: unknown) =>
@@ -169,8 +174,9 @@ export class EquipmentApiRepository implements EquipmentsRepository {
   private loadEquipment(companyId: string, equipmentId: string): Observable<Equipment> {
     return this.resolveEquipmentRequestId(companyId, equipmentId).pipe(
       switchMap((requestEquipmentId) =>
-        this.http
-          .get<BackendEquipmentDto>(`${withTrailingSlash(this.baseUrl)}${requestEquipmentId}`)
+        this.withEndpointCompatibility((baseUrl) =>
+          this.http.get<BackendEquipmentDto>(`${withTrailingSlash(baseUrl)}${requestEquipmentId}`),
+        )
           .pipe(
             map((equipment) =>
               mapBackendEquipmentToEquipment(equipment, companyId, this.resolveCompanyName(companyId)),
@@ -235,15 +241,16 @@ export class EquipmentApiRepository implements EquipmentsRepository {
       switchMap((equipment) =>
         this.resolveEquipmentRequestId(companyId, equipmentId).pipe(
           switchMap((requestEquipmentId) =>
-            this.http
-              .patch<BackendEquipmentDto | void>(
-                `${withTrailingSlash(this.baseUrl)}${requestEquipmentId}`,
+            this.withEndpointCompatibility((baseUrl) =>
+              this.http.patch<BackendEquipmentDto | void>(
+                `${withTrailingSlash(baseUrl)}${requestEquipmentId}`,
                 {
                   estado: status,
                   activo: status === 'ACTIVO',
                   isActive: status === 'ACTIVO',
                 },
-              )
+              ),
+            )
               .pipe(
                 switchMap((response) =>
                   this.resolveSavedEquipment(
@@ -323,10 +330,11 @@ export class EquipmentApiRepository implements EquipmentsRepository {
   }
 
   private resolveEquipmentRequestId(companyId: string, equipmentId: string): Observable<string> {
-    return this.http
-      .get<unknown>(withTrailingSlash(this.baseUrl), {
+    return this.withEndpointCompatibility((baseUrl) =>
+      this.http.get<unknown>(withTrailingSlash(baseUrl), {
         params: buildMasterListParams(this.resolveRequestCompanyId(companyId)),
-      })
+      }),
+    )
       .pipe(
         map((response) => {
           const equipment = extractArrayPayload<BackendEquipmentDto>(response).find((candidate) =>
@@ -504,5 +512,15 @@ export class EquipmentApiRepository implements EquipmentsRepository {
       context,
       permissionMessage: 'No tienes permisos para operar equipos en la empresa activa.',
     });
+  }
+
+  private withEndpointCompatibility<T>(
+    operation: (baseUrl: string) => Observable<T>,
+  ): Observable<T> {
+    return withFlatMasterEndpointFallback(
+      operation,
+      this.endpointUrls,
+      environment.useFlatMasterEndpointsFallback,
+    );
   }
 }
