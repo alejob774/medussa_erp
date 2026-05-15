@@ -48,6 +48,21 @@ Formato sugerido:
 - `bi.supply.purchases.view`: HU-043 Compras Estrategicas.
 - `bi.supply.logistics.view`: HU-044 KPI Logisticos.
 
+## DashboardUid esperados
+
+- HU-033: `medussa-executive`.
+- HU-034: `medussa-profitability`.
+- HU-035: `medussa-alerts`.
+- HU-036: `medussa-commercial`.
+- HU-037: `medussa-clients`.
+- HU-038: `medussa-forecast`.
+- HU-039: `medussa-production-rt`.
+- HU-040: `medussa-oee-plant`.
+- HU-041: `medussa-quality-nc`.
+- HU-042: `medussa-inventory-strategic`.
+- HU-043: `medussa-purchases-strategic`.
+- HU-044: `medussa-logistics-kpi`.
+
 ## Endpoints
 
 ### HU-033 Dashboard Ejecutivo 360
@@ -84,7 +99,10 @@ Respuesta:
 }
 ```
 
+Permiso: `bi.executive.view`.
 Refresh esperado: 15 minutos.
+Tabla DW/datamart sugerida: `dm_bi_executive_360`, alimentado desde `dw_fact_ventas`, `dw_fact_produccion_plan_real`, `dw_fact_inventario_saldos`, `dw_fact_otif`, `dw_fact_costos_producto` y `dw_fact_alertas_gerenciales`.
+Dashboard Grafana: `medussa-executive`.
 
 ### HU-034 Rentabilidad por Producto / Linea
 
@@ -119,7 +137,10 @@ Respuesta:
 }
 ```
 
+Permiso: `bi.profitability.view`.
 Refresh esperado: 1 hora o al cierre de lote de Costos Core.
+Tabla DW/datamart sugerida: `dm_bi_profitability`, alimentado desde `dw_fact_costos_producto`, `dw_fact_ventas`, `dw_dim_producto` y `dw_dim_linea_producto`.
+Dashboard Grafana: `medussa-profitability`.
 
 ### HU-035 Alertas Gerenciales
 
@@ -145,10 +166,14 @@ Respuesta:
   totalRojas: number;
   totalAmarillas: number;
   totalVerdes: number;
+  grafana?: BiDashboardEmbedConfig | null;
 }
 ```
 
+Permiso: `bi.alerts.view`.
 Refresh esperado: 5 minutos.
+Tabla DW/datamart sugerida: `dm_bi_managerial_alerts`, alimentado desde `dw_fact_alertas_gerenciales` y dimensiones operativas autorizadas.
+Dashboard Grafana: `medussa-alerts`.
 
 ### HU-036 Ventas y Cumplimiento Comercial
 
@@ -179,7 +204,10 @@ Respuesta:
 }
 ```
 
+Permiso: `bi.commercial.view`.
 Refresh esperado: 15 minutos.
+Tabla DW/datamart sugerida: `dm_bi_commercial_performance`, alimentado desde `dw_fact_ventas`, `dw_dim_vendedor`, `dw_dim_zona` y `dw_dim_cliente`.
+Dashboard Grafana: `medussa-commercial`.
 
 ### HU-037 Clientes Estrategicos
 
@@ -210,7 +238,10 @@ Respuesta:
 }
 ```
 
+Permiso: `bi.clients.view`.
 Refresh esperado: 30 minutos.
+Tabla DW/datamart sugerida: `dm_bi_strategic_clients`, alimentado desde `dw_fact_ventas`, `dw_dim_cliente`, `dw_dim_vendedor` y `dw_dim_zona`.
+Dashboard Grafana: `medussa-clients`.
 
 ### HU-038 Demanda vs Forecast
 
@@ -243,7 +274,10 @@ Respuesta:
 }
 ```
 
+Permiso: `bi.forecast.view`.
 Refresh esperado: 30 minutos o al aprobar forecast.
+Tabla DW/datamart sugerida: `dm_bi_demand_vs_forecast`, alimentado desde `dw_fact_forecast_real`, `dw_fact_ventas`, `dw_dim_producto`, `dw_dim_linea_producto` y `dw_dim_zona`.
+Dashboard Grafana: `medussa-forecast`.
 
 ### HU-039 Produccion Tiempo Real
 
@@ -539,4 +573,4 @@ Datamarts sugeridos:
 - Respuestas demo orientadas a El Arbolito.
 - Metadata de Grafana con `dashboardUid`, sin URL real ni token.
 - Facade y repositories API-ready sin consumir backend real mientras `environment.useBusinessIntelligenceMock` este activo.
-- Sin dashboards Angular finales ni configuracion real de Grafana.
+- Sin dashboards JSON de Grafana, embedding real, tokens ni configuracion real de Grafana.

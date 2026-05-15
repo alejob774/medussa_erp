@@ -427,6 +427,17 @@ export const routes: Routes = [
             },
           },
           {
+            path: 'demanda-vs-forecast',
+            loadComponent: () =>
+              import(
+                './features/business-intelligence/presentation/pages/demand-vs-forecast-page/demand-vs-forecast-page.component'
+              ).then((module) => module.DemandVsForecastPageComponent),
+            canActivate: [permissionGuard],
+            data: {
+              permission: 'bi.forecast.view',
+            },
+          },
+          {
             path: 'produccion-tiempo-real',
             loadComponent: () =>
               import(
@@ -490,17 +501,6 @@ export const routes: Routes = [
             canActivate: [permissionGuard],
             data: {
               permission: 'bi.supply.logistics.view',
-            },
-          },
-          {
-            path: 'demanda-vs-forecast',
-            loadComponent: () =>
-              import(
-                './features/business-intelligence/presentation/pages/demand-vs-forecast-page/demand-vs-forecast-page.component'
-              ).then((module) => module.DemandVsForecastPageComponent),
-            canActivate: [permissionGuard],
-            data: {
-              permission: 'bi.forecast.view',
             },
           },
         ],
