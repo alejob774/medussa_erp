@@ -60,7 +60,13 @@ async def eliminar_producto_logico(db: Session, db_obj: Producto):
 
 async def registrar_movimiento(db: Session, mov_in: MovimientoCreate, empresa_id: str):
     # 1. Insertar siempre en Kardex como fuente única de verdad
-    nuevo_kardex = InventarioKardex(**mov_in.model_dump(), empresa_id=empresa_id)
+    columnas_kardex = {col.name for col in InventarioKardex.__table__.columns}
+    datos_movimiento = {
+        key: value
+        for key, value in mov_in.model_dump().items()
+        if key in columnas_kardex
+    }
+    nuevo_kardex = InventarioKardex(**datos_movimiento, empresa_id=empresa_id)
     db.add(nuevo_kardex)
     db.commit()
     
@@ -77,7 +83,8 @@ async def recalcular_saldo_desde_kardex(db: Session, producto_id: int, bodega_id
         InventarioKardex.empresa_id == empresa_id,
         InventarioKardex.tipo_movimiento.in_([
             'ENTRADA', 'SALIDA', 'AJUSTE', 'RECHAZO', 'CONSUMO_TPM',
-            'TRANSFERENCIA_ENTRADA', 'TRANSFERENCIA_SALIDA'
+            'TRANSFERENCIA_ENTRADA', 'TRANSFERENCIA_SALIDA',
+            'DESPACHO_CLIENTE'
         ])
     ).scalar() or 0.0
 

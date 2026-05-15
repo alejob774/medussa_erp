@@ -13,6 +13,8 @@
 
 No se hizo merge con `devJ`, no se modifico frontend, no se conecto Grafana productivo, no se implemento ETL/DW real, no se reconstruyeron Inventory Core ni Costos Core completos.
 
+Nota 2026-05-15: HU-018/HU-019 tienen una rama backend dedicada `feat/backend-hu-018-019-pedidos-entregas`, basada en esta preparacion, con modelos, migracion, routers y documentacion especifica en `Backend/docs/hu-018-019-pedidos-entregas-backend.md`.
+
 ## 2. Cambios backend realizados
 
 | Archivo | Problema detectado | Cambio realizado | Motivo | Riesgo restante |

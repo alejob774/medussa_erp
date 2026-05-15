@@ -13,7 +13,8 @@ from app.api.v1 import (
     equipos, proveedores, oee, bom, calidad, mps, tpm,
     demanda, analisis_demanda, desarrollo_productos,
     scm_compras_api, scm_presupuesto_api, scm_inventario_api,
-    scm_layout_api, wms_api, bi, costs_core, pedidos
+    scm_layout_api, wms_api, bi, costs_core, pedidos, inventarios,
+    logistica_ordenes
     )
 
 app = FastAPI(
@@ -90,7 +91,10 @@ app.include_router(scm_inventario_api.router, prefix="/api/v1/scm/inventario/cic
 app.include_router(scm_layout_api.router, prefix="/api/v1/scm/inventario/layout", tags=["SCM - Layout Estratégico"])
 app.include_router(wms_api.router, prefix="/api/v1/wms", tags=["WMS - Picking & Packing"])
 
-app.include_router(pedidos.router, prefix="/api/v1/comercial/pedidos", tags=["Comercial"])
+app.include_router(pedidos.router, prefix="/api/v1/comercial/pedidos", tags=["Comercial - Pedidos"])
+app.include_router(pedidos.router, prefix="/api/v1/pedidos", tags=["Comercial - Pedidos HU-018"])
+app.include_router(inventarios.router, prefix="/api/v1/inventarios", tags=["Inventarios - Bridge HU-018"])
+app.include_router(logistica_ordenes.router, prefix="/api/v1/logistica/ordenes", tags=["Logistica - Entregas HU-019"])
 
 # BLOQUE: BI & DIRECCIÓN GENERAL (HU-033 al HU-035)
 app.include_router(bi.router, prefix="/api/v1/bi", tags=["Business Intelligence - Dirección"])

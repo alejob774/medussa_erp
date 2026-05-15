@@ -1,14 +1,45 @@
-from fastapi import APIRouter, Depends, Request, HTTPException
+from fastapi import APIRouter, Depends, Request, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from fastapi.encoders import jsonable_encoder
 from app.db.session import get_db
-from app.api.deps import get_current_user
+from app.api.deps import get_current_company, get_current_user
+from app.models.clientes import Cliente
 from app.schemas.cliente import ClienteCreate, ClienteUpdate, ClienteResponse
+from app.schemas.pedidos import ClienteEstadoResponse
 from app.services import cliente_service as crud
 from app.utils.auditoria import registrar_log
 
 router = APIRouter()
+
+@router.get("/estado", response_model=ClienteEstadoResponse)
+async def obtener_estado_cliente(
+    cliente_id: Optional[int] = Query(default=None),
+    id_cli: Optional[str] = Query(default=None),
+    db: Session = Depends(get_db),
+    empresa_id: str = Depends(get_current_company),
+    current_user = Depends(get_current_user)
+):
+    query = db.query(Cliente).filter(Cliente.empresa_id == empresa_id)
+    if cliente_id is not None:
+        query = query.filter(Cliente.id == cliente_id)
+    elif id_cli:
+        query = query.filter(Cliente.id_cli == id_cli)
+    else:
+        raise HTTPException(status_code=400, detail="Debe informar cliente_id o id_cli")
+
+    cliente = query.first()
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado para la empresa activa")
+
+    restringido = getattr(cliente, "estado", True) is False
+    return ClienteEstadoResponse(
+        cliente_id=cliente.id,
+        empresa_id=empresa_id,
+        estado="RESTRINGIDO" if restringido else "ACTIVO",
+        restringido=restringido,
+        motivo="Cliente inactivo o restringido comercialmente" if restringido else None,
+    )
 
 @router.post("/", response_model=ClienteResponse)
 async def crear_cliente(
