@@ -1,0 +1,231 @@
+<section class="space-y-4">
+  <header class="flex flex-col gap-3 border-b border-slate-200 pb-4 md:flex-row md:items-end md:justify-between">
+    <div>
+      <p class="text-sm font-semibold uppercase tracking-wide text-teal-700">Comercial</p>
+      <h1 class="text-2xl font-semibold text-slate-950">Toma de Pedidos</h1>
+      <p class="text-sm text-slate-600">{{ activeCompanyName }}</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <button mat-stroked-button type="button" (click)="syncInventory()" [disabled]="loading">
+        <mat-icon>sync</mat-icon>
+        Sincronizar inventario
+      </button>
+      <button mat-flat-button color="primary" type="button" (click)="sendConsolidated()" [disabled]="sending || !pendingOrders.length">
+        <mat-icon>outbox</mat-icon>
+        Enviar pendientes
+      </button>
+    </div>
+  </header>
+
+  <mat-progress-bar *ngIf="loading || saving || sending" mode="indeterminate"></mat-progress-bar>
+
+  <div *ngIf="errorMessage" class="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ errorMessage }}</div>
+  <div *ngIf="warningMessage" class="rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{{ warningMessage }}</div>
+  <div *ngIf="successMessage" class="rounded border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{{ successMessage }}</div>
+
+  <div class="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(360px,0.8fr)]">
+    <div class="space-y-4">
+      <mat-card>
+        <mat-card-content class="space-y-4 p-4">
+          <div class="grid gap-3 md:grid-cols-3">
+            <label class="space-y-1 text-sm">
+              <span class="font-medium text-slate-700">Cliente</span>
+              <select class="w-full rounded border border-slate-300 px-3 py-2" [(ngModel)]="selectedCustomerId">
+                <option value="">Seleccionar cliente</option>
+                <option *ngFor="let customer of catalogs.customers" [value]="customer.id">
+                  {{ customer.commercialName || customer.name }} - {{ customer.status }}
+                </option>
+              </select>
+            </label>
+            <label class="space-y-1 text-sm">
+              <span class="font-medium text-slate-700">Vendedor</span>
+              <select class="w-full rounded border border-slate-300 px-3 py-2" [(ngModel)]="selectedSellerId">
+                <option *ngFor="let seller of catalogs.sellers" [value]="seller.id">{{ seller.name }}</option>
+              </select>
+            </label>
+            <div class="rounded border px-3 py-2 text-sm" [ngClass]="selectedCustomerStatus === 'RESTRINGIDO' ? 'border-red-200 bg-red-50 text-red-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700'">
+              <div class="font-semibold">Estado cliente: {{ selectedCustomerStatus || 'Sin seleccionar' }}</div>
+              <div>{{ selectedCustomerRestrictionReason || 'Disponible para toma de pedido.' }}</div>
+            </div>
+          </div>
+
+          <div class="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
+            <label class="space-y-1 text-sm">
+              <span class="font-medium text-slate-700">Fecha pedido</span>
+              <input class="w-full rounded border border-slate-300 px-3 py-2" type="date" [(ngModel)]="orderDate" />
+            </label>
+            <label class="space-y-1 text-sm">
+              <span class="font-medium text-slate-700">Fecha entrega</span>
+              <input class="w-full rounded border border-slate-300 px-3 py-2" type="date" [(ngModel)]="requestedDeliveryDate" />
+            </label>
+            <label class="space-y-1 text-sm">
+              <span class="font-medium text-slate-700">Tipo</span>
+              <select class="w-full rounded border border-slate-300 px-3 py-2" [(ngModel)]="orderType">
+                <option>NORMAL</option>
+                <option>PROMOCIONAL</option>
+                <option>REPOSICION</option>
+                <option>CREDITO</option>
+              </select>
+            </label>
+            <label class="space-y-1 text-sm">
+              <span class="font-medium text-slate-700">Canal</span>
+              <select class="w-full rounded border border-slate-300 px-3 py-2" [(ngModel)]="salesChannel">
+                <option>CAMPO</option>
+                <option>WEB</option>
+                <option>TELEFONICO</option>
+                <option>WHATSAPP</option>
+                <option>MAYORISTA</option>
+              </select>
+            </label>
+            <label class="space-y-1 text-sm">
+              <span class="font-medium text-slate-700">Prioridad</span>
+              <select class="w-full rounded border border-slate-300 px-3 py-2" [(ngModel)]="priority">
+                <option>BAJA</option>
+                <option>NORMAL</option>
+                <option>ALTA</option>
+                <option>URGENTE</option>
+              </select>
+            </label>
+            <label class="space-y-1 text-sm">
+              <span class="font-medium text-slate-700">Pago</span>
+              <select class="w-full rounded border border-slate-300 px-3 py-2" [(ngModel)]="paymentCondition">
+                <option>CONTADO</option>
+                <option>CREDITO_8_DIAS</option>
+                <option>CREDITO_15_DIAS</option>
+                <option>CREDITO_30_DIAS</option>
+              </select>
+            </label>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card>
+        <mat-card-content class="space-y-4 p-4">
+          <div class="flex flex-col gap-3 md:flex-row md:items-end">
+            <label class="min-w-0 flex-1 space-y-1 text-sm">
+              <span class="font-medium text-slate-700">Producto</span>
+              <select class="w-full rounded border border-slate-300 px-3 py-2" [(ngModel)]="selectedProductId">
+                <option *ngFor="let product of catalogs.products" [value]="product.productId">
+                  {{ product.sku }} - {{ product.productName }} | Stock {{ product.availableStock }}
+                </option>
+              </select>
+            </label>
+            <label class="w-32 space-y-1 text-sm">
+              <span class="font-medium text-slate-700">Cantidad</span>
+              <input class="w-full rounded border border-slate-300 px-3 py-2" type="number" min="1" [(ngModel)]="quantityToAdd" />
+            </label>
+            <label class="flex items-center gap-2 rounded border border-slate-200 px-3 py-2 text-sm">
+              <input type="checkbox" [(ngModel)]="promisedLater" />
+              Entrega posterior
+            </label>
+            <button mat-flat-button color="primary" type="button" (click)="addProduct()">
+              <mat-icon>add</mat-icon>
+              Agregar
+            </button>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="min-w-full text-left text-sm">
+              <thead class="border-b bg-slate-50 text-xs uppercase text-slate-500">
+                <tr>
+                  <th class="px-3 py-2">Producto</th>
+                  <th class="px-3 py-2">Stock</th>
+                  <th class="px-3 py-2">Cantidad</th>
+                  <th class="px-3 py-2">Precio</th>
+                  <th class="px-3 py-2">Total</th>
+                  <th class="px-3 py-2">Estado</th>
+                  <th class="px-3 py-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let detail of details" class="border-b">
+                  <td class="px-3 py-2">
+                    <div class="font-medium text-slate-900">{{ detail.productName }}</div>
+                    <div class="text-xs text-slate-500">{{ detail.sku }} | {{ detail.presentation }}</div>
+                  </td>
+                  <td class="px-3 py-2">{{ detail.availableStock }} {{ detail.unit }}</td>
+                  <td class="px-3 py-2">{{ detail.quantity }}</td>
+                  <td class="px-3 py-2">{{ detail.unitPrice | currency:'COP':'symbol':'1.0-0' }}</td>
+                  <td class="px-3 py-2">{{ detail.lineTotal | currency:'COP':'symbol':'1.0-0' }}</td>
+                  <td class="px-3 py-2">
+                    <span class="rounded px-2 py-1 text-xs" [ngClass]="detail.stockStatus === 'SIN_STOCK' ? 'bg-red-100 text-red-700' : detail.stockStatus === 'BAJO_STOCK' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-700'">
+                      {{ detail.promisedLater ? 'ENTREGA_POSTERIOR' : detail.stockStatus }}
+                    </span>
+                  </td>
+                  <td class="px-3 py-2 text-right">
+                    <button mat-icon-button type="button" (click)="removeDetail(detail.productId)" aria-label="Quitar producto">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </td>
+                </tr>
+                <tr *ngIf="!details.length">
+                  <td class="px-3 py-6 text-center text-slate-500" colspan="7">No hay productos en el pedido.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <aside class="space-y-4">
+      <mat-card>
+        <mat-card-content class="space-y-4 p-4">
+          <div class="flex items-center justify-between text-sm">
+            <span>Ultima sincronizacion</span>
+            <strong>{{ lastInventorySyncAt || 'Pendiente' }}</strong>
+          </div>
+          <div class="space-y-2 border-t pt-3 text-sm">
+            <div class="flex justify-between"><span>Subtotal</span><strong>{{ subtotal | currency:'COP':'symbol':'1.0-0' }}</strong></div>
+            <div class="flex justify-between"><span>IVA mock 19%</span><strong>{{ tax | currency:'COP':'symbol':'1.0-0' }}</strong></div>
+            <div class="flex justify-between text-lg text-slate-950"><span>Total</span><strong>{{ total | currency:'COP':'symbol':'1.0-0' }}</strong></div>
+          </div>
+          <label class="flex items-center gap-2 text-sm">
+            <input type="checkbox" [(ngModel)]="reserveInventory" />
+            Reservar inventario al enviar
+          </label>
+          <div class="grid gap-2">
+            <button mat-flat-button color="primary" type="button" (click)="saveCreated()" [disabled]="saving">
+              Guardar como CREADA
+            </button>
+            <button mat-stroked-button type="button" (click)="sendOrder()" [disabled]="saving || sending">
+              Enviar pedido
+            </button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card>
+        <mat-card-content class="space-y-3 p-4">
+          <div class="flex items-center justify-between">
+            <h2 class="font-semibold text-slate-900">Pedidos locales</h2>
+            <span class="text-xs text-slate-500">{{ pendingOrders.length }} pendientes</span>
+          </div>
+          <button *ngFor="let order of orders" type="button" class="w-full rounded border border-slate-200 p-3 text-left hover:bg-slate-50" (click)="selectOrder(order)">
+            <div class="flex items-center justify-between gap-2">
+              <strong>{{ order.orderNumber }}</strong>
+              <span class="rounded bg-slate-100 px-2 py-1 text-xs">{{ order.status }}</span>
+            </div>
+            <div class="text-sm text-slate-600">{{ order.customerName }}</div>
+            <div class="flex items-center justify-between text-xs text-slate-500">
+              <span>{{ order.total | currency:'COP':'symbol':'1.0-0' }}</span>
+              <button *ngIf="order.status === 'CREADA'" mat-button type="button" (click)="sendSavedOrder(order); $event.stopPropagation()">Enviar</button>
+            </div>
+          </button>
+          <p *ngIf="!orders.length" class="py-4 text-center text-sm text-slate-500">No hay pedidos registrados.</p>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card *ngIf="selectedOrder">
+        <mat-card-content class="space-y-3 p-4">
+          <h2 class="font-semibold text-slate-900">Trazabilidad</h2>
+          <div *ngFor="let trace of selectedOrder.trace" class="border-l-2 border-teal-600 pl-3 text-sm">
+            <div class="font-medium">{{ trace.status }}</div>
+            <div class="text-slate-600">{{ trace.description }}</div>
+            <div class="text-xs text-slate-500">{{ trace.occurredAt }}</div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </aside>
+  </div>
+</section>

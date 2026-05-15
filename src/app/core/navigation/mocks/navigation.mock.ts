@@ -39,6 +39,22 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
         companyIds: ['medussa-holding', 'medussa-retail', 'medussa-services'],
       },
       {
+        id: 'comercial',
+        label: 'Comercial',
+        icon: 'point_of_sale',
+        companyIds: ALL_COMPANIES,
+        children: [
+          {
+            id: 'comercial-toma-pedidos',
+            label: 'Toma de Pedidos',
+            route: '/ventas/pedidos',
+            icon: 'playlist_add',
+            requiredPermissions: ['orders.view'],
+            companyIds: ALL_COMPANIES,
+          },
+        ],
+      },
+      {
         id: 'produccion',
         label: 'Produccion',
         icon: 'precision_manufacturing',
@@ -189,6 +205,22 @@ export const ERP_NAVIGATION_SECTIONS: NavigationSection[] = [
         icon: 'warehouse',
         requiredPermissions: ['warehouse.view'],
         companyIds: ['medussa-holding', 'medussa-industrial'],
+      },
+      {
+        id: 'logistica',
+        label: 'Logistica',
+        icon: 'local_shipping',
+        companyIds: ALL_COMPANIES,
+        children: [
+          {
+            id: 'logistica-entrega-pedidos',
+            label: 'Entrega de Pedidos',
+            route: '/logistica/entrega-pedidos',
+            icon: 'fact_check',
+            requiredPermissions: ['deliveries.view'],
+            companyIds: ALL_COMPANIES,
+          },
+        ],
       },
       {
         id: 'compras',

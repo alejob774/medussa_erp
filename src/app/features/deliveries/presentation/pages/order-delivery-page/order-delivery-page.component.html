@@ -1,0 +1,191 @@
+<section class="space-y-4">
+  <header class="flex flex-col gap-3 border-b border-slate-200 pb-4 md:flex-row md:items-end md:justify-between">
+    <div>
+      <p class="text-sm font-semibold uppercase tracking-wide text-teal-700">Logistica</p>
+      <h1 class="text-2xl font-semibold text-slate-950">Entrega de Pedidos</h1>
+      <p class="text-sm text-slate-600">Ordenes en ruta, evidencia y trazabilidad mock-first</p>
+    </div>
+    <button mat-stroked-button type="button" (click)="loadDeliveries()" [disabled]="loading">
+      <mat-icon>refresh</mat-icon>
+      Actualizar
+    </button>
+  </header>
+
+  <mat-progress-bar *ngIf="loading || confirming" mode="indeterminate"></mat-progress-bar>
+
+  <div *ngIf="errorMessage" class="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ errorMessage }}</div>
+  <div *ngIf="successMessage" class="rounded border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{{ successMessage }}</div>
+
+  <mat-card>
+    <mat-card-content class="grid gap-3 p-4 md:grid-cols-4">
+      <label class="space-y-1 text-sm">
+        <span class="font-medium text-slate-700">Ruta</span>
+        <select class="w-full rounded border border-slate-300 px-3 py-2" [(ngModel)]="filters.routeId" (change)="loadDeliveries()">
+          <option value="">Todas</option>
+          <option *ngFor="let route of catalogs.routes" [value]="route.id">{{ route.name }}</option>
+        </select>
+      </label>
+      <label class="space-y-1 text-sm">
+        <span class="font-medium text-slate-700">Conductor</span>
+        <select class="w-full rounded border border-slate-300 px-3 py-2" [(ngModel)]="filters.driverId" (change)="loadDeliveries()">
+          <option value="">Todos</option>
+          <option *ngFor="let driver of catalogs.drivers" [value]="driver.id">{{ driver.name }}</option>
+        </select>
+      </label>
+      <label class="space-y-1 text-sm">
+        <span class="font-medium text-slate-700">Estado</span>
+        <select class="w-full rounded border border-slate-300 px-3 py-2" [(ngModel)]="filters.status" (change)="loadDeliveries()">
+          <option>TODOS</option>
+          <option>EN_RUTA</option>
+          <option>LISTA_PARA_DESPACHO</option>
+          <option>ENTREGADA</option>
+          <option>PARCIALMENTE_SURTIDA</option>
+          <option>NO_ENTREGADA</option>
+        </select>
+      </label>
+      <label class="space-y-1 text-sm">
+        <span class="font-medium text-slate-700">Fecha</span>
+        <input class="w-full rounded border border-slate-300 px-3 py-2" type="date" [(ngModel)]="filters.date" (change)="loadDeliveries()" />
+      </label>
+    </mat-card-content>
+  </mat-card>
+
+  <div class="grid gap-4 xl:grid-cols-[360px_minmax(0,1fr)]">
+    <mat-card>
+      <mat-card-content class="space-y-3 p-4">
+        <div class="flex items-center justify-between">
+          <h2 class="font-semibold text-slate-900">Ordenes en ruta</h2>
+          <span class="text-xs text-slate-500">{{ deliveries.length }} ordenes</span>
+        </div>
+        <button *ngFor="let delivery of deliveries" type="button" class="w-full rounded border border-slate-200 p-3 text-left hover:bg-slate-50" [ngClass]="selectedDelivery?.orderId === delivery.orderId ? 'border-teal-500 bg-teal-50' : ''" (click)="selectDelivery(delivery)">
+          <div class="flex items-center justify-between gap-2">
+            <strong>{{ delivery.orderId }}</strong>
+            <span class="rounded bg-slate-100 px-2 py-1 text-xs">{{ delivery.orderStatus }}</span>
+          </div>
+          <div class="text-sm text-slate-700">{{ delivery.customerName }}</div>
+          <div class="text-xs text-slate-500">{{ delivery.routeName }} | {{ delivery.driverName }}</div>
+        </button>
+        <p *ngIf="!deliveries.length" class="py-6 text-center text-sm text-slate-500">No hay ordenes para los filtros seleccionados.</p>
+      </mat-card-content>
+    </mat-card>
+
+    <div class="space-y-4" *ngIf="selectedDelivery; else emptySelection">
+      <mat-card>
+        <mat-card-content class="space-y-4 p-4">
+          <div class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+            <div>
+              <h2 class="text-lg font-semibold text-slate-950">{{ selectedDelivery.customerName }}</h2>
+              <p class="text-sm text-slate-600">{{ selectedDelivery.routeName }} | {{ selectedDelivery.vehicleName }}</p>
+            </div>
+            <span class="rounded bg-slate-100 px-3 py-1 text-sm font-medium">{{ selectedDelivery.orderStatus }}</span>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="min-w-full text-left text-sm">
+              <thead class="border-b bg-slate-50 text-xs uppercase text-slate-500">
+                <tr>
+                  <th class="px-3 py-2">Producto</th>
+                  <th class="px-3 py-2">Pedido</th>
+                  <th class="px-3 py-2">Pendiente</th>
+                  <th class="px-3 py-2">Entregado</th>
+                  <th class="px-3 py-2">Unidad</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let detail of editableDetails" class="border-b">
+                  <td class="px-3 py-2">
+                    <div class="font-medium text-slate-900">{{ detail.productName }}</div>
+                    <div class="text-xs text-slate-500">{{ detail.sku }}</div>
+                  </td>
+                  <td class="px-3 py-2">{{ detail.orderedQuantity }}</td>
+                  <td class="px-3 py-2">{{ detail.pendingQuantity }}</td>
+                  <td class="px-3 py-2">
+                    <input class="w-28 rounded border border-slate-300 px-3 py-2" type="number" min="0" [max]="detail.pendingQuantity" [(ngModel)]="detail.deliveredQuantity" [disabled]="selectedDelivery.orderStatus !== 'EN_RUTA' && selectedDelivery.orderStatus !== 'LISTA_PARA_DESPACHO'" />
+                  </td>
+                  <td class="px-3 py-2">{{ detail.unit }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="flex flex-wrap gap-2">
+            <button mat-stroked-button type="button" (click)="fillTotalDelivery()" [disabled]="selectedDelivery.orderStatus !== 'EN_RUTA' && selectedDelivery.orderStatus !== 'LISTA_PARA_DESPACHO'">
+              <mat-icon>done_all</mat-icon>
+              Prellenar total
+            </button>
+            <button mat-stroked-button type="button" (click)="clearDeliveryQuantities()" [disabled]="selectedDelivery.orderStatus !== 'EN_RUTA' && selectedDelivery.orderStatus !== 'LISTA_PARA_DESPACHO'">
+              <mat-icon>backspace</mat-icon>
+              Limpiar cantidades
+            </button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card>
+        <mat-card-content class="grid gap-4 p-4 lg:grid-cols-2">
+          <div class="space-y-3">
+            <label class="space-y-1 text-sm">
+              <span class="font-medium text-slate-700">Firma digital simple</span>
+              <input class="w-full rounded border border-slate-300 px-3 py-2" type="text" placeholder="Nombre o firma textual" [(ngModel)]="signatureText" />
+            </label>
+            <label class="space-y-1 text-sm">
+              <span class="font-medium text-slate-700">Comentarios</span>
+              <textarea class="min-h-24 w-full rounded border border-slate-300 px-3 py-2" [(ngModel)]="comments"></textarea>
+            </label>
+            <div class="flex flex-wrap gap-2">
+              <button mat-stroked-button type="button" (click)="setMockPhoto()">
+                <mat-icon>photo_camera</mat-icon>
+                Evidencia mock
+              </button>
+              <span class="rounded bg-slate-100 px-3 py-2 text-sm text-slate-700">{{ photoBase64 ? 'Evidencia adjunta' : 'Sin evidencia' }}</span>
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            <label class="flex items-center gap-2 text-sm">
+              <input type="checkbox" [(ngModel)]="useMockGps" />
+              Usar GPS mock
+            </label>
+            <div class="grid gap-3 md:grid-cols-2">
+              <label class="space-y-1 text-sm">
+                <span class="font-medium text-slate-700">Latitud</span>
+                <input class="w-full rounded border border-slate-300 px-3 py-2" type="number" [(ngModel)]="gpsLatitude" [disabled]="!useMockGps" />
+              </label>
+              <label class="space-y-1 text-sm">
+                <span class="font-medium text-slate-700">Longitud</span>
+                <input class="w-full rounded border border-slate-300 px-3 py-2" type="number" [(ngModel)]="gpsLongitude" [disabled]="!useMockGps" />
+              </label>
+            </div>
+            <div class="flex flex-wrap gap-2 pt-2">
+              <button mat-flat-button color="primary" type="button" (click)="confirmTotal()" [disabled]="confirming || (selectedDelivery.orderStatus !== 'EN_RUTA' && selectedDelivery.orderStatus !== 'LISTA_PARA_DESPACHO')">
+                Confirmar entrega total
+              </button>
+              <button mat-stroked-button type="button" (click)="confirmPartial()" [disabled]="confirming || (selectedDelivery.orderStatus !== 'EN_RUTA' && selectedDelivery.orderStatus !== 'LISTA_PARA_DESPACHO')">
+                Registrar parcial
+              </button>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card>
+        <mat-card-content class="space-y-3 p-4">
+          <h2 class="font-semibold text-slate-900">Trazabilidad</h2>
+          <div *ngFor="let item of trace" class="border-l-2 border-teal-600 pl-3 text-sm">
+            <div class="font-medium">{{ item.status }}</div>
+            <div class="text-slate-600">{{ item.description }}</div>
+            <div class="text-xs text-slate-500">{{ item.occurredAt }} | {{ item.user }}</div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+
+  <ng-template #emptySelection>
+    <mat-card>
+      <mat-card-content class="p-8 text-center text-slate-500">
+        Selecciona una orden en ruta para registrar la entrega.
+      </mat-card-content>
+    </mat-card>
+  </ng-template>
+</section>

@@ -18,6 +18,8 @@ export const environment = {
   enableClientsAdministrationFallback: true,
   useVendorsAdministrationMock: true,
   enableVendorsAdministrationFallback: true,
+  useOrdersMock: true,
+  enableOrdersFallback: true,
   useDriversAdministrationMock: true,
   enableDriversAdministrationFallback: true,
   useRoutesAdministrationMock: true,
@@ -41,6 +43,8 @@ export const environment = {
   useStorageLayoutMock: true,
   useInventoryCycleMock: true,
   usePickingPackingMock: true,
+  useDeliveriesMock: true,
+  enableDeliveriesFallback: true,
 
   // Production, quality, and cost domains
   useInventoryCoreMock: true,

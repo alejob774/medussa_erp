@@ -59,6 +59,17 @@ export const routes: Routes = [
         redirectTo: 'supply-chain-management/vendedores',
       },
       {
+        path: 'ventas/pedidos',
+        loadComponent: () =>
+          import('./features/orders/presentation/pages/order-taking-page/order-taking-page.component').then(
+            (module) => module.OrderTakingPageComponent,
+          ),
+        canActivate: [permissionGuard],
+        data: {
+          permission: 'orders.view',
+        },
+      },
+      {
         path: 'ventas/conductores',
         pathMatch: 'full',
         redirectTo: 'supply-chain-management/conductores',
@@ -514,6 +525,17 @@ export const routes: Routes = [
           description: 'Base para entradas, salidas, ubicaciones y picking.',
           hint: 'HU siguiente: tablero de almacén y operaciones.',
           permission: 'warehouse.view',
+        },
+      },
+      {
+        path: 'logistica/entrega-pedidos',
+        loadComponent: () =>
+          import(
+            './features/deliveries/presentation/pages/order-delivery-page/order-delivery-page.component'
+          ).then((module) => module.OrderDeliveryPageComponent),
+        canActivate: [permissionGuard],
+        data: {
+          permission: 'deliveries.view',
         },
       },
       {
