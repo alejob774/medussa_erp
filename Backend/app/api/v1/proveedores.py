@@ -26,7 +26,7 @@ async def crear_proveedor(
     db.commit()
     db.refresh(nuevo_obj)
     
-    # Corregido: Se pasa 'request' y datos del usuario[cite: 15]
+    # Corregido: Se pasa 'request' y datos del usuario
     await registrar_log(db, request, user_id=current_user.id, user_name=current_user.username,
                         modulo="MAESTROS", accion="CREATE_PROVEEDOR", empresa_id=empresa_id)
     return nuevo_obj
@@ -37,7 +37,7 @@ def obtener_proveedor(
     db: Session = Depends(get_db),
     empresa_id: str = Depends(get_current_company)
 ):
-    # Validación de tenant[cite: 15, 21]
+    # Validación de tenant
     db_obj = db.query(Proveedor).filter(Proveedor.id == proveedor_id, Proveedor.empresa_id == empresa_id).first()
     if not db_obj:
         raise HTTPException(status_code=404, detail="Proveedor no encontrado")

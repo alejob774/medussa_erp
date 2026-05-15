@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import List, Optional
+from typing import Any, List, Optional
 
 class EmpresaMe(BaseModel):
     empresa_id: str
@@ -19,3 +19,12 @@ class UserMeResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class SeleccionarEmpresaRequest(BaseModel):
+    empresaId: Optional[Any] = None
+    empresa_id: Optional[Any] = None
+    companyId: Optional[Any] = None
+
+    def empresa_id_solicitada(self) -> Optional[str]:
+        value = self.empresaId or self.empresa_id or self.companyId
+        return str(value) if value is not None else None

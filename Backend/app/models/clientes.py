@@ -14,5 +14,6 @@ class Cliente(Base):
     ciudad = Column(String(100), nullable=False)
     telefono = Column(String(20), nullable=True)
     email = Column(String(100), nullable=True)
+    empresa_id = Column(String(50), index=True, nullable=False)
     estado = Column(Boolean, default=True) # Para eliminación lógica (Soft Delete)
     fecha_creacion = Column(DateTime(timezone=True), server_default=func.now())

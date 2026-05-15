@@ -8,7 +8,7 @@ from app.db.session import engine, Base
 
 # Importación de Routers
 from app.api.v1 import (
-    auth, usuarios, configuracion, auditoria, seguridad,
+    auth, usuarios, configuracion, auditoria, seguridad, empresas,
     inventario, inventory_core, clientes, vendedores, conductores, rutas,
     equipos, proveedores, oee, bom, calidad, mps, tpm,
     demanda, analisis_demanda, desarrollo_productos,
@@ -48,6 +48,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login")
 
 # BLOQUE: CORE & ADMINISTRACIÓN (HU-001 al HU-005)
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Autenticación"])
+app.include_router(empresas.router, prefix="/api/v1/empresas", tags=["Empresas"])
 app.include_router(usuarios.router, prefix="/api/v1/usuarios", tags=["Usuarios"])
 app.include_router(seguridad.router, prefix="/api/v1/seguridad", tags=["Seguridad"])
 app.include_router(configuracion.router, prefix="/api/v1/configuracion", tags=["Configuración Sistema"])
@@ -64,6 +65,13 @@ app.include_router(conductores.router, prefix="/api/v1/conductores", tags=["Log�
 app.include_router(rutas.router, prefix="/api/v1/rutas", tags=["Logística - Rutas"])
 app.include_router(equipos.router, prefix="/api/v1/equipos", tags=["Activos - Equipos"])
 app.include_router(proveedores.router, prefix="/api/v1/proveedores", tags=["Compras - Proveedores"])
+
+# Aliases contractuales para el frontend devJ: mantienen la logica de routers planos.
+app.include_router(proveedores.router, prefix="/api/v1/maestros/proveedores", tags=["Maestros - Proveedores"])
+app.include_router(vendedores.router, prefix="/api/v1/maestros/vendedores", tags=["Maestros - Vendedores"])
+app.include_router(conductores.router, prefix="/api/v1/maestros/conductores", tags=["Maestros - Conductores"])
+app.include_router(rutas.router, prefix="/api/v1/maestros/rutas", tags=["Maestros - Rutas"])
+app.include_router(equipos.router, prefix="/api/v1/maestros/equipos", tags=["Maestros - Equipos"])
 
 # BLOQUE: PRODUCCIÓN & CALIDAD (HU-020 al HU-024)
 app.include_router(oee.router, prefix="/api/v1/produccion/oee", tags=["Producción - OEE"])

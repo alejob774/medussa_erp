@@ -5,6 +5,7 @@ from app.db.session import get_db
 from app.api.deps import get_current_user, get_current_company
 from app.schemas.inventario import MovimientoCreate, SaldoResponse, TransferenciaCreate
 from app.services import inventario_service as crud
+from app.models.inventario import InventarioSaldo
 
 router = APIRouter()
 

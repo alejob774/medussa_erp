@@ -19,6 +19,7 @@ class Vendedor(Base):
     id = Column(Integer, primary_key=True, index=True)
     id_ven = Column(String(20), unique=True, nullable=False, index=True) # ID Único
     nombre_ven = Column(String(150), nullable=False) # Nombre Obligatorio
+    empresa_id = Column(String(50), index=True, nullable=False)
     estado = Column(Boolean, default=True) # Soft Delete
     fecha_creacion = Column(DateTime(timezone=True), server_default=func.now())
 

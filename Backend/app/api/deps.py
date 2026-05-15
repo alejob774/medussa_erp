@@ -33,6 +33,11 @@ async def get_current_user(db: Session = Depends(get_db), token: str = Depends(o
     user = db.query(Usuario).filter(Usuario.username == username).first()
     if user is None:
         raise credentials_exception
+    if not getattr(user, "estado", True):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Usuario inactivo"
+        )
     return user
 
 async def get_current_company(

@@ -16,7 +16,7 @@ class ConductorBase(BaseModel):
     estado: Optional[bool] = True
 
 class ConductorCreate(ConductorBase):
-    id_rutas: List[int] # Lista de IDs de rutas a asociar [cite: 176]
+    id_rutas: List[int] # Lista de IDs de rutas a asociar
 
 class ConductorUpdate(BaseModel):
     nombre_con: Optional[str] = None
@@ -25,7 +25,7 @@ class ConductorUpdate(BaseModel):
 
 class ConductorResponse(ConductorBase):
     id: int
-    rutas: List[RutaBase] # [cite: 178]
+    rutas: List[RutaBase] #
     fecha_creacion: datetime
 
     class Config:

@@ -36,7 +36,12 @@ async def crear_vendedor(db: Session, obj_in: VendedorCreate):
     
     # Manejo de relación con clientes si existen IDs
     if obj_in.id_clientes:
-        clientes = db.query(Cliente).filter(Cliente.id.in_(obj_in.id_clientes)).all()
+        clientes = db.query(Cliente).filter(
+            Cliente.id.in_(obj_in.id_clientes),
+            Cliente.empresa_id == empresa_id
+        ).all()
+        if len(clientes) != len(obj_in.id_clientes):
+            raise HTTPException(status_code=404, detail="Uno o mas clientes no pertenecen a esta empresa")
         db_obj.clientes = clientes
 
     db.add(db_obj)
@@ -50,7 +55,12 @@ async def actualizar_vendedor(db: Session, id: int, obj_in: VendedorUpdate):
     
     if "id_clientes" in update_data:
         id_clientes = update_data.pop("id_clientes")
-        clientes = db.query(Cliente).filter(Cliente.id.in_(id_clientes)).all()
+        clientes = db.query(Cliente).filter(
+            Cliente.id.in_(id_clientes),
+            Cliente.empresa_id == empresa_id
+        ).all()
+        if len(clientes) != len(id_clientes):
+            raise HTTPException(status_code=404, detail="Uno o mas clientes no pertenecen a esta empresa")
         vendedor.clientes = clientes
 
     for field, value in update_data.items():

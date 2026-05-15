@@ -8,7 +8,7 @@ class MultiCompanyMiddleware(BaseHTTPMiddleware):
         path = request.url.path
         
         # 1. Rutas exentas (Auth y Docs)
-        exact_exempt_paths = ["/docs", "/redoc", "/openapi.json", "/"]
+        exact_exempt_paths = ["/docs", "/redoc", "/openapi.json", "/", "/api/v1/empresas/mis-empresas", "/api/v1/empresas/mis-empresas/"]
         exempt_prefixes = ["/api/v1/auth"]
 
         if path in exact_exempt_paths or any(path.startswith(p) for p in exempt_prefixes):

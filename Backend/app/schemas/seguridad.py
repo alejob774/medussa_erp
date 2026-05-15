@@ -3,9 +3,9 @@ from typing import Optional, Any, List
 from datetime import datetime
 
 class RolBase(BaseModel):
-    # Longitud de 100 caracteres según HU-013 [cite: 31]
+    # Longitud de 100 caracteres según HU-013
     nombre: str = Field(..., max_length=100)
-    # Longitud de 300 caracteres según HU-013 [cite: 31]
+    # Longitud de 300 caracteres según HU-013
     descripcion: Optional[str] = Field(None, max_length=300)
     empresa_id: str
     permisos: Optional[Any] = None
@@ -23,7 +23,7 @@ class RolUpdate(BaseModel):
     estado: Optional[str] = None
 
 class RolResponse(RolBase):
-    """Esquema de salida con datos de auditoría [cite: 32, 37]"""
+    """Esquema de salida con datos de auditoría"""
     id: int
     fecha_creacion: Optional[datetime] = None
     fecha_actualizacion: Optional[datetime] = None
@@ -45,7 +45,7 @@ class PerfilBase(BaseModel):
     nombre: str = Field(..., max_length=100)
     descripcion: Optional[str] = Field(None, max_length=300)
     empresa_id: str
-    permisos: Any # Soporta el árbol de módulos/pantallas [cite: 93]
+    permisos: Any # Soporta el árbol de módulos/pantallas
     estado: bool = True
 
 class PerfilCreate(PerfilBase):

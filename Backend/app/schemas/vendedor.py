@@ -10,12 +10,12 @@ class VendedorBase(BaseModel):
 class VendedorCreate(VendedorBase):
     id_ven: str
     nombre_ven: str
-    id_clientes: List[int] # Lista de IDs de clientes para asociar [cite: 161]
+    id_clientes: List[int] # Lista de IDs de clientes para asociar
 
 class VendedorUpdate(VendedorBase):
     id_clientes: Optional[List[int]] = None
 
 class VendedorResponse(VendedorBase):
     id: int
-    clientes: List[ClienteResponse] = [] # Incluye detalle de clientes asociados [cite: 155]
+    clientes: List[ClienteResponse] = [] # Incluye detalle de clientes asociados
     model_config = ConfigDict(from_attributes=True)

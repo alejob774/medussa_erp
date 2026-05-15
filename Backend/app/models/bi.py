@@ -148,7 +148,7 @@ class DimCausaNC(Base):
 
     causa_id = Column(Integer, primary_key=True)
     nombre = Column(String(100), nullable=False)
-    categoria = Column(String(50)) # Materia Prima, Proceso, Empaque, etc.[cite: 19]
+    categoria = Column(String(50)) # Materia Prima, Proceso, Empaque, etc.
 
 class FactCalidad(Base):
     __tablename__ = "fact_calidad"
@@ -163,10 +163,10 @@ class FactCalidad(Base):
     cliente_id = Column(Integer, index=True)
     lote_id = Column(String(100))
     
-    tipo_evento = Column(String(50)) # SCRAP, RETRABAJO, RECHAZO, RECLAMO[cite: 19]
+    tipo_evento = Column(String(50)) # SCRAP, RETRABAJO, RECHAZO, RECLAMO
     causa_id = Column(Integer, ForeignKey("bi.dim_causa_nc.causa_id"))
     cantidad = Column(Numeric(14, 2), default=0)
-    costo = Column(Numeric(14, 2), default=0) # Costo de mala calidad calculado[cite: 19]
+    costo = Column(Numeric(14, 2), default=0) # Costo de mala calidad calculado
     fecha_carga = Column(DateTime, server_default=func.now())
 
 # app/models/bi.py (referenciado como bi_models_10.py)
@@ -186,13 +186,13 @@ class FactInventario(Base):
     valor_inventario = Column(Numeric(14, 2), default=0)
     costo_unitario = Column(Numeric(14, 2), default=0)
     
-    # KPIs de Gestión[cite: 22]
+    # KPIs de Gestión
     consumo_mensual_promedio = Column(Numeric(14, 2), default=0)
     dias_cobertura = Column(Numeric(10, 2), default=0)
     indice_rotacion = Column(Numeric(10, 4), default=0)
     dias_sin_movimiento = Column(Integer, default=0)
     
-    # Flags de Estrategia[cite: 22]
+    # Flags de Estrategia
     es_sobrestock = Column(Boolean, default=False)
     es_quiebre = Column(Boolean, default=False)
     es_lento_movimiento = Column(Boolean, default=False)
@@ -253,7 +253,7 @@ class FactLogistica(Base):
     capacidad_utilizada_vol = Column(Numeric(10, 2)) # m3 o kg
     capacidad_total_vehiculo = Column(Numeric(10, 2))
     
-    # Flags de calidad de servicio[cite: 30]
+    # Flags de calidad de servicio
     es_puntual = Column(Boolean, default=True)
     entrega_completa = Column(Boolean, default=True)
     

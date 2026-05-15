@@ -13,6 +13,7 @@ class Equipo(Base):
     modelo = Column(String(100))
     serie = Column(String(100))
     especificaciones_tecnicas = Column(Text)
+    empresa_id = Column(String(50), index=True, nullable=False)
     empresa_fabricante = Column(String(150))
     contacto_fabricante = Column(String(100)) # Email solicitado en HU
     estado = Column(Boolean, default=True)

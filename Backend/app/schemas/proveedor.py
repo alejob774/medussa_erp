@@ -3,7 +3,7 @@ from typing import Optional
 from datetime import datetime
 
 class ProveedorBase(BaseModel):
-    # Alineado con 'nombre_razon_social' en el modelo[cite: 18]
+    # Alineado con 'nombre_razon_social' en el modelo
     nombre_razon_social: str = Field(..., max_length=100)
     nit: str = Field(..., max_length=20)
     contacto_nombre: Optional[str] = Field(None, max_length=100)

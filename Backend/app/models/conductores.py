@@ -19,6 +19,7 @@ class Conductor(Base):
     id = Column(Integer, primary_key=True, index=True)
     id_con = Column(String(20), unique=True, nullable=False, index=True)
     nombre_con = Column(String(150), nullable=False)
+    empresa_id = Column(String(50), index=True, nullable=False)
     estado = Column(Boolean, default=True)
     fecha_creacion = Column(DateTime(timezone=True), server_default=func.now())
 

@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
+from sqlalchemy import func, or_
 from fastapi import HTTPException, status
 from app.models.inventario import Producto, InventarioSaldo, InventarioKardex
 from app.schemas.producto import ProductoCreate, ProductoUpdate
@@ -74,7 +74,11 @@ async def recalcular_saldo_desde_kardex(db: Session, producto_id: int, bodega_id
         InventarioKardex.producto_id == producto_id,
         InventarioKardex.bodega_id == bodega_id,
         InventarioKardex.lote_id == lote_id,
-        InventarioKardex.tipo_movimiento.in_(['ENTRADA', 'SALIDA', 'AJUSTE', 'RECHAZO', 'CONSUMO_TPM'])
+        InventarioKardex.empresa_id == empresa_id,
+        InventarioKardex.tipo_movimiento.in_([
+            'ENTRADA', 'SALIDA', 'AJUSTE', 'RECHAZO', 'CONSUMO_TPM',
+            'TRANSFERENCIA_ENTRADA', 'TRANSFERENCIA_SALIDA'
+        ])
     ).scalar() or 0.0
 
     # Suma Reservas/Bloqueos (Positivos) - Liberaciones (Negativas)
@@ -82,8 +86,31 @@ async def recalcular_saldo_desde_kardex(db: Session, producto_id: int, bodega_id
         InventarioKardex.producto_id == producto_id,
         InventarioKardex.bodega_id == bodega_id,
         InventarioKardex.lote_id == lote_id,
+        InventarioKardex.empresa_id == empresa_id,
         InventarioKardex.tipo_movimiento.in_(['RESERVA', 'BLOQUEO', 'LIBERACION'])
     ).scalar() or 0.0
+
+    saldo = db.query(InventarioSaldo).filter(
+        InventarioSaldo.producto_id == producto_id,
+        InventarioSaldo.bodega_id == bodega_id,
+        InventarioSaldo.lote_id == lote_id,
+        InventarioSaldo.empresa_id == empresa_id
+    ).first()
+
+    if not saldo:
+        saldo = InventarioSaldo(
+            producto_id=producto_id,
+            bodega_id=bodega_id,
+            lote_id=lote_id,
+            empresa_id=empresa_id
+        )
+        db.add(saldo)
+
+    saldo.cantidad_fisica = fisico
+    saldo.cantidad_reservada = reservado
+    db.commit()
+    db.refresh(saldo)
+    return saldo
 
 async def gestionar_reserva(db: Session, producto_id: int, bodega_id: int, cantidad: float, accion: str, empresa_id: str, lote_id: str = None):
     """Maneja el bloqueo y liberación de stock para picking y ventas."""

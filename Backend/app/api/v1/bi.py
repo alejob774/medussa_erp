@@ -15,6 +15,22 @@ from app.core.config import settings
 
 router = APIRouter()
 
+
+def _resolver_rango_fechas(
+    fecha_desde: Optional[date],
+    fecha_hasta: Optional[date],
+    fechaDesde: Optional[date],
+    fechaHasta: Optional[date],
+):
+    desde = fecha_desde or fechaDesde
+    hasta = fecha_hasta or fechaHasta
+    if not desde or not hasta:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="fecha_desde/fecha_hasta o fechaDesde/fechaHasta son obligatorios"
+        )
+    return desde, hasta
+
 # --- 1. ENDPOINTS DE GRAFANA ---
 
 @router.get("/grafana/dashboards", response_model=List[GrafanaDashboardMeta])
@@ -41,11 +57,13 @@ async def get_grafana_dashboards(
 # --- 2. ENDPOINTS DE DATOS NATIVOS (Sin Wrappers) ---
 
 @router.get("/dashboard-ejecutivo", response_model=Dict[str, Any])
-async def get_dashboard(fecha_desde: date, fecha_hasta: date, db: Session = Depends(get_bi_db), empresa_id: str = Depends(get_current_company)):
+async def get_dashboard(fecha_desde: Optional[date] = None, fecha_hasta: Optional[date] = None, fechaDesde: Optional[date] = None, fechaHasta: Optional[date] = None, db: Session = Depends(get_bi_db), empresa_id: str = Depends(get_current_company)):
+    fecha_desde, fecha_hasta = _resolver_rango_fechas(fecha_desde, fecha_hasta, fechaDesde, fechaHasta)
     return await bi_service.obtener_kpis_ejecutivos(db, empresa_id, fecha_desde, fecha_hasta)
 
 @router.get("/rentabilidad-producto-linea", response_model=Dict[str, Any])
-async def get_rentabilidad(fecha_desde: date, fecha_hasta: date, top: int = 10, db: Session = Depends(get_bi_db), empresa_id: str = Depends(get_current_company)):
+async def get_rentabilidad(fecha_desde: Optional[date] = None, fecha_hasta: Optional[date] = None, fechaDesde: Optional[date] = None, fechaHasta: Optional[date] = None, top: int = 10, db: Session = Depends(get_bi_db), empresa_id: str = Depends(get_current_company)):
+    fecha_desde, fecha_hasta = _resolver_rango_fechas(fecha_desde, fecha_hasta, fechaDesde, fechaHasta)
     return await bi_service.calcular_rentabilidad(db, empresa_id, fecha_desde, fecha_hasta, top)
 
 @router.get("/alertas-gerenciales")
@@ -53,15 +71,18 @@ async def get_alertas(estado: str = "ABIERTA", db: Session = Depends(get_bi_db),
     return await bi_service.obtener_alertas_gerenciales(db, empresa_id, estado)
 
 @router.get("/ventas-cumplimiento-comercial")
-async def get_ventas(fecha_desde: date, fecha_hasta: date, zona_id: Optional[int] = None, vendedor_id: Optional[int] = None, db: Session = Depends(get_bi_db), empresa_id: str = Depends(get_current_company)):
+async def get_ventas(fecha_desde: Optional[date] = None, fecha_hasta: Optional[date] = None, fechaDesde: Optional[date] = None, fechaHasta: Optional[date] = None, zona_id: Optional[int] = None, vendedor_id: Optional[int] = None, db: Session = Depends(get_bi_db), empresa_id: str = Depends(get_current_company)):
+    fecha_desde, fecha_hasta = _resolver_rango_fechas(fecha_desde, fecha_hasta, fechaDesde, fechaHasta)
     return await bi_service.obtener_cumplimiento_comercial(db, empresa_id, fecha_desde, fecha_hasta, zona_id, vendedor_id)
 
 @router.get("/clientes-estrategicos")
-async def get_clientes(fecha_desde: date, fecha_hasta: date, vendedor_id: Optional[int] = None, zona_id: Optional[int] = None, db: Session = Depends(get_bi_db), empresa_id: str = Depends(get_current_company)):
+async def get_clientes(fecha_desde: Optional[date] = None, fecha_hasta: Optional[date] = None, fechaDesde: Optional[date] = None, fechaHasta: Optional[date] = None, vendedor_id: Optional[int] = None, zona_id: Optional[int] = None, db: Session = Depends(get_bi_db), empresa_id: str = Depends(get_current_company)):
+    fecha_desde, fecha_hasta = _resolver_rango_fechas(fecha_desde, fecha_hasta, fechaDesde, fechaHasta)
     return await bi_service.obtener_clientes_estrategicos(db, empresa_id, desde=fecha_desde, hasta=fecha_hasta, vendedor_id=vendedor_id, zona_id=zona_id)
 
 @router.get("/demanda-vs-forecast")
-async def get_forecast(fecha_desde: date, fecha_hasta: date, db: Session = Depends(get_bi_db), empresa_id: str = Depends(get_current_company)):
+async def get_forecast(fecha_desde: Optional[date] = None, fecha_hasta: Optional[date] = None, fechaDesde: Optional[date] = None, fechaHasta: Optional[date] = None, db: Session = Depends(get_bi_db), empresa_id: str = Depends(get_current_company)):
+    fecha_desde, fecha_hasta = _resolver_rango_fechas(fecha_desde, fecha_hasta, fechaDesde, fechaHasta)
     return await bi_service.obtener_demanda_vs_forecast(db, empresa_id, {"fechaDesde": fecha_desde, "fechaHasta": fecha_hasta})
 
 @router.get("/produccion-tiempo-real", response_model=ProduccionRTData)
@@ -74,7 +95,8 @@ async def get_oee_consolidado(db: Session = Depends(get_bi_db), empresa_id: str 
     return await bi_service.obtener_oee_consolidado(db, empresa_id)
 
 @router.get("/calidad-no-conformidades", response_model=CalidadDashboardData)
-async def get_calidad_dashboard(fecha_desde: date, fecha_hasta: date, producto_id: Optional[int] = None, db: Session = Depends(get_bi_db), empresa_id: str = Depends(get_current_company)):
+async def get_calidad_dashboard(fecha_desde: Optional[date] = None, fecha_hasta: Optional[date] = None, fechaDesde: Optional[date] = None, fechaHasta: Optional[date] = None, producto_id: Optional[int] = None, db: Session = Depends(get_bi_db), empresa_id: str = Depends(get_current_company)):
+    fecha_desde, fecha_hasta = _resolver_rango_fechas(fecha_desde, fecha_hasta, fechaDesde, fechaHasta)
     filtros = {"desde": fecha_desde, "hasta": fecha_hasta, "productoId": producto_id}
     return await bi_service.obtener_dashboard_calidad(db, empresa_id, filtros)
 
@@ -83,9 +105,11 @@ async def get_inventario_estrategico(bodega_id: Optional[int] = None, db: Sessio
     return await bi_service.obtener_inventario_estrategico(db, empresa_id, bodega_id)
 
 @router.get("/compras-estrategicas", response_model=ComprasEstrategicasData)
-async def get_compras_estrategicas(fecha_desde: date, fecha_hasta: date, proveedor_id: Optional[int] = None, db: Session = Depends(get_bi_db), empresa_id: str = Depends(get_current_company)):
+async def get_compras_estrategicas(fecha_desde: Optional[date] = None, fecha_hasta: Optional[date] = None, fechaDesde: Optional[date] = None, fechaHasta: Optional[date] = None, proveedor_id: Optional[int] = None, db: Session = Depends(get_bi_db), empresa_id: str = Depends(get_current_company)):
+    fecha_desde, fecha_hasta = _resolver_rango_fechas(fecha_desde, fecha_hasta, fechaDesde, fechaHasta)
     return await bi_service.obtener_compras_estrategicas(db, empresa_id, {"fechaDesde": fecha_desde, "fechaHasta": fecha_hasta, "proveedorId": proveedor_id})
 
 @router.get("/kpi-logisticos", response_model=KpiLogisticosData)
-async def get_kpi_logisticos(fecha_desde: date, fecha_hasta: date, db: Session = Depends(get_bi_db), empresa_id: str = Depends(get_current_company)):
+async def get_kpi_logisticos(fecha_desde: Optional[date] = None, fecha_hasta: Optional[date] = None, fechaDesde: Optional[date] = None, fechaHasta: Optional[date] = None, db: Session = Depends(get_bi_db), empresa_id: str = Depends(get_current_company)):
+    fecha_desde, fecha_hasta = _resolver_rango_fechas(fecha_desde, fecha_hasta, fechaDesde, fechaHasta)
     return await bi_service.obtener_kpis_logisticos(db, empresa_id, fecha_desde, fecha_hasta)

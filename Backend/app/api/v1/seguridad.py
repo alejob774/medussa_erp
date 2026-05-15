@@ -112,7 +112,7 @@ async def desactivar_rol(rol_id: int, db: Session = Depends(get_db)):
 
 @router.get("/empresas/{empresa_id}/perfiles", response_model=List[PerfilResponse])
 def obtener_perfiles_empresa(empresa_id: str, db: Session = Depends(get_db)):
-    # Consulta filtrada por empresa activa [cite: 81]
+    # Consulta filtrada por empresa activa
     return db.query(Perfil).filter(Perfil.empresa_id == empresa_id).all()
 
 @router.put("/empresas/{empresa_id}/perfiles/{perfil_id}", response_model=PerfilResponse)
@@ -130,7 +130,7 @@ async def actualizar_perfil(empresa_id: str, perfil_id: int, perfil_edit: Perfil
 
 @router.delete("/empresas/{empresa_id}/perfiles/{perfil_id}")
 async def desactivar_perfil(empresa_id: str, perfil_id: int, db: Session = Depends(get_db)):
-    # Escenario 3: No eliminar, solo desactivar [cite: 79]
+    # Escenario 3: No eliminar, solo desactivar
     db_perfil = db.query(Perfil).filter(Perfil.id == perfil_id, Perfil.empresa_id == empresa_id).first()
     if not db_perfil:
         raise HTTPException(status_code=404, detail="Perfil no encontrado")
