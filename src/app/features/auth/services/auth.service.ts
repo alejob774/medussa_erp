@@ -109,8 +109,8 @@ export class AuthService {
 
     const requestCompanyId = this.resolveRequestCompanyId(companyId, currentSession);
     const body = {
+      empresaId: requestCompanyId,
       empresa_id: requestCompanyId,
-      company_id: requestCompanyId,
       companyId: requestCompanyId,
     };
 

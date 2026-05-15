@@ -26,11 +26,17 @@ export interface BackendRouteDto {
   companyId?: string | number | null;
   empresa_nombre?: string | null;
   companyName?: string | null;
+  id_rut?: string | null;
+  nombre_rut?: string | null;
   id_ruta?: string | null;
   idRuta?: string | null;
   nombre_ruta?: string | null;
   nombreRuta?: string | null;
   zona?: string | null;
+  origen?: string | null;
+  destino?: string | null;
+  distancia_km?: number | string | null;
+  distanciaKm?: number | string | null;
   vendedor_id?: string | number | null;
   vendedorId?: string | number | null;
   vendedor_codigo?: string | null;
@@ -63,8 +69,13 @@ export interface BackendRouteDto {
 export interface BackendSaveRoutePayload {
   empresa_id: string;
   empresa_nombre?: string | null;
+  id_rut: string;
   id_ruta: string;
+  nombre_rut: string;
   nombre_ruta: string;
+  origen?: string | null;
+  destino?: string | null;
+  distancia_km?: number | null;
   zona: string;
   vendedor_id: string;
   vendedor_nombre?: string | null;
@@ -81,16 +92,16 @@ export function mapBackendRouteToRoute(
   companyIdFallback: string,
   companyNameFallback: string,
 ): Route {
-  const nombreRuta = resolveText(dto.nombre_ruta, dto.nombreRuta, 'Ruta sin nombre');
+  const nombreRuta = resolveText(dto.nombre_rut, dto.nombre_ruta, dto.nombreRuta, 'Ruta sin nombre');
   const clientesAsignados = (dto.clientes_asignados ?? dto.clientesAsignados ?? []).map(
     (client) => mapAssignedClient(client),
   );
 
   return {
-    id: resolveText(dto.id, dto.ruta_id, dto.routeId, dto.id_ruta, dto.idRuta, nombreRuta),
-    idRuta: resolveText(dto.id_ruta, dto.idRuta, ''),
+    id: resolveText(dto.id, dto.ruta_id, dto.routeId, dto.id_rut, dto.id_ruta, dto.idRuta, nombreRuta),
+    idRuta: resolveText(dto.id_rut, dto.id_ruta, dto.idRuta, ''),
     nombreRuta,
-    zona: resolveText(dto.zona, ''),
+    zona: resolveText(dto.zona, dto.origen, dto.destino, ''),
     vendedorId: resolveText(dto.vendedor_id, dto.vendedorId, ''),
     vendedorCodigo: resolveText(dto.vendedor_codigo, dto.vendedorCodigo, ''),
     vendedorNombre: resolveText(dto.vendedor_nombre, dto.vendedorNombre, ''),
@@ -119,8 +130,13 @@ export function mapRoutePayloadToBackend(
   return {
     empresa_id: requestCompanyId,
     empresa_nombre: payload.empresaNombre.trim() || null,
+    id_rut: payload.idRuta.trim().toUpperCase(),
     id_ruta: payload.idRuta.trim().toUpperCase(),
+    nombre_rut: payload.nombreRuta.trim(),
     nombre_ruta: payload.nombreRuta.trim(),
+    origen: payload.zona.trim() || null,
+    destino: payload.zona.trim() || null,
+    distancia_km: null,
     zona: payload.zona.trim(),
     vendedor_id: payload.vendedorId.trim(),
     vendedor_nombre: payload.vendedorNombre?.trim() || null,

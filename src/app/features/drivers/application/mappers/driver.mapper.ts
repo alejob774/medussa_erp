@@ -20,6 +20,8 @@ export interface BackendDriverDto {
   companyId?: string | number | null;
   empresa_nombre?: string | null;
   companyName?: string | null;
+  id_con?: string | null;
+  nombre_con?: string | null;
   id_conductor?: string | null;
   idConductor?: string | null;
   nombre_conductor?: string | null;
@@ -43,6 +45,7 @@ export interface BackendDriverDto {
   vencimientoLicencia?: string | null;
   rutas_asignadas?: BackendDriverAssignedRouteDto[] | null;
   rutasAsignadas?: BackendDriverAssignedRouteDto[] | null;
+  rutas?: BackendDriverAssignedRouteDto[] | null;
   estado?: boolean | string | null;
   activo?: boolean | number | string | null;
   isActive?: boolean | number | string | null;
@@ -57,7 +60,9 @@ export interface BackendDriverDto {
 export interface BackendSaveDriverPayload {
   empresa_id: string;
   empresa_nombre?: string | null;
+  id_con: string;
   id_conductor: string;
+  nombre_con: string;
   nombre_conductor: string;
   tipo_documento: string;
   numero_documento: string | null;
@@ -70,6 +75,7 @@ export interface BackendSaveDriverPayload {
   categoria_licencia: string | null;
   vencimiento_licencia: string | null;
   rutas_asignadas: Array<{ route_id: string }>;
+  id_rutas: string[];
   estado: boolean;
 }
 
@@ -79,19 +85,20 @@ export function mapBackendDriverToDriver(
   companyNameFallback: string,
 ): Driver {
   const nombreConductor = resolveText(
+    dto.nombre_con,
     dto.nombre_conductor,
     dto.nombreConductor,
     'Conductor sin nombre',
   );
-  const rutasAsignadas = (dto.rutas_asignadas ?? dto.rutasAsignadas ?? []).map((route) =>
+  const rutasAsignadas = (dto.rutas_asignadas ?? dto.rutasAsignadas ?? dto.rutas ?? []).map((route) =>
     mapAssignedRoute(route),
   );
 
   return {
-    id: resolveText(dto.id, dto.conductor_id, dto.conductorId, dto.id_conductor, dto.idConductor, nombreConductor),
+    id: resolveText(dto.id, dto.conductor_id, dto.conductorId, dto.id_con, dto.id_conductor, dto.idConductor, nombreConductor),
     empresaId: resolveText(dto.empresa_id, dto.companyId, companyIdFallback),
     empresaNombre: resolveText(dto.empresa_nombre, dto.companyName, companyNameFallback),
-    idConductor: resolveText(dto.id_conductor, dto.idConductor, ''),
+    idConductor: resolveText(dto.id_con, dto.id_conductor, dto.idConductor, ''),
     nombreConductor,
     tipoDocumento: resolveText(dto.tipo_documento, dto.tipoDocumento, ''),
     numeroDocumento: resolveNullableText(dto.numero_documento, dto.numeroDocumento),
@@ -119,7 +126,9 @@ export function mapDriverPayloadToBackend(
   return {
     empresa_id: requestCompanyId,
     empresa_nombre: payload.empresaNombre.trim() || null,
+    id_con: payload.idConductor.trim().toUpperCase(),
     id_conductor: payload.idConductor.trim().toUpperCase(),
+    nombre_con: payload.nombreConductor.trim(),
     nombre_conductor: payload.nombreConductor.trim(),
     tipo_documento: payload.tipoDocumento.trim(),
     numero_documento: payload.numeroDocumento?.trim() || null,
@@ -132,6 +141,7 @@ export function mapDriverPayloadToBackend(
     categoria_licencia: payload.categoriaLicencia?.trim() || null,
     vencimiento_licencia: payload.vencimientoLicencia?.trim() || null,
     rutas_asignadas: payload.rutasAsignadas.map((route) => ({ route_id: route.routeId })),
+    id_rutas: payload.rutasAsignadas.map((route) => route.routeId),
     estado: payload.estado === 'ACTIVO',
   };
 }

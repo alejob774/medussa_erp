@@ -93,7 +93,7 @@ export class RouteApiRepository implements RoutesRepository {
           return this.resolveRouteRequestId(companyId, routeId).pipe(
             switchMap((requestRouteId) =>
               this.withEndpointCompatibility((baseUrl) =>
-                this.http.patch<BackendRouteDto | void>(
+                this.http.put<BackendRouteDto | void>(
                   `${withTrailingSlash(baseUrl)}${requestRouteId}`,
                   requestBody,
                 ),
@@ -242,7 +242,7 @@ export class RouteApiRepository implements RoutesRepository {
         this.resolveRouteRequestId(companyId, routeId).pipe(
           switchMap((requestRouteId) =>
             this.withEndpointCompatibility((baseUrl) =>
-              this.http.patch<BackendRouteDto | void>(
+              this.http.put<BackendRouteDto | void>(
                 `${withTrailingSlash(baseUrl)}${requestRouteId}`,
                 {
                   estado: status,

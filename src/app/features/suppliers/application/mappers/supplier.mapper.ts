@@ -18,8 +18,12 @@ export interface BackendSupplierDto {
   empresa_nombre?: string | null;
   companyName?: string | null;
   nit?: string | null;
+  nombre_razon_social?: string | null;
+  nombreRazonSocial?: string | null;
   nombre_proveedor?: string | null;
   nombreProveedor?: string | null;
+  contacto_nombre?: string | null;
+  contactoNombre?: string | null;
   ciudad_id?: string | number | null;
   ciudadId?: string | number | null;
   ciudad_nombre?: string | null;
@@ -29,6 +33,7 @@ export interface BackendSupplierDto {
   email?: string | null;
   tipo_abastecimiento?: string | null;
   tipoAbastecimiento?: string | null;
+  categoria?: string | null;
   producto_principal?: string | null;
   productoPrincipal?: string | null;
   lead_time_dias?: number | string | null;
@@ -51,13 +56,16 @@ export interface BackendSaveSupplierPayload {
   empresa_id: string;
   empresa_nombre?: string | null;
   nit: string;
+  nombre_razon_social: string;
   nombre_proveedor: string;
+  contacto_nombre?: string | null;
   ciudad_id: string | null;
   ciudad_nombre: string | null;
   direccion: string;
   telefono: string;
   email: string | null;
   tipo_abastecimiento: SupplyType;
+  categoria?: string | null;
   producto_principal: string;
   lead_time_dias: number | null;
   moq: number | null;
@@ -71,6 +79,8 @@ export function mapBackendSupplierToSupplier(
   companyNameFallback: string,
 ): Supplier {
   const nombreProveedor = resolveText(
+    dto.nombre_razon_social,
+    dto.nombreRazonSocial,
     dto.nombre_proveedor,
     dto.nombreProveedor,
     'Proveedor sin nombre',
@@ -85,8 +95,8 @@ export function mapBackendSupplierToSupplier(
     direccion: resolveText(dto.direccion, ''),
     telefono: resolveText(dto.telefono, ''),
     email: resolveNullableText(dto.email),
-    tipoAbastecimiento: resolveSupplyType(dto.tipo_abastecimiento, dto.tipoAbastecimiento),
-    productoPrincipal: resolveText(dto.producto_principal, dto.productoPrincipal, ''),
+    tipoAbastecimiento: resolveSupplyType(dto.tipo_abastecimiento, dto.tipoAbastecimiento, dto.categoria),
+    productoPrincipal: resolveText(dto.producto_principal, dto.productoPrincipal, dto.categoria, ''),
     leadTimeDias: resolveNullableNumber(dto.lead_time_dias ?? dto.leadTimeDias),
     moq: resolveNullableNumber(dto.moq),
     condicionPago: resolveNullableText(dto.condicion_pago, dto.condicionPago),
@@ -109,13 +119,16 @@ export function mapSupplierPayloadToBackend(
     empresa_id: requestCompanyId,
     empresa_nombre: payload.empresaNombre.trim() || null,
     nit: payload.nit.trim().toUpperCase(),
+    nombre_razon_social: payload.nombreProveedor.trim(),
     nombre_proveedor: payload.nombreProveedor.trim(),
+    contacto_nombre: payload.telefono.trim() || null,
     ciudad_id: payload.ciudadId?.trim() || null,
     ciudad_nombre: payload.ciudadNombre?.trim() || null,
     direccion: payload.direccion.trim(),
     telefono: payload.telefono.trim(),
     email: payload.email?.trim().toLowerCase() || null,
     tipo_abastecimiento: payload.tipoAbastecimiento,
+    categoria: payload.productoPrincipal.trim() || payload.tipoAbastecimiento,
     producto_principal: payload.productoPrincipal.trim(),
     lead_time_dias: payload.leadTimeDias ?? null,
     moq: payload.moq ?? null,

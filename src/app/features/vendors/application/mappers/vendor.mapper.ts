@@ -20,6 +20,8 @@ export interface BackendVendorDto {
   companyId?: string | number | null;
   empresa_nombre?: string | null;
   companyName?: string | null;
+  id_ven?: string | null;
+  nombre_ven?: string | null;
   id_vendedor?: string | null;
   idVendedor?: string | null;
   nombre_vendedor?: string | null;
@@ -42,6 +44,7 @@ export interface BackendVendorDto {
   isActive?: boolean | number | string | null;
   clientes_asignados?: BackendVendorAssignedClientDto[] | null;
   clientesAsignados?: BackendVendorAssignedClientDto[] | null;
+  clientes?: BackendVendorAssignedClientDto[] | null;
   dependencias_activas?: boolean | number | string | null;
   tieneDependenciasActivas?: boolean | number | string | null;
   created_at?: string | null;
@@ -53,7 +56,9 @@ export interface BackendVendorDto {
 export interface BackendSaveVendorPayload {
   empresa_id: string;
   empresa_nombre?: string | null;
+  id_ven: string;
   id_vendedor: string;
+  nombre_ven: string;
   nombre_vendedor: string;
   tipo_vendedor: string;
   zona: string;
@@ -65,6 +70,7 @@ export interface BackendSaveVendorPayload {
   celular: string | null;
   email: string | null;
   clientes_asignados: Array<{ client_id: string }>;
+  id_clientes: string[];
   estado: boolean;
 }
 
@@ -73,20 +79,21 @@ export function mapBackendVendorToVendor(
   companyIdFallback: string,
   companyNameFallback: string,
 ): Vendor {
-  const assignedClients = (dto.clientes_asignados ?? dto.clientesAsignados ?? []).map((client) =>
+  const assignedClients = (dto.clientes_asignados ?? dto.clientesAsignados ?? dto.clientes ?? []).map((client) =>
     mapAssignedClient(client),
   );
   const nombreVendedor = resolveText(
+    dto.nombre_ven,
     dto.nombre_vendedor,
     dto.nombreVendedor,
     'Vendedor sin nombre',
   );
 
   return {
-    id: resolveText(dto.id, dto.vendedor_id, dto.vendedorId, dto.id_vendedor, dto.idVendedor, nombreVendedor),
+    id: resolveText(dto.id, dto.vendedor_id, dto.vendedorId, dto.id_ven, dto.id_vendedor, dto.idVendedor, nombreVendedor),
     empresaId: resolveText(dto.empresa_id, dto.companyId, companyIdFallback),
     empresaNombre: resolveText(dto.empresa_nombre, dto.companyName, companyNameFallback),
-    idVendedor: resolveText(dto.id_vendedor, dto.idVendedor, ''),
+    idVendedor: resolveText(dto.id_ven, dto.id_vendedor, dto.idVendedor, ''),
     nombreVendedor,
     tipoVendedor: resolveText(dto.tipo_vendedor, dto.tipoVendedor, ''),
     zona: resolveText(dto.zona, ''),
@@ -113,7 +120,9 @@ export function mapVendorPayloadToBackend(
   return {
     empresa_id: requestCompanyId,
     empresa_nombre: payload.empresaNombre.trim() || null,
+    id_ven: payload.idVendedor.trim().toUpperCase(),
     id_vendedor: payload.idVendedor.trim().toUpperCase(),
+    nombre_ven: payload.nombreVendedor.trim(),
     nombre_vendedor: payload.nombreVendedor.trim(),
     tipo_vendedor: payload.tipoVendedor.trim(),
     zona: payload.zona.trim(),
@@ -125,6 +134,7 @@ export function mapVendorPayloadToBackend(
     celular: payload.celular?.trim() || null,
     email: payload.email?.trim().toLowerCase() || null,
     clientes_asignados: payload.clientesAsignados.map((client) => ({ client_id: client.clientId })),
+    id_clientes: payload.clientesAsignados.map((client) => client.clientId),
     estado: payload.estado === 'ACTIVO',
   };
 }

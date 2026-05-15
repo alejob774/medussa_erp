@@ -16,6 +16,8 @@ export interface BackendEquipmentDto {
   companyId?: string | number | null;
   empresa_nombre?: string | null;
   companyName?: string | null;
+  id_maq?: string | null;
+  nombre_maq?: string | null;
   id_equipo?: string | null;
   idEquipo?: string | null;
   nombre_equipo?: string | null;
@@ -27,6 +29,13 @@ export interface BackendEquipmentDto {
   altura?: number | string | null;
   empresa_fabricante?: string | null;
   empresaFabricante?: string | null;
+  marca?: string | null;
+  modelo?: string | null;
+  serie?: string | null;
+  especificaciones_tecnicas?: string | null;
+  especificacionesTecnicas?: string | null;
+  contacto_fabricante?: string | null;
+  contactoFabricante?: string | null;
   direccion_fabricante?: string | null;
   direccionFabricante?: string | null;
   correo_fabricante?: string | null;
@@ -49,13 +58,20 @@ export interface BackendEquipmentDto {
 export interface BackendSaveEquipmentPayload {
   empresa_id: string;
   empresa_nombre?: string | null;
+  id_maq: string;
   id_equipo: string;
+  nombre_maq: string;
   nombre_equipo: string;
   capacidad: number;
   unidad_capacidad: string;
   diametro: number | null;
   altura: number | null;
   empresa_fabricante: string;
+  marca?: string | null;
+  modelo?: string | null;
+  serie?: string | null;
+  especificaciones_tecnicas?: string | null;
+  contacto_fabricante?: string | null;
   direccion_fabricante: string | null;
   correo_fabricante: string | null;
   tipo_equipo: string | null;
@@ -68,21 +84,21 @@ export function mapBackendEquipmentToEquipment(
   companyIdFallback: string,
   companyNameFallback: string,
 ): Equipment {
-  const nombreEquipo = resolveText(dto.nombre_equipo, dto.nombreEquipo, 'Equipo sin nombre');
+  const nombreEquipo = resolveText(dto.nombre_maq, dto.nombre_equipo, dto.nombreEquipo, 'Equipo sin nombre');
 
   return {
-    id: resolveText(dto.id, dto.equipo_id, dto.equipmentId, dto.id_equipo, dto.idEquipo, nombreEquipo),
-    idEquipo: resolveText(dto.id_equipo, dto.idEquipo, ''),
+    id: resolveText(dto.id, dto.equipo_id, dto.equipmentId, dto.id_maq, dto.id_equipo, dto.idEquipo, nombreEquipo),
+    idEquipo: resolveText(dto.id_maq, dto.id_equipo, dto.idEquipo, ''),
     nombreEquipo,
     capacidad: resolveNullableNumber(dto.capacidad) ?? 0,
     unidadCapacidad: resolveText(dto.unidad_capacidad, dto.unidadCapacidad, ''),
     diametro: resolveNullableNumber(dto.diametro),
     altura: resolveNullableNumber(dto.altura),
-    empresaFabricante: resolveText(dto.empresa_fabricante, dto.empresaFabricante, ''),
+    empresaFabricante: resolveText(dto.empresa_fabricante, dto.empresaFabricante, dto.marca, ''),
     direccionFabricante: resolveNullableText(dto.direccion_fabricante, dto.direccionFabricante),
-    correoFabricante: resolveNullableText(dto.correo_fabricante, dto.correoFabricante),
-    tipoEquipo: resolveNullableText(dto.tipo_equipo, dto.tipoEquipo),
-    ubicacionOperativa: resolveNullableText(dto.ubicacion_operativa, dto.ubicacionOperativa),
+    correoFabricante: resolveNullableText(dto.correo_fabricante, dto.correoFabricante, dto.contacto_fabricante, dto.contactoFabricante),
+    tipoEquipo: resolveNullableText(dto.tipo_equipo, dto.tipoEquipo, dto.modelo),
+    ubicacionOperativa: resolveNullableText(dto.ubicacion_operativa, dto.ubicacionOperativa, dto.serie),
     estado: resolveMasterStatus(dto.estado, dto.activo, dto.isActive) as EquipmentStatus,
     empresaId: resolveText(dto.empresa_id, dto.companyId, companyIdFallback),
     empresaNombre: resolveText(dto.empresa_nombre, dto.companyName, companyNameFallback),
@@ -101,13 +117,20 @@ export function mapEquipmentPayloadToBackend(
   return {
     empresa_id: requestCompanyId,
     empresa_nombre: payload.empresaNombre.trim() || null,
+    id_maq: payload.idEquipo.trim().toUpperCase(),
     id_equipo: payload.idEquipo.trim().toUpperCase(),
+    nombre_maq: payload.nombreEquipo.trim(),
     nombre_equipo: payload.nombreEquipo.trim(),
     capacidad: Number(payload.capacidad),
     unidad_capacidad: payload.unidadCapacidad.trim(),
     diametro: payload.diametro ?? null,
     altura: payload.altura ?? null,
     empresa_fabricante: payload.empresaFabricante.trim(),
+    marca: payload.empresaFabricante.trim() || null,
+    modelo: payload.tipoEquipo?.trim() || null,
+    serie: payload.ubicacionOperativa?.trim() || null,
+    especificaciones_tecnicas: payload.unidadCapacidad.trim() || null,
+    contacto_fabricante: payload.correoFabricante?.trim().toLowerCase() || null,
     direccion_fabricante: payload.direccionFabricante?.trim() || null,
     correo_fabricante: payload.correoFabricante?.trim().toLowerCase() || null,
     tipo_equipo: payload.tipoEquipo?.trim() || null,

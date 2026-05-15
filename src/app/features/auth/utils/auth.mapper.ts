@@ -145,6 +145,35 @@ function extractPermissionCodes(permissionSource: unknown): string[] {
   });
 }
 
+function extractNameCodes(values: unknown): string[] {
+  if (!values) {
+    return [];
+  }
+
+  if (typeof values === 'string') {
+    return values.trim() ? [values.trim()] : [];
+  }
+
+  if (!Array.isArray(values)) {
+    return [];
+  }
+
+  return values.flatMap((value) => {
+    if (typeof value === 'string') {
+      return value.trim() ? [value.trim()] : [];
+    }
+
+    if (value && typeof value === 'object') {
+      const record = value as Record<string, unknown>;
+      const name =
+        record['nombre'] ?? record['name'] ?? record['rol'] ?? record['role'] ?? record['perfil'] ?? record['profile'];
+      return typeof name === 'string' && name.trim() ? [name.trim()] : [];
+    }
+
+    return [];
+  });
+}
+
 function isFrontendCompany(company: Company | BackendAuthMeCompany): company is Company {
   return 'name' in company && 'code' in company;
 }
@@ -219,7 +248,17 @@ function mapAuthMeCompanies(
   response: BackendAuthMeResponse,
   companies: readonly Company[],
 ): Company[] {
-  return mapBackendCompaniesToCompanies(response.empresas ?? response.companies ?? [], companies);
+  const empresaActiva =
+    response.empresaActiva && typeof response.empresaActiva === 'object'
+      ? [response.empresaActiva]
+      : response.empresa_activa_obj
+        ? [response.empresa_activa_obj]
+        : [];
+
+  return mapBackendCompaniesToCompanies(
+    [...(response.empresas ?? []), ...(response.companies ?? []), ...empresaActiva],
+    companies,
+  );
 }
 
 function resolveActiveAuthMeCompany(
@@ -228,6 +267,16 @@ function resolveActiveAuthMeCompany(
 ): BackendAuthMeCompany | null {
   const responseCompanies = response.empresas ?? response.companies ?? [];
   const requestedBackendCompanyId =
+    (response.empresaActiva && typeof response.empresaActiva === 'object'
+      ? normalizeNullableString(
+          response.empresaActiva.empresa_id ??
+            response.empresaActiva.empresaId ??
+            response.empresaActiva.companyId ??
+            response.empresaActiva.backend_id ??
+            response.empresaActiva.backendId ??
+            response.empresaActiva.id,
+        )
+      : normalizeNullableString(response.empresaActiva)) ??
     normalizeNullableString(response.empresa_activa) ??
     normalizeNullableString(response.active_company_id) ??
     normalizeNullableString(response.activeCompanyId) ??
@@ -378,6 +427,7 @@ export function mapBackendAuthMeToAuthUser(
     activeCompany?.role ??
     response.rol ??
     response.role ??
+    extractNameCodes(response.roles)[0] ??
     currentUser?.roleName ??
     null;
   const profileName =
@@ -385,6 +435,7 @@ export function mapBackendAuthMeToAuthUser(
     activeCompany?.profile ??
     response.perfil ??
     response.profile ??
+    extractNameCodes(response.perfiles)[0] ??
     currentUser?.profileName ??
     null;
   const extractedPermissions = extractPermissionCodes(
@@ -406,6 +457,7 @@ export function mapBackendAuthMeToAuthUser(
       currentUser?.displayName,
     roles: dedupeStrings([
       ...(currentUser?.roles ?? []),
+      ...extractNameCodes(response.roles),
       response.rol,
       response.role,
       activeCompany?.rol,
@@ -434,6 +486,16 @@ export function mergeAuthenticatedContextIntoSession(
     activeCompanyId: session.activeCompanyId ?? null,
     activeBackendCompanyId:
       normalizeNullableString(response.empresa_activa) ??
+      (response.empresaActiva && typeof response.empresaActiva === 'object'
+        ? normalizeNullableString(
+            response.empresaActiva.empresa_id ??
+              response.empresaActiva.empresaId ??
+              response.empresaActiva.companyId ??
+              response.empresaActiva.backend_id ??
+              response.empresaActiva.backendId ??
+              response.empresaActiva.id,
+          )
+        : normalizeNullableString(response.empresaActiva)) ??
       normalizeNullableString(response.active_company_id) ??
       normalizeNullableString(response.activeCompanyId) ??
       normalizeNullableString(response.empresa_id) ??

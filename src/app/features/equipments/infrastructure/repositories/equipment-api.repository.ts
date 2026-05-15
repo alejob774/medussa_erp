@@ -93,7 +93,7 @@ export class EquipmentApiRepository implements EquipmentsRepository {
           return this.resolveEquipmentRequestId(companyId, equipmentId).pipe(
             switchMap((requestEquipmentId) =>
               this.withEndpointCompatibility((baseUrl) =>
-                this.http.patch<BackendEquipmentDto | void>(
+                this.http.put<BackendEquipmentDto | void>(
                   `${withTrailingSlash(baseUrl)}${requestEquipmentId}`,
                   requestBody,
                 ),
@@ -242,7 +242,7 @@ export class EquipmentApiRepository implements EquipmentsRepository {
         this.resolveEquipmentRequestId(companyId, equipmentId).pipe(
           switchMap((requestEquipmentId) =>
             this.withEndpointCompatibility((baseUrl) =>
-              this.http.patch<BackendEquipmentDto | void>(
+              this.http.put<BackendEquipmentDto | void>(
                 `${withTrailingSlash(baseUrl)}${requestEquipmentId}`,
                 {
                   estado: status,

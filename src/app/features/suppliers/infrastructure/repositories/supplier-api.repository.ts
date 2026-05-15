@@ -93,7 +93,7 @@ export class SupplierApiRepository implements SuppliersRepository {
           return this.resolveSupplierRequestId(companyId, supplierId).pipe(
             switchMap((requestSupplierId) =>
               this.withEndpointCompatibility((baseUrl) =>
-                this.http.patch<BackendSupplierDto | void>(
+                this.http.put<BackendSupplierDto | void>(
                   `${withTrailingSlash(baseUrl)}${requestSupplierId}`,
                   requestBody,
                 ),
@@ -242,7 +242,7 @@ export class SupplierApiRepository implements SuppliersRepository {
         this.resolveSupplierRequestId(companyId, supplierId).pipe(
           switchMap((requestSupplierId) =>
             this.withEndpointCompatibility((baseUrl) =>
-              this.http.patch<BackendSupplierDto | void>(
+              this.http.put<BackendSupplierDto | void>(
                 `${withTrailingSlash(baseUrl)}${requestSupplierId}`,
                 {
                   estado: status,
