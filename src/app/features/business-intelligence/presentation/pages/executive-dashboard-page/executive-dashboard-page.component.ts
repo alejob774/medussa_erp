@@ -5,13 +5,13 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { finalize } from 'rxjs/operators';
 import { BusinessIntelligenceFacadeService } from '../../../application/facade/business-intelligence.facade';
+import { GrafanaDemoEmbedComponent } from '../../components/grafana-demo-embed/grafana-demo-embed.component';
 import {
   ExecutiveCriticalAlert,
   ExecutiveDashboard360Response,
   ExecutiveDashboardFilters,
 } from '../../../domain/models/executive-dashboard.model';
 import { BiMetricValue, BiTrendPoint } from '../../../domain/models/bi-filter-context.model';
-import { BiDashboardEmbedConfig } from '../../../domain/models/grafana-embed.model';
 
 interface ExecutiveKpiCard {
   key: string;
@@ -23,7 +23,7 @@ interface ExecutiveKpiCard {
 @Component({
   selector: 'app-executive-dashboard-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatButtonModule],
+  imports: [CommonModule, FormsModule, MatButtonModule, GrafanaDemoEmbedComponent],
   template: `
     <div class="space-y-6">
       <section class="erp-page-header erp-page-header--dark">
@@ -204,20 +204,12 @@ interface ExecutiveKpiCard {
 
         <section class="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
           <article class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Visualizacion Grafana preparada</p>
-            <h2 class="mt-1 text-lg font-semibold text-slate-950">Dashboard embed pendiente de conexion</h2>
-            <div class="mt-5 rounded-md border border-dashed border-slate-300 bg-slate-50 p-5">
-              <p class="text-sm font-semibold text-slate-800">dashboardUid</p>
-              <p class="mt-2 font-mono text-sm text-slate-700">{{ dashboard.grafana?.dashboardUid || 'pendiente' }}</p>
-              <p class="mt-4 text-sm text-slate-600">
-                La visualizacion final consultara Data Warehouse via Grafana. En esta fase no se crea token,
-                URL firmada ni iframe real.
-              </p>
-              <div class="mt-4 flex flex-wrap gap-2 text-xs text-slate-600">
-                <span class="rounded-full bg-white px-3 py-1 ring-1 ring-slate-200">Estado: pendiente de conexion</span>
-                <span class="rounded-full bg-white px-3 py-1 ring-1 ring-slate-200">Iframe: {{ dashboard.grafana?.iframeAllowed ? 'habilitado' : 'no configurado' }}</span>
-              </div>
-            </div>
+            <app-bi-grafana-demo-embed
+              [embedConfig]="dashboard.grafana"
+              fallbackDashboardUid="medussa-executive"
+              title="Dashboard Ejecutivo 360"
+              description="La visualizacion final consultara Data Warehouse via Grafana. Esta fase demo/local no crea token firmado, URL productiva, ETL ni conexion a backend."
+            ></app-bi-grafana-demo-embed>
           </article>
 
           <article class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">

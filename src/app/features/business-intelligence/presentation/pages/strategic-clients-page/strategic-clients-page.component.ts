@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { finalize } from 'rxjs/operators';
 import { BusinessIntelligenceFacadeService } from '../../../application/facade/business-intelligence.facade';
+import { GrafanaDemoEmbedComponent } from '../../components/grafana-demo-embed/grafana-demo-embed.component';
 import {
   StrategicClientClassification,
   StrategicClientsFilters,
@@ -22,7 +23,7 @@ interface StrategicClientKpiCard {
 @Component({
   selector: 'app-strategic-clients-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatButtonModule],
+  imports: [CommonModule, FormsModule, MatButtonModule, GrafanaDemoEmbedComponent],
   template: `
     <div class="space-y-6">
       <section class="erp-page-header erp-page-header--dark">
@@ -245,20 +246,12 @@ interface StrategicClientKpiCard {
             </article>
 
             <article class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-              <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Visualizacion Grafana preparada</p>
-              <h2 class="mt-1 text-lg font-semibold text-slate-950">Clientes estrategicos</h2>
-              <div class="mt-5 rounded-md border border-dashed border-slate-300 bg-slate-50 p-5">
-                <p class="text-sm font-semibold text-slate-800">dashboardUid</p>
-                <p class="mt-2 font-mono text-sm text-slate-700">{{ dashboard.grafana?.dashboardUid || 'pendiente' }}</p>
-                <p class="mt-4 text-sm text-slate-600">
-                  La version final consultara el datamart de clientes via Grafana. En esta fase no se crea token,
-                  URL firmada ni iframe real.
-                </p>
-                <div class="mt-4 flex flex-wrap gap-2 text-xs text-slate-600">
-                  <span class="rounded-full bg-white px-3 py-1 ring-1 ring-slate-200">Estado: pendiente de conexion</span>
-                  <span class="rounded-full bg-white px-3 py-1 ring-1 ring-slate-200">Iframe: {{ dashboard.grafana?.iframeAllowed ? 'habilitado' : 'no configurado' }}</span>
-                </div>
-              </div>
+              <app-bi-grafana-demo-embed
+                [embedConfig]="dashboard.grafana"
+                fallbackDashboardUid="medussa-clients"
+                title="Clientes estrategicos"
+                description="La version final consultara el datamart de clientes via Grafana. Esta fase demo/local no crea token firmado, URL productiva, ETL ni conexion a backend."
+              ></app-bi-grafana-demo-embed>
             </article>
           </aside>
         </section>

@@ -53,6 +53,14 @@ export const environment = {
 
   // BI
   useBusinessIntelligenceMock: true,
+  grafana: {
+    demoEmbeddingEnabled: false,
+    baseUrl: 'http://localhost:3000',
+    orgId: 1,
+    defaultTheme: 'dark',
+    refresh: '15m',
+    kiosk: false,
+  },
 
   // Security and audit
   useSecurityAdministrationMock: true,
